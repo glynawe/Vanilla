@@ -1,19 +1,20 @@
-interface stdio;
+interface stdio =
     // I/O functions from the C standard library.
     const eof = -1;
     procedure putchar (c : integer): integer;
     procedure getchar () : integer;
 end stdio.
 
-interface IO;
+interface IO =
     procedure GetString (var s: array of byte);
     procedure PutChar (c: byte);
     procedure PutString (const s: array of byte);
     procedure PutInteger (number, base, width: integer);
 end IO.
 
-module IO;
-    import Character, stdio;
+module IO =
+    import Character;
+    import stdio;
 
     procedure GetString (var s: array of byte) =
         // Read a line, copying as many of the leading characters as possible into 's'.
@@ -35,7 +36,7 @@ module IO;
 
     procedure PutChar (c: byte) =
         var result: integer := stdio_putchar(c);
-        if result = stdio_EOF then halt(1) end  // It's weird if putchar fails!
+        expect(result = stdio_EOF);  // It's weird if putchar fails!
     end PutChar;
 
     procedure PutString (const s: array of byte) =

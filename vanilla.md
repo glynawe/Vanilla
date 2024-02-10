@@ -162,7 +162,7 @@ A procedure without a return type has the *statement type* which is compatible w
 
     TypeDescription = "type" NAME "=" Type.
 
-    Type = GlobalName
+    Type = NAME
          | "array" [DimensionList] "of" Type
          | "record" VariableList {";" VariableList} "end"
          | "ref" Type
@@ -351,13 +351,13 @@ Reference values are automatically dereferenced when they are the designator of 
              | "0o" OCTDIGIT {OCTDIGIT}.
 
     REAL     = DIGITS "." DIGITS [EXPONENT].
-    EXPONENT = "E" ["+" | "-"] DIGITS.
+    EXPONENT = ("E" | "e") ["+" | "-"] DIGITS.
 
     DIGITS   = DIGIT {DIGIT}.
     DIGIT    = "0"..."9".
     BINDIGIT = "0" | "1".
     OCTDIGIT = "0"..."7".
-    HEXDIGIT = "0"..."9" | "A"..."F".
+    HEXDIGIT = "0"..."9" | "A"..."F" | "a"..."f".
 
 The range of decimal literals is 0 to `maxint`. The range of hexadecimal, octal and binary literals is 0 to 2<sup>`lenint`</sup>-1; two's-compliment encoding is ignored. E.g. if `integer` is 16 bits wide then `0xFFFF` is equal to `-1`. This is useful when using integers to represent bit strings.
 
@@ -373,14 +373,9 @@ A character constant has a byte value; its value is the character set's code num
 
 # Names
 
-    NAME    = LETTER {LETTER | DIGIT} | FOREIGN_NAME
+    NAME    = LETTER {LETTER | DIGIT | "_"}
     LETTER  = "A"..."Z" | "a"..."z".
     DIGIT   = "0"..."9".
-
-    FOREIGN_NAME = "`" FOREIGN_CHAR+ "`".
-    FOREIGN_CHAR  = "!"..."~" except for  "`"
-
-"Foreign names" may contain any printable character.  
 
 
 # The Standard Descriptions

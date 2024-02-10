@@ -1,25 +1,40 @@
+// this is nonsense to check parsing and highlighting
+
 interface ModuleName =
     import Import;
+    include Import2 for name, Name, nameTwo, module_name, name2, module_name, _oddname;
     type NamedType = Import_Type;
     type OpenArrayType = array of byte;
     type ArrayType1 = array 1 of byte;
     type ArrayType2 = array 1, 2 of byte;
     type RefType = ref NamedType;
+    type RefType2 = ref array of integer;
+    type RefType2 = ref array of array 3,4 of real;
     type ProcedureType = procedure;
     type ProcedureType = procedure (a, b: integer): real;
     var Var: NamedType;
+    var Var1, Var2: boolean;  // a comment
 end ModuleName.
 
 module ModuleName =
-    include Interface for Name, `@foreign_name`;
+    include Interface for Name;
+    include Interface2;
+    import Import;
     procedure Procedure (a, b, c: byte; var d: real; const e: array of integer) : t =
         Call;
-        Call2(a);
-        Call[1](c);
+        Call2(a and b);
+        Call2(true);
+        Call3(a + b);
+        Call[1].element(c);
         Import_Element(d);
         Record.Element(d);
         var x, y, z: byte := 4;
-        aa, bb := 4;
-        a := (2 + 3) * 4;
+        inc(12);
+        true;
+        f("a\nsd");
+        g('a', '\x1f');
+        aa, bb := 4.0 + 0.123E6 + 0.123E+6 + 1.0E-6 + flt(4);
+        inc(i);
+        a := (2 + 3) * 4 mod 6 + 0xFFFF + 0b10101111 / 0o644 + 0xdead1337;
     end Procedure;
 end ModuleName.

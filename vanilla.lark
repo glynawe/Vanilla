@@ -19,7 +19,6 @@ declarationlist: (declarationordescription ";")*
 inclusion : include | import
 import : "import" NAME
 include : "include" NAME ("for" NAME ("," NAME)*)?
-globalname: [NAME "_"] NAME
 
 constdescription : "const" NAME "=" constant
 constant: expression
@@ -42,7 +41,7 @@ parameters: varlist       -> valueparameters
         | "const" varlist -> constparameters
 
 typedescription : "type" NAME "=" type
-type : globalname                         -> namedtype
+type : NAME                              -> namedtype
         | "array" dimensionlist "of" type -> arraytype
         | "record" elementlist "end"      -> recordtype
         | "array" "of" type               -> openarraytype
@@ -126,7 +125,7 @@ condlist:    condthen ("elsif" condthen)*
 condthen:    expression "then" expression
 condelse:    "else" expression
 
-?designator: globalname
+?designator: NAME
         | designator "." NAME                                -> selection
         | designator "^"                                     -> dereference
         | designator "(" (expression ("," expression)*)? ")" -> call
@@ -140,10 +139,9 @@ WHITESPACE: /[ \t\n\r]+/
 NIL: "nil"
 TRUE: "true"
 FALSE: "false"
-NAME: /[A-Za-z][A-Za-z0-9]*/ | FOREIGN_NAME
-FOREIGN_NAME : "`" ("!".."_" | "a".."~")+ "`"
+NAME: /[A-Za-z_][A-Za-z0-9_]*/
 
-INTEGER:   /[0-9]+|0x[0-9A-Fa-f]+|0o[0-7]+|0b[01]+/
+INTEGER:   /[0-9]+/ | /0x[0-9A-Fa-f]+/ | /0o[0-7]+/ | /0b[01]+/
 REAL:      /[0-9]+[.][0-9]+([Ee][+-]?[0-9]+)?/
 STRING:    "\"" (NORMAL | "'"  | "\\\"" | ESCAPE)* "\""
 CHARACTER: "'"  (NORMAL | "\"" | "\\'"  | ESCAPE) "'"
