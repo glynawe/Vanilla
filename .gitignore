@@ -1,0 +1,6 @@
+.vscode
+unused
+*.pyc
+*.out
+*.pdf
+scratch.txt

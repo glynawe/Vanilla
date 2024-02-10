@@ -1,0 +1,25 @@
+interface ModuleName =
+    import Import;
+    type NamedType = Import_Type;
+    type OpenArrayType = array of byte;
+    type ArrayType1 = array 1 of byte;
+    type ArrayType2 = array 1, 2 of byte;
+    type RefType = ref NamedType;
+    type ProcedureType = procedure;
+    type ProcedureType = procedure (a, b: integer): real;
+    var Var: NamedType;
+end ModuleName.
+
+module ModuleName =
+    include Interface for Name, `@foreign_name`;
+    procedure Procedure (a, b, c: byte; var d: real; const e: array of integer) : t =
+        Call;
+        Call2(a);
+        Call[1](c);
+        Import_Element(d);
+        Record.Element(d);
+        var x, y, z: byte := 4;
+        aa, bb := 4;
+        a := (2 + 3) * 4;
+    end Procedure;
+end ModuleName.

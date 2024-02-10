@@ -1,0 +1,151 @@
+#
+# Vanilla grammar in Lark. 
+#
+# The grammar is LL(1), so just about any parsing method will do. 
+#
+
+start: (module | interface)+
+
+module    : "module" NAME "=" declarationlist "end" NAME "."
+interface : "interface" NAME "=" descriptionlist "end" NAME "."
+
+descriptionlist: (description ";")*
+declarationlist: (declarationordescription ";")*
+
+?description : vardescription | procdescription | otherdescriptions
+?declarationordescription: vardeclaration | procdeclaration | otherdescriptions
+?otherdescriptions : inclusion | constdescription | typedescription
+
+inclusion : include | import
+import : "import" NAME
+include : "include" NAME ("for" NAME ("," NAME)*)?
+globalname: [NAME "_"] NAME
+
+constdescription : "const" NAME "=" constant
+constant: expression
+
+vardescription : "var" varlist
+vardeclaration : vardescription [":=" structuredconstant]
+varlist:  namelist ":" type
+namelist: NAME ("," NAME)*
+?structuredconstant : constant | structure
+structure: "[" structureitems ("," structureitems)* "]"
+structureitems: structuredconstant ["for" constant]
+
+procdescription: "procedure" NAME proctype
+procdeclaration: procdescription [procbody]
+proctype:        "(" parameterlist ")" [":" type]
+procbody:        "=" body "end" NAME
+parameterlist:   (parameters (";" parameters)*)?
+parameters: varlist       -> valueparameters
+        | "var" varlist   -> varparameters
+        | "const" varlist -> constparameters
+
+typedescription : "type" NAME "=" type
+type : globalname                         -> namedtype
+        | "array" dimensionlist "of" type -> arraytype
+        | "record" elementlist "end"      -> recordtype
+        | "array" "of" type               -> openarraytype
+        | "ref" type                      -> referencetype
+        | "byte"                          -> bytetype
+        | "integer"                       -> integertype
+        | "real"                          -> realtype
+        | "boolean"                       -> booleantype
+        | "procedure" proctype            -> proceduretype
+dimensionlist: constant ("," constant)*
+elementlist: varlist (";" varlist)*
+
+body:      statement (";" statement)*
+statement: localvardeclaration | constdescription
+         | assignment | call | if | loop | exit | return | switch | empty
+
+localvardeclaration : "var" varlist [":=" expression]
+
+if:     "if" iflist [ifelse] "end"
+iflist: ifthen ("elsif" ifthen)*
+ifthen: expression "then" body
+ifelse: "else" body
+
+loop :     ["loop" NAME] [loopfor] ["while" expression] "do" body "end"
+loopfor:   "for" NAME ":=" expression ["by" constant] (loopto | loopuntil) expression
+loopto:    "to"
+loopuntil: "until"
+
+switch :   "case" expression "of" caselist [caseelse] "end"
+caselist:  case ("|" case)*
+case:      rangelist ":" body
+rangelist: range ("," range)*
+range:     constant [".." constant]
+caseelse:  "else" body
+
+call: designator
+
+assignment:     designatorlist ":=" expression
+designatorlist: designator ("," designator)*
+
+exit: "exit" [NAME]
+return: "return" [expression]
+
+empty:
+
+?expression: sum
+        | sum "=" sum  -> eq
+        | sum "#" sum  -> ne
+        | sum "<" sum  -> lt
+        | sum "<=" sum -> le
+        | sum ">" sum  -> gt
+        | sum ">=" sum -> ge
+
+?sum:   term
+        | term "+" sum  -> plus
+        | term "-" sum  -> minus
+        | term "or" sum -> logicalor
+
+?term:  factor
+        | factor "*" term   -> times
+        | factor "/" term   -> divide
+        | factor "mod" term -> mod
+        | factor "and" term -> logicaland
+
+?factor: "+" factor
+        | "-" factor   -> negate
+        | "not" factor -> not
+        | designator
+        | conditional
+        | "(" expression ")"
+        | INTEGER
+        | REAL
+        | CHARACTER
+        | STRING
+        | TRUE
+        | FALSE
+        | NIL
+
+conditional: "if" condlist condelse "end"
+condlist:    condthen ("elsif" condthen)*
+condthen:    expression "then" expression
+condelse:    "else" expression
+
+?designator: globalname
+        | designator "." NAME                                -> selection
+        | designator "^"                                     -> dereference
+        | designator "(" (expression ("," expression)*)? ")" -> call
+        | designator "["  expression ("," expression)*   "]" -> subscript
+
+COMMENT: "//" /[^\n]*/
+WHITESPACE: /[ \t\n\r]+/
+%ignore COMMENT
+%ignore WHITESPACE
+
+NIL: "nil"
+TRUE: "true"
+FALSE: "false"
+NAME: /[A-Za-z][A-Za-z0-9]*/ | FOREIGN_NAME
+FOREIGN_NAME : "`" ("!".."_" | "a".."~")+ "`"
+
+INTEGER:   /[0-9]+|0x[0-9A-Fa-f]+|0o[0-7]+|0b[01]+/
+REAL:      /[0-9]+[.][0-9]+([Ee][+-]?[0-9]+)?/
+STRING:    "\"" (NORMAL | "'"  | "\\\"" | ESCAPE)* "\""
+CHARACTER: "'"  (NORMAL | "\"" | "\\'"  | ESCAPE) "'"
+ESCAPE:    "\\\\" | "\\n" | "\\f" | "\\t" | "\\b" | "\\x" /[0-9A-Fa-f][0-9A-Fa-f]/
+NORMAL:    " " | "!" | "#".."&" | "(".."[" | "]".."~"

@@ -1,0 +1,75 @@
+interface stdio;
+    // I/O functions from the C standard library.
+    const eof = -1;
+    procedure putchar (c : integer): integer;
+    procedure getchar () : integer;
+end stdio.
+
+interface IO;
+    procedure GetString (var s: array of byte);
+    procedure PutChar (c: byte);
+    procedure PutString (const s: array of byte);
+    procedure PutInteger (number, base, width: integer);
+end IO.
+
+module IO;
+    import Character, stdio;
+
+    procedure GetString (var s: array of byte) =
+        // Read a line, copying as many of the leading characters as possible into 's'.
+        var c: integer := stdio_getchar();
+        var i: integer := 0;
+        while (i < len(s)) and (c # Character_LF) and (c # stdio_EOF) do
+            s[i] := c;
+            c := stdio_getchar();
+            inc(i)
+        end;
+        if i < len(s) then
+            s[i] := 0    // add terminator
+        else
+            while (c # Character_LF) and (c # stdio_EOF) do  // Consume remainder of line.
+                c := stdio_getchar()
+            end
+        end
+    end GetString;
+
+    procedure PutChar (c: byte) =
+        var result: integer := stdio_putchar(c);
+        if result = stdio_EOF then halt(1) end  // It's weird if putchar fails!
+    end PutChar;
+
+    procedure PutString (const s: array of byte) =
+        for i := 0 until len(s) while s[i] # 0 do
+            PutChar(s[i])
+        end;
+        PutChar(Character_LF)
+    end PutString;
+
+    procedure PutInteger (number, base, width: integer) =
+        // Print integer 'number' in 'base', left padded to 'width'.
+        // XXX cannot print the minimum negative integer.
+        var buffer: array 33 of byte;
+        if number = 0 then
+            PutChar('0');
+        else
+            var i: integer := 0;
+            var n: integer := abs(number);
+            while n > 0 do
+                var D: integer := n mod base;
+                buffer[i] := D + if D < 10 then '0' else 'A' end;
+                n := n / base;
+                inc(i)
+            end;
+            if number < 0 then
+                buffer[i] := '-';
+                inc(i)
+            end;
+            for j := width by -1 to i do  // Left padding.
+                PutChar(' ')
+            end;
+            for j := i - 1 by -1 to 0 do  // Sign and digits.
+                PutChar(buffer[j])
+            end
+        end
+    end PutInteger;
+end IO.
