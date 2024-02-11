@@ -36,9 +36,8 @@ procdeclaration: procdescription [procbody]
 proctype:        "(" parameterlist ")" [":" type]
 procbody:        "=" body "end" NAME
 parameterlist:   (parameters (";" parameters)*)?
-parameters: varlist       -> valueparameters
+parameters: varlist       -> constparameters
         | "var" varlist   -> varparameters
-        | "const" varlist -> constparameters
 
 typedescription : "type" NAME "=" type
 type : NAME                              -> namedtype

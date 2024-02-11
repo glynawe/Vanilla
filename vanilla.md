@@ -53,13 +53,13 @@ All interfaces and modules implicitly contain the descriptions of the standard l
     interface String =
         include Types for char;
         type T = array of char;
-        procedure Length (const s: T) : integer;
+        procedure Length (s: T) : integer;
     end String.
 
     module String =
         import Character;
         type T = array of char;
-        procedure Length (const s: T) : integer =
+        procedure Length (s: T) : integer =
             for i := 0 until len(s) do
                 if s[i] = Character_NUL then return i end
             end;
@@ -145,18 +145,19 @@ A string literal can be used to declare a byte array. If it is shorter than the 
     ProcDeclaration = ProcDescription ["=" Body "end" NAME].
 
     ProcType   = "(" [Parameters {";" Parameters}] ")" [ReturnType]
-    Parameters = ["var" | "const"] VariableList.
+    Parameters = ["var"] VariableList.
     ReturnType = ":" Type
 
 The parameter names in procedure descriptions are placeholders for describing each parameter. They are not examined when determining type equivalence. However, parameters names are significant in procedure declarations.
 
-Assigning to a `var` parameter assigns to the parameter supplied by the procedure call, i.e. `var` parameters are passed by reference. A `const` parameter is a `var` that may not be assigned to. Parameters that are neither `const` or `var` are *value parameters*. Value parameters are assigned to temporary variables in the procedure, i.e. they are pass-by-value.
+Assigning to a `var` parameter assigns to the parameter supplied by the procedure call, i.e. `var` parameters are passed by reference. Parameters without `var` are *constant parameters*. Constant parameters cannot be assigned new values.
 
-A supplied parameter must match its parameter type, with one exception: a `byte` value will be accepted as an `integer` value parameter.
-
-The compiler may pass structured type `const` parameters by reference. *The compiler may optionally disallow record and array value parameters.*
+A supplied parameter must match its parameter type, with one exception: a `byte` value will be accepted as an `integer` constant parameter.
 
 A procedure without a return type has the *statement type* which is compatible with no other type. Such a procedure may only be used as a statement.
+
+*The compiler may pass record and array constant parameters by reference.*
+
 
 # Types
 

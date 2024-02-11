@@ -1,8 +1,8 @@
 interface String =
    type T = array of byte;
-   procedure Length (const s: T) : integer;
-   procedure Compare (const a, b: T) : integer;  // a < b is -1, a = b is 0, a > b is 1
-   procedure Copy (var dst: T; const src: T);    // Note: this may truncate the string.
+   procedure Length (s: T) : integer;
+   procedure Compare (a, b: T) : integer;  // a < b is -1, a = b is 0, a > b is 1
+   procedure Copy (var dst: T; src: T);    // Note: this may truncate the string.
    procedure Uppercase (var s: T);
 end String.
 
@@ -10,14 +10,14 @@ end String.
 module String =
    type T = array of byte;
 
-   procedure Length (const s: T) : integer =
+   procedure Length (s: T) : integer =
       for i := 0 until len(s) do
          if s[i] = 0 then return i end
       end;
       return len(s)
    end Length;
 
-   procedure Copy (var dst: T; const src: T) =
+   procedure Copy (var dst: T; src: T) =
       for i := 0 until len(src) while src[i] # 0 do
          dst[i] := src[i]
       end;

@@ -20,7 +20,7 @@ module ModuleName =
     include Interface for Name;
     include Interface2;
     import Import;
-    procedure Procedure (a, b, c: byte; var d: real; const e: array of integer) : t =
+    procedure Procedure (a, b, c: byte; var d: real; e: array of integer) : t =
         Call;
         Call2(a and b);
         Call2(true);
