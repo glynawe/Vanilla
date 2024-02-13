@@ -3,4 +3,4 @@ unused
 *.pyc
 *.out
 *.pdf
-scratch.txt
+scratch*

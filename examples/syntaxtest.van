@@ -2,7 +2,7 @@
 
 interface ModuleName =
     import Import;
-    include Import2 for name, Name, nameTwo, module_name, name2, module_name, _oddname;
+    include Import2 for name, Name, nameTwo, name2;
     type NamedType = Import_Type;
     type OpenArrayType = array of byte;
     type ArrayType1 = array 1 of byte;
@@ -29,6 +29,9 @@ module ModuleName =
         Import_Element(d);
         Record.Element(d);
         var x, y, z: byte := 4;
+        var a, b := 4;
+        var c := 5;
+        val d := 6;
         inc(12);
         true;
         f("a\nsd");

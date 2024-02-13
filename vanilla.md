@@ -1,19 +1,19 @@
 # Vanilla  [Draft]
 
-This is a language in the Pascal family, the starting point of its design was Oberon.
+Vanilla is a language in the Pascal family, the starting point of its design was Oberon.
 
-I have taken a different approach to describing declarations and modules. I would like to try extending this into something like Ocaml's module system, which I have not seen used in an imperative system programming language.
+I have taken a different approach to describing declarations and modules. I would like to try extending Vanilla modules with something like [Ocaml's module system](https://v2.ocaml.org/manual/moduleexamples.html), which I have not seen used in an imperative system programming language.
 
 
 # Program Structure
 
 ## Descriptions and Declarations
 
-    Description = VarDescription | ProcDescription | OtherDescriptions.
+    Description = VarDescription | ValDescription | ProcDescription | OtherDescriptions.
 
-    DeclarationOrDescription  = VarDeclaration | ProcDeclaration | OtherDescriptions.
+    DeclarationOrDescription  = VarDeclaration | ValDeclaration | ProcDeclaration | OtherDescriptions.
 
-    OtherDescriptions = Inclusion | ConstDescription | TypeDescription
+    OtherDescriptions = Inclusion | ConstDescription | TypeDescription.
 
 A *description* names and describes a data type, procedure, variable, module or constant. A description may be given more than once; descriptions with the same name must have the same type.
 
@@ -42,10 +42,13 @@ All interfaces and modules implicitly contain the descriptions of the standard l
     Import    = "import" NAME.
 
     ImportedName = NAME "_" NAME.
+    GlobalName   = NAME | ImportedName. 
 
 `include` includes descriptions from other interfaces. If the `include` has a `for` clause then only a selection of its descriptions are included. 
 
-`import` includes descriptions from other interfaces, but each description is given an ImportedName, which is the description's name prefixed with the name of the interface.
+`import` includes descriptions from other interfaces, but each description is given an *imported name*, which is the description's name prefixed with the name of the interface. 
+
+A module or interface's *global names* are the names of all its descriptions.
 
 
 **Example**
@@ -69,7 +72,7 @@ All interfaces and modules implicitly contain the descriptions of the standard l
 
 ## Programs
 
-A program is a module that contains a procedure object named `main`, which will be the first procedure to be executed. A program may not include the interface of another program. 
+A *program* is a module that contains a procedure declaration named `main`, which will be the first procedure to be executed.  
 
 **Example**
 
@@ -77,7 +80,7 @@ A program is a module that contains a procedure object named `main`, which will 
         import Args;
         import IO;
         procedure main () =
-            assert(Args_argc >= 1);
+            expect(Args_argc >= 1);
             IO_Writeln(Args_argv[0])
         end main
     end Program.
@@ -89,9 +92,7 @@ A program is a module that contains a procedure object named `main`, which will 
 
     ConstDescription = "const" NAME "=" Constant.
 
-A Constant is an Expression that is evaluated by the compiler. The declared length of an array is example of an expression that must be constant.  
-
-The only names allowed in a constant expression are the names of other constants and calls to standard procedures, which the compiler will have the means to evaluate. There is one exception: the procedure `SYSTEM_REF` may be used the create a reference to a variable. If that variable has subscripts then they must be constants.
+A Constant is an Expression that is evaluated by the compiler. The declared length of an array is example of an expression that must be constant.  The only names allowed in a constant expression are the names of other constants and calls to standard procedures.
 
 A ConstDescription names a constant. A named constant may be described more than once, but the additional descriptions must evaluate to the same value.
 
@@ -101,13 +102,19 @@ A ConstDescription names a constant. A named constant may be described more than
     VarDescription = "var" VariableList.
     VarDeclaration = VarDescription [":=" StructuredConstant].
 
-    VariableList = NAME {"," NAME} ":" Type.
+    ValDescription = "val" VariableList.
+    ValDeclaration = ValDescription ":=" StructuredConstant.
 
-All of the variables named in the VariableList of a VarDeclaration are initialized to the values in the VarDeclaration's StructuredConstant.
+    VariableList = NameList ":" Type.
+    NameList     = NAME {"," NAME}.
+
+All of the variables named in the variable list of a VarDeclaration are initialized to the values in the VarDeclaration's structured constant. 
+
+`val` declares a *value*, a variable that can only be assigned once when it is declared. *The compiler may store values in ROM.*
 
 ## Implicit Variable Declarations
 
-A variable description has an implicit declaration if one is not given in its module. 
+A `var` variable description has an implicit declaration if one is not given in a program's modules. 
 
 An implicit variable declaration has a default value. Numeric variables are initialized to zero. Reference values are initialized to `nil`. Procedure values are initialized to a procedure that causes an *uninitialized procedure* exception. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero, nil or an error procedure.
 
@@ -128,11 +135,11 @@ elements are records or arrays then this rule is applied recursively.
 
 A `for` clause indicates that an item should be repeated a number of times within its structure list.
 
+A string literal can be used to declare a byte array. If it is shorter than the array then it is padded with zeros.
+
 **Example** This array contains a one, three sevens and a six:
 
     var sevens: array 7 of integer := [1, 7 for 3, 6];
-
-A string literal can be used to declare a byte array. If it is shorter than the array then it is padded with zeros.
 
 **Example** This array contains the bytes [64, 90, 64, 90, 0, 0, 0, 0]:
 
@@ -150,20 +157,16 @@ A string literal can be used to declare a byte array. If it is shorter than the 
 
 The parameter names in procedure descriptions are placeholders for describing each parameter. They are not examined when determining type equivalence. However, parameters names are significant in procedure declarations.
 
-Assigning to a `var` parameter assigns to the parameter supplied by the procedure call, i.e. `var` parameters are passed by reference. Parameters without `var` are *constant parameters*. Constant parameters cannot be assigned new values.
-
-A supplied parameter must match its parameter type, with one exception: a `byte` value will be accepted as an `integer` constant parameter.
-
 A procedure without a return type has the *statement type* which is compatible with no other type. Such a procedure may only be used as a statement.
 
-*The compiler may pass record and array constant parameters by reference.*
+Assigning to a `var` parameter assigns to the parameter supplied by the procedure call, i.e. `var` parameters are passed by reference. Parameters without `var` are *value parameters*. Value parameters cannot be assigned new values. *The compiler may pass record and array value parameters by reference.*
 
 
 # Types
 
     TypeDescription = "type" NAME "=" Type.
 
-    Type = NAME
+    Type = GlobalName
          | "array" [DimensionList] "of" Type
          | "record" VariableList {";" VariableList} "end"
          | "ref" Type
@@ -171,7 +174,7 @@ A procedure without a return type has the *statement type* which is compatible w
 
     DimensionList = Constant {"," Constant}.
 
-Arrays begin at element 0. An array with more than one length in its dimension list describes arrays of arrays. I.e. `array a, b, c of t` stands for `array a of array b of array c of t`. An array with no dimension list is an *open array*. An open array is one dimensional, and its length can be found using the standard procedure `len`. An open array type may only be used as the type of a procedure parameter or as the target of a reference type.
+Arrays begin at element 0. An array with more than one length in its dimension list describes arrays of arrays. I.e. `array a, b, c of t` stands for `array a of array b of array c of t`. An array with no dimension list is an *open array*. An open array is one dimensional, and its length can be found using the standard procedure `len`. An open array type may only be used as the type of a parameter or as the target of a reference type.
 
 A reference type may refer to the name of a previously undescribed type. That type must be described later in the same module.
 
@@ -179,23 +182,24 @@ A reference type may refer to the name of a previously undescribed type. That ty
 
     Body = Statement {";" Statement}.
 
-    Statement = LcaleDescription
+    Statement = LocalDescription
               | CallOrAssignment | If | Exit | Return | Case | Empty.
 
 Statements appear in the bodies of procedures and within other statements.
 
 ## Local Declarations
 
-    LcaleDescription = ConstDescription | LocalVarDeclaration. 
-    LocalVarDeclaration = "var" VariableList [":=" Expression].
+    LcaleDescription = ConstDescription | LocalVarDeclaration | LocalValDeclaration. 
+    LocalVarDeclaration = "var" NameList (":" Type [":=" Expression] | ":=" Expression).
+    LocalValDeclaration = "val" NameList [":" Type] ":=" Expression.
 
 Variables and constants defined in a Body are only valid within that body, i.e. bodies are scopes. Variables and constants are only visible to the statements that come after their declaration statements. 
 
-If a LocalVarDeclaration has an initializer Expression then the Expression is evaluated first and then all the variables named in the VariableList are assigned that value. Otherwise it is initialized to a default value by the same rules used to initialize global variables.
+If a LocalVarDeclaration has an initializer expression then the expression is evaluated first and then all the variables named in the VariableList are assigned that value. Otherwise it is initialized to a default value by the same rules used to initialize global variables.
+
+If a local declaration has an initializer expression but no type then it takes on the type of its initializer.  
 
 A local description may not have the same name as a description from the module or any surrounding body.i .e. names may not be shadowed.
-
-*The compiler may optionally disallow uninitialized reference and procedure variables.*
 
 ## Call and Assignment Statements
 
@@ -203,7 +207,7 @@ A local description may not have the same name as a description from the module 
 
 A designator with the statement type is a procedure call statement.
 
-A statement that is a list of Designators and an Expression is an assignment. The expression is evaluated once then its value is assigned to each designator in the list. The designators are evaluated after the expression. The designators must have types that are *assignment compatible* with the expression's type.
+A statement that is a list of Designators and an Expression is an assignment. The expression is evaluated once then its value is assigned to each designator in the list. The designators are evaluated in order after the expression. The designators must have the same type as the expression, with two exceptions: a `byte` expression can be assigned to `integer` designator; an `integer` constant in the range 0 to 255 may be assigned to a `byte` designator.
 
 Records of the same type and arrays of the same type and length may by assigned to each other.
 
@@ -228,7 +232,7 @@ A loop statement may be given a name to be used by `exit` statements.
 
 Loop statements with no `for` or `while` clauses continue until a `return` statement or an applicable `exit` statement is executed.
 
-If a loop statement has a `for` clause then its name is declared as an integer variable in the  statement's body. That variable may not be assigned to. If there is a `while` clause then the variable may be used in that clause's expression. The limiting expressions of a `for` clause are evaluated only once.
+If a loop statement has a `for` clause then its name is declared as an integer value in the statement's body. If there is a `while` clause then the value may be used in that clause's expression. The limiting expressions of a `for` clause are evaluated only once.
 
 If `to` is used in a `for` clause then the loop ends when the limiting expression is exceeded. If `until` is used in a `for` clause then the loop ends when the limiting expression is reached. `for i := 0 to 4 do print(i) end` would print `0 1 2 3 4` but `for i := 0 until 4 do print(i) end` would print `0 1 2 3`
 
@@ -265,9 +269,7 @@ If `to` is used in a `for` clause then the loop ends when the limiting expressio
 
 Case expressions and label constants must be integer or bytes. All Constants in a `case` statement must be unique and Ranges must not overlap. If the Expression's value is within a branch's ranges then the branch's Body is executed. If the value does not match a branch and there is an `else` clause then its body is executed; if there is no `else` clause then nothing is done.
 
-*The highest label constant must be less than 256 higher that the lowest constant. A case is most useful when implemented using a jump table, but there must be some limit to the size of those tables.*
-
-*The case statement could be omitted to allow a simpler compiler.*
+*The highest label constant must be less than 256 higher that the lowest constant. Case statements are most useful when implemented using jump tables, and there must be some limit to the size of those tables.*
 
 ## Empty statement
 
@@ -339,7 +341,9 @@ The expressions following `then` and `else` must have the same type.
     Dereference = "^".
     Call        = "(" [Expression {"," Expression}] ")"
 
-Reference values are automatically dereferenced when they are the designator of a Call, Selection or Subscript.
+Reference values are automatically dereferenced when they are the designator of a call, selection or subscript.
+
+The list of expressions in a *call* are supplied to the designated procedure as parameters. A `var` parameter must be supplied with a designator. A supplied parameter must match its parameter's type, with one exception: a `byte` value will be accepted as an `integer` value parameter. 
 
 
 ## Literals
@@ -362,21 +366,23 @@ Reference values are automatically dereferenced when they are the designator of 
 
 The range of decimal literals is 0 to `maxint`. The range of hexadecimal, octal and binary literals is 0 to 2<sup>`lenint`</sup>-1; two's-compliment encoding is ignored. E.g. if `integer` is 16 bits wide then `0xFFFF` is equal to `-1`. This is useful when using integers to represent bit strings.
 
-    STRING    = '"' {NORMAL | "'" | '\"' | ESCAPE} '"'
-    CHARACTER = "'" (NORMAL | '"' | "\'" | ESCAPE) "'"
-    ESCAPE    = "\\" | "\n" | "\f" | "\t" | "\b" | "\0" | "\x" HEXDIGIT HEXDIGIT
-    NORMAL    = " "..."~" except for "\", "'" and '"'
+    STRING    = '"' {NORMAL | "'" | '\"' | ESCAPE} '"'.
+    CHARACTER = "'" (NORMAL | '"' | "\'" | ESCAPE) "'".
+    NORMAL    = " "..."~" except for "\", "'" and '"'.
+    ESCAPE    = "\\" | "\n" | "\f" | "\t" | "\b" | "\0" 
+              | "\x" HEXDIGIT HEXDIGIT.
 
-String literals in Expressions are anonymous variables of type `array of byte`. A string literal's array has an additional element at the end containing 0. String literals cannot be passed as `var` parameters. The procedure `SYSTEM_REF` may not be used on a string constant.
+String literals in Expressions are anonymous values of type `array of byte`. A string literal's array has an additional element at the end containing 0. 
 
 A character constant has a byte value; its value is the character set's code number for that character.
 
 
 # Names
 
-    NAME    = LETTER {LETTER | DIGIT | "_"}
+    NAME    = LETTER {LETTER | DIGIT}.
     LETTER  = "A"..."Z" | "a"..."z".
     DIGIT   = "0"..."9".
+   
 
 
 # The Standard Descriptions
@@ -394,7 +400,7 @@ The standard descriptions are implicitly included at the start of every interfac
 
 The floating-point number representation is implementation-dependant.
 
-A `byte` value may be assigned to an `integer` variable or `integer` value parameter.
+A `byte` value may be assigned to an `integer` designator or `integer` value parameter. 
 
 `integer` is assumed to be wide enough to contain the bits of a memory address.
 
@@ -410,7 +416,7 @@ A `byte` value may be assigned to an `integer` variable or `integer` value param
 | `true`   |                                                                   |
 | `false`  |                                                                   |
 
-The constant `nil` may be assigned to any reference variable. A variable containing `nil` must not be dereferenced. *A compiler may optionally disallow the use of `nil` in a module.*
+The constant `nil` may be assigned to any reference variable. A variable containing `nil` must not be dereferenced.
 
 The values of `minint`, `maxint` and `lenint` are implementation-dependant.
 
@@ -434,25 +440,6 @@ In the following  tables *NumberType* is an integer, byte or real value; *IntTyp
 `inc` and `dec` evaluate their variable parameter only once.
 
 `len(a, 0)` is the length of the first dimension of array *a*.
-
-### Halting procedures
-
-| Name            | Argument type  | Result type   | Function                      |
-|-----------------|----------------|---------------|-------------------------------|
-| `exit`(n)       | n: `integer`   |               | halt with exit code *n*       |
-| `assert`(x)     | x: `boolean`   |               | raise exception if not *x*    |
-| `expect`(x)     | x: `boolean`   |               | raise exception if not *x*    |
-
- `assert` is for testing if the program is correct. `expect` is for testing whether the program can continue, e.g. testing whether an operating system service is still functioning. *The execution of `assert` may optionally be turned off by the compiler.*
-
-How exceptions and exit codes are handled is implementation-dependant behaviour.
-
-**Example**
-
-    assert(String_length(text) > 0);    // The program must create text.
-    status := Cstdio_fputs(text, file);
-    expect(status # Cstdio_EOF);        // The I/O system should be working.
-    exit(0);                            // The program is finished now.
 
 ### Type transfer procedures
 
@@ -498,6 +485,25 @@ The `free(r)` procedure calls `DEALLOCATE(SYSTEM_TYPE(r, integer))` to mark the 
 
 These `ALLOCATE` and `DEALLOCATE` procedure descriptions must be included in any module that calls `new` or `free`. How the procedures are implemented is up to the programmer. They will typically be included from the interface of a module that manages memory on a heap. 
 
+### Halting procedures
+
+| Name            | Argument type  | Result type   | Function                      |
+|-----------------|----------------|---------------|-------------------------------|
+| `exit`(n)       | n: `integer`   |               | halt with exit code *n*       |
+| `assert`(x)     | x: `boolean`   |               | raise exception if not *x*    |
+| `expect`(x)     | x: `boolean`   |               | raise exception if not *x*    |
+
+ `assert` is for testing if the program is correct. `expect` is for testing whether the program can continue, e.g. testing whether an operating system service is still functioning. *The execution of `assert` may optionally be turned off by the compiler.*
+
+How exceptions and exit codes are handled is implementation-dependant behaviour.
+
+**Example**
+
+    assert(String_length(text) > 0);    // The program created text.
+    status := Cstdio_fputs(text, file);
+    expect(status # Cstdio_EOF);        // The I/O system is working.
+    exit(0);                            // The program is finished now.
+
 
 # The SYSTEM Interface
 
@@ -507,16 +513,16 @@ If a particular computer requires language extensions, e.g. procedures that acce
 
 In the following table *ram* refers the computer's random access memory, addressed by byte.
 
-|  Name         |  Parameter types         | Result type |  Function                                |
-|---------------|--------------------------|-------------|------------------------------------------|
-| `ADDR`(v)     | v: AnyType               | `integer`   | address of variable *v*                  |
-| `GET`(a, v)   | a: `integer`; v: AnyType |             | fill *v* with the bytes starting at *ram[a]*   |
-| `MOVE`(a,b,n) | a, b, n: `integer`       |             | move *n* bytes from *ram[a]* to *ram[b]* |
-| `PUT`(a, v)   | a: integer; v: AnyType   |             | move the bytes of *v* to *ram[a]*        |
-| `SIZE`(v)     | v: AnyType               | `integer`   | number of bytes in variable *v*          |
-| `SIZE`(T)     | T = AnyType              | `integer`   | number of bytes required by type *T*     |
-| `TYPE`(x, T)  | x: AnyType; T = AnyType  | T           | give *x* the type *T*                    |
-| `REF`(v)      | v: T                     | `ref` T     | reference to an object                   |
+|  Name         |  Parameter types         | Result type   |  Function                                |
+|---------------|--------------------------|---------------|------------------------------------------|
+| `ADDR`(v)     | v: AnyType               | `integer`     | address of variable *v*                  |
+| `MOVE`(a,b,n) | a, b, n: `integer`       |               | move *n* bytes from *ram[a]* to *ram[b]* |
+| `GET`(a, v)   | a: `integer`; v: AnyType |               | fill *v* with the bytes starting at *ram[a]*   |
+| `PUT`(a, v)   | a: `integer`; v: AnyType |               | move the bytes of *v* to *ram[a]*        |
+| `SIZE`(v)     | v: AnyType               | `integer`     | number of bytes in variable *v*          |
+| `SIZE`(T)     | T = AnyType              | `integer`     | number of bytes required by type *T*     |
+| `TYPE`(x, T)  | x: AnyType; T = AnyType  | T             | give *x* the type *T*                    |
+| `REF`(v)      | v: AnyType               | `ref` AnyType | reference to an object                   |
 
 `TYPE` changes the type of a value or variable without altering the underlying bits that represent it. E.g. it can be used to represent a reference as an integer or a record as an array of bytes.
 
@@ -530,8 +536,8 @@ In the following table *ram* refers the computer's random access memory, address
         include SYSTEM;
         procedure EndianReversal (x: integer) : integer =
             const w = SIZE(x);
-            var a, b: array w of byte;
-            a := TYPE(x, array w of byte)
+            val a := TYPE(x, array w of byte);
+            var b: array w of byte;
             for i := 0 until w do
                 b[i] := a[w - i - 1]
             end;

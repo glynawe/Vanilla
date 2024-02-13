@@ -12,19 +12,23 @@ interface : "interface" NAME "=" descriptionlist "end" NAME "."
 descriptionlist: (description ";")*
 declarationlist: (declarationordescription ";")*
 
-?description : vardescription | procdescription | otherdescriptions
-?declarationordescription: vardeclaration | procdeclaration | otherdescriptions
+?description : vardescription | valdescription | procdescription | otherdescriptions
+?declarationordescription: vardeclaration | valdeclaration | procdeclaration | otherdescriptions
 ?otherdescriptions : inclusion | constdescription | typedescription
 
 inclusion : include | import
 import : "import" NAME
 include : "include" NAME ("for" NAME ("," NAME)*)?
+importedname : NAME "_" NAME
+globalname : NAME | NAME "_" NAME
 
 constdescription : "const" NAME "=" constant
 constant: expression
 
 vardescription : "var" varlist
 vardeclaration : vardescription [":=" structuredconstant]
+valdescription : "val" varlist
+valdeclaration : valdescription ":=" structuredconstant
 varlist:  namelist ":" type
 namelist: NAME ("," NAME)*
 ?structuredconstant : constant | structure
@@ -40,7 +44,7 @@ parameters: varlist       -> constparameters
         | "var" varlist   -> varparameters
 
 typedescription : "type" NAME "=" type
-type : NAME                              -> namedtype
+type : globalname                         -> namedtype
         | "array" dimensionlist "of" type -> arraytype
         | "record" elementlist "end"      -> recordtype
         | "array" "of" type               -> openarraytype
@@ -54,10 +58,11 @@ dimensionlist: constant ("," constant)*
 elementlist: varlist (";" varlist)*
 
 body:      statement (";" statement)*
-statement: localvardeclaration | constdescription
+statement: localvardeclaration | localvaldeclaration | constdescription
          | assignment | call | if | loop | exit | return | switch | empty
 
-localvardeclaration : "var" varlist [":=" expression]
+localvardeclaration : "var" namelist (":" type [":=" expression] | ":=" expression)
+localvaldeclaration : "val" namelist [":" type] ":=" expression
 
 if:     "if" iflist [ifelse] "end"
 iflist: ifthen ("elsif" ifthen)*
@@ -124,7 +129,7 @@ condlist:    condthen ("elsif" condthen)*
 condthen:    expression "then" expression
 condelse:    "else" expression
 
-?designator: NAME
+?designator: globalname
         | designator "." NAME                                -> selection
         | designator "^"                                     -> dereference
         | designator "(" (expression ("," expression)*)? ")" -> call
@@ -138,7 +143,7 @@ WHITESPACE: /[ \t\n\r]+/
 NIL: "nil"
 TRUE: "true"
 FALSE: "false"
-NAME: /[A-Za-z_][A-Za-z0-9_]*/
+NAME: /[A-Za-z][A-Za-z0-9]*/
 
 INTEGER:   /[0-9]+/ | /0x[0-9A-Fa-f]+/ | /0o[0-7]+/ | /0b[01]+/
 REAL:      /[0-9]+[.][0-9]+([Ee][+-]?[0-9]+)?/

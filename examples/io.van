@@ -18,8 +18,8 @@ module IO =
 
     procedure GetString (var s: array of byte) =
         // Read a line, copying as many of the leading characters as possible into 's'.
-        var c: integer := stdio_getchar();
-        var i: integer := 0;
+        var c := stdio_getchar();
+        var i := 0;
         while (i < len(s)) and (c # Character_LF) and (c # stdio_EOF) do
             s[i] := c;
             c := stdio_getchar();
@@ -53,8 +53,8 @@ module IO =
         if number = 0 then
             PutChar('0');
         else
-            var i: integer := 0;
-            var n: integer := abs(number);
+            var i := 0;
+            var n  := abs(number);
             while n > 0 do
                 var D: integer := n mod base;
                 buffer[i] := D + if D < 10 then '0' else 'A' end;
