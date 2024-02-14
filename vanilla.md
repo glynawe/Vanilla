@@ -110,7 +110,7 @@ A ConstDescription names a constant. A named constant may be described more than
 
 All of the variables named in the variable list of a VarDeclaration are initialized to the values in the VarDeclaration's structured constant. 
 
-`val` declares a *value*, a variable that can only be assigned once when it is declared. *The compiler may store values in ROM.*
+`val` declares a *immutable variable*, a variable that can only be assigned once when it is declared. *The compiler may store immutable variables in ROM.*
 
 ## Implicit Variable Declarations
 
@@ -159,7 +159,7 @@ The parameter names in procedure descriptions are placeholders for describing ea
 
 A procedure without a return type has the *statement type* which is compatible with no other type. Such a procedure may only be used as a statement.
 
-Assigning to a `var` parameter assigns to the parameter supplied by the procedure call, i.e. `var` parameters are passed by reference. Parameters without `var` are *value parameters*. Value parameters cannot be assigned new values. *The compiler may pass record and array value parameters by reference.*
+Assigning to a `var` parameter assigns to the parameter supplied by the procedure call, i.e. `var` parameters are passed by reference. Parameters without `var` are *value parameters*. Value parameters are immutable. *The compiler may pass record and array value parameters by reference.*
 
 
 # Types
@@ -232,7 +232,7 @@ A loop statement may be given a name to be used by `exit` statements.
 
 Loop statements with no `for` or `while` clauses continue until a `return` statement or an applicable `exit` statement is executed.
 
-If a loop statement has a `for` clause then its name is declared as an integer value in the statement's body. If there is a `while` clause then the value may be used in that clause's expression. The limiting expressions of a `for` clause are evaluated only once.
+If a loop statement has a `for` clause then its control variable name is an integer immutable variable in the statement's body. If there is a `while` clause then that variable may be used in that clause's expression. The limiting expressions of a `for` clause are evaluated only once.
 
 If `to` is used in a `for` clause then the loop ends when the limiting expression is exceeded. If `until` is used in a `for` clause then the loop ends when the limiting expression is reached. `for i := 0 to 4 do print(i) end` would print `0 1 2 3 4` but `for i := 0 until 4 do print(i) end` would print `0 1 2 3`
 
@@ -372,7 +372,7 @@ The range of decimal literals is 0 to `maxint`. The range of hexadecimal, octal 
     ESCAPE    = "\\" | "\n" | "\f" | "\t" | "\b" | "\0" 
               | "\x" HEXDIGIT HEXDIGIT.
 
-String literals in Expressions are anonymous values of type `array of byte`. A string literal's array has an additional element at the end containing 0. 
+String literals in Expressions are anonymous immutable variables of type `array of byte`. A string literal's array has an additional element at the end containing 0. 
 
 A character constant has a byte value; its value is the character set's code number for that character.
 
