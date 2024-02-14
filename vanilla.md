@@ -9,9 +9,9 @@ I have taken a different approach to describing declarations and modules. I woul
 
 ## Descriptions and Declarations
 
-    Description = VarDescription | ValDescription | ProcDescription | OtherDescriptions.
+    Description = VarDescription | ProcDescription | OtherDescriptions.
 
-    DeclarationOrDescription  = VarDeclaration | ValDeclaration | ProcDeclaration | OtherDescriptions.
+    DeclarationOrDescription  = VarDeclaration | ProcDeclaration | OtherDescriptions.
 
     OtherDescriptions = Inclusion | ConstDescription | TypeDescription.
 
@@ -99,22 +99,19 @@ A ConstDescription names a constant. A named constant may be described more than
 
 # Variables
 
-    VarDescription = "var" VariableList.
+    VarDescription = ("var" | "val") VariableList.
     VarDeclaration = VarDescription [":=" StructuredConstant].
-
-    ValDescription = "val" VariableList.
-    ValDeclaration = ValDescription ":=" StructuredConstant.
 
     VariableList = NameList ":" Type.
     NameList     = NAME {"," NAME}.
 
 All of the variables named in the variable list of a VarDeclaration are initialized to the values in the VarDeclaration's structured constant. 
 
-`val` declares a *immutable variable*, a variable that can only be assigned once when it is declared. *The compiler may store immutable variables in ROM.*
+`val` declares a *immutable variable*, a variable that can only be assigned once when it is declared. *The compiler may arrange for immutable variables to be stored in ROM.*
 
 ## Implicit Variable Declarations
 
-A `var` variable description has an implicit declaration if one is not given in a program's modules. 
+A variable description has an implicit declaration if one is not given in a program's modules. 
 
 An implicit variable declaration has a default value. Numeric variables are initialized to zero. Reference values are initialized to `nil`. Procedure values are initialized to a procedure that causes an *uninitialized procedure* exception. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero, nil or an error procedure.
 
@@ -189,15 +186,12 @@ Statements appear in the bodies of procedures and within other statements.
 
 ## Local Declarations
 
-    LcaleDescription = ConstDescription | LocalVarDeclaration | LocalValDeclaration. 
-    LocalVarDeclaration = "var" NameList (":" Type [":=" Expression] | ":=" Expression).
-    LocalValDeclaration = "val" NameList [":" Type] ":=" Expression.
+    LocalDescription = LocalVarDeclaration | ConstDescription. 
+    LocalVarDeclaration = ("var" | "val") NameList (":" Type [":=" Expression] | ":=" Expression).
 
 Variables and constants defined in a Body are only valid within that body, i.e. bodies are scopes. Variables and constants are only visible to the statements that come after their declaration statements. 
 
-If a LocalVarDeclaration has an initializer expression then the expression is evaluated first and then all the variables named in the VariableList are assigned that value. Otherwise it is initialized to a default value by the same rules used to initialize global variables.
-
-If a local declaration has an initializer expression but no type then it takes on the type of its initializer.  
+If a local variable declaration has an initializer expression then the expression is evaluated first and then all the variables named in its list are assigned that value, otherwise it is initialized to a default value by the same rules used to initialize global variables. If a local declaration has an initializer expression but no type then it takes on the type of its initializer. `val` declares a *immutable variable*, a variable that can only be assigned once when it is declared.  
 
 A local description may not have the same name as a description from the module or any surrounding body.i .e. names may not be shadowed.
 
