@@ -12,8 +12,8 @@ interface : "interface" NAME "=" descriptionlist "end" NAME "."
 descriptionlist: (description ";")*
 declarationlist: (declarationordescription ";")*
 
-?description : vardescription | valdescription | procdescription | otherdescriptions
-?declarationordescription: vardeclaration | valdeclaration | procdeclaration | otherdescriptions
+?description : vardescription | procdescription | otherdescriptions
+?declarationordescription: vardeclaration | procdeclaration | otherdescriptions
 ?otherdescriptions : inclusion | constdescription | typedescription
 
 inclusion : include | import
@@ -25,10 +25,8 @@ globalname : NAME | NAME "_" NAME
 constdescription : "const" NAME "=" constant
 constant: expression
 
-vardescription : "var" varlist
+vardescription : ("var" | "val") varlist
 vardeclaration : vardescription [":=" structuredconstant]
-valdescription : "val" varlist
-valdeclaration : valdescription ":=" structuredconstant
 varlist:  namelist ":" type
 namelist: NAME ("," NAME)*
 ?structuredconstant : constant | structure
@@ -58,11 +56,10 @@ dimensionlist: constant ("," constant)*
 elementlist: varlist (";" varlist)*
 
 body:      statement (";" statement)*
-statement: localvardeclaration | localvaldeclaration | constdescription
+statement: localvardeclaration | constdescription
          | assignment | call | if | loop | exit | return | switch | empty
 
-localvardeclaration : "var" namelist (":" type [":=" expression] | ":=" expression)
-localvaldeclaration : "val" namelist [":" type] ":=" expression
+localvardeclaration : ("var" | "val") namelist (":" type [":=" expression] | ":=" expression)
 
 if:     "if" iflist [ifelse] "end"
 iflist: ifthen ("elsif" ifthen)*
