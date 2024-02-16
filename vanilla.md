@@ -33,7 +33,7 @@ An interface contains a set of descriptions.
 
 A module contains a set of descriptions and declarations. If there is an interface with the same name then the module implicitly contains that interface's descriptions.
 
-All interfaces and modules implicitly contain the descriptions of the standard library.
+All interfaces and modules implicitly contain a set of *standard descriptions* supplied by the Vanilla language. For example, the type `integer` is a standard description.
 
 ### Inclusion
 
