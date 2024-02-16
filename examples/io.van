@@ -21,7 +21,7 @@ module IO =
         var c := stdio_getchar();
         var i := 0;
         while (i < len(s)) and (c # Character_LF) and (c # stdio_EOF) do
-            s[i] := c;
+            s[i] := low(c);
             c := stdio_getchar();
             inc(i)
         end;
@@ -35,7 +35,7 @@ module IO =
     end GetString;
 
     procedure PutChar (c: byte) =
-        var result: integer := stdio_putchar(c);
+        val result := stdio_putchar(c);
         expect(result = stdio_EOF);  // It's weird if putchar fails!
     end PutChar;
 
