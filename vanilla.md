@@ -41,7 +41,8 @@ All interfaces and modules implicitly contain the descriptions of the standard l
     Include   = "include" NAME ["for" NAME {"," NAME}].
     Import    = "import" NAME.
 
-    ImportedName = NAME "_" NAME.
+    ImportedName = ModuleName "_" NAME.
+    ModuleName   = NAME.
     GlobalName   = NAME | ImportedName. 
 
 `include` includes descriptions from other interfaces. If the `include` has a `for` clause then only a selection of its descriptions are included. 
@@ -113,9 +114,9 @@ All of the variables named in the variable list of a VarDeclaration are initiali
 
 A variable description has an implicit declaration if one is not given in a program's modules. 
 
-An implicit variable declaration has a default value. Numeric variables are initialized to zero. Reference values are initialized to `nil`. Procedure values are initialized to a procedure that causes an *uninitialized procedure* exception. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero, nil or an error procedure.
+An implicit variable declaration has a default value. Numeric variables are initialized to zero. Reference values are initialized to `nil`. Procedure values are initialized to a procedure that causes an *uninitialized procedure* runtime error. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero, nil or an error procedure.
 
-*How uninitialized procedure exceptions are handled is implementation-dependant behaviour.*
+*How uninitialized procedure runtime errors are handled is implementation-dependant behaviour.*
 
 
 ## Structured Constants
@@ -301,7 +302,7 @@ Case expressions and label constants must be integer or bytes. All Constants in 
 
 *IntType* is `integer` or `byte`. *NumType* is `real`, `integer` or `byte`. *RefType* is any reference type. The operand and result types must be the same, with one exception: a `byte` operand will be automatically promoted to `integer` if the other operand is `integer`.
 
-`x / y` and `x mod y` may raise an exception if *y* = 0. How that exception is handled is implementation-dependant behaviour.
+`x / y` and `x mod y` may raise an runtime error if *y* = 0. How that runtime error is handled is implementation-dependant behaviour.
 
 ### Logical operators
 
@@ -371,12 +372,42 @@ String literals in Expressions are anonymous immutable variables of type `array 
 A character constant has a byte value; its value is the character set's code number for that character.
 
 
-# Names
+# Lexical Elements
+
+Numeric and string literals have been described above.
+
+## Names
 
     NAME    = LETTER {LETTER | DIGIT}.
     LETTER  = "A"..."Z" | "a"..."z".
     DIGIT   = "0"..."9".
-   
+
+    ImportedName = ModuleName "_" NAME.
+    ModuleName   = NAME.
+
+The underscore is reserved for prefixing imported names with module names.
+
+## Keywords
+
+    Keywords = 
+        "and" | "array" | "by" | "byte" | "case" | "const" | "do" | "else" | "elsif"
+        "end" | "exit" | "for" | "if" | "import" | "include" | "interface" | "loop"
+        "mod" | "module" | "not" | "of" | "or" | "procedure" | "real" | "record"
+        "ref" | "return" | "then" | "to" | "type" | "until" | "val" | "var" | "while".
+
+## Whitespace and comments
+
+    WHITESPACE = SPACER {SPACER}.
+    SPACER     = COMMENT | " " | CR | LF | TAB.
+    COMMENT    = "//" {" "..."~" | TAB} (CR | LF).
+
+Adjacent names and keywords must be separated by whitespace. Whitespace is allowed anywhere except inside lexical elements (syntactic elements between double quotes and elements with all-uppercase names). Comments begin with `//` and end at the end of the line. Comments are allowed anywhere that whitespace is allowed.
+
+## Source files
+
+    SourceFile = (Interface | Module) {Interface | Module}.
+
+A Vanilla source file contains one or more interfaces or modules. The names of the files are not significant, but the file extension `.van` should be used by convention.
 
 
 # The Standard Descriptions
@@ -419,7 +450,7 @@ The values of `minint`, `maxint` and `lenint` are implementation-dependant.
 The standard procedures are operators that resemble procedure calls. Standard procedures may be used within constant expressions. 
 
 
-In the following  tables *NumberType* is an integer, byte or real value; *IntType* is integer or byte value; *Array* is any array variable; *AnyType* is a variable any type; *IntVar* is an integer variable; *IntConst* is an integer constant.
+In the following  tables *SimpleType* is an integer, byte, real value or boolean; *IntType* is integer or byte value; *Array* is any array variable; *AnyType* is a variable any type; *IntVar* is an integer variable; *IntConst* is an integer constant.
 
 | Name            | Argument type             | Result type   | Function                             |
 |-----------------|---------------------------|---------------|--------------------------------------|
@@ -443,9 +474,9 @@ In the following  tables *NumberType* is an integer, byte or real value; *IntTyp
 | `int`(r) | r: `real`               | `integer`   | the largest integer less than *r*    |
 | `int`(i) | i: IntType              | `integer`   | the integer *i*                      |
 | `flt`(i) | i: IntType              | `real`      | *i* as a real number                 |
-| `low`(x) | x: NumberType           | `byte`      | int(*x*) as a byte, if 0 ≤ *x* ≤ 255 |
+| `low`(x) | x: SimpleType           | `byte`      | int(*x*) as a byte, if 0 ≤ int(*x*) ≤ 255 |
 
-`low(x)` may raise an exception if 0 > *x* > 255. How exceptions are handled is implementation-dependant behaviour.
+`low(x)` may raise an runtime error if 0 > *x* > 255. How runtime errors are handled is implementation-dependant behaviour.
 
 ### Bit Manipulation Procedures
 
@@ -459,8 +490,7 @@ In the following  tables *NumberType* is an integer, byte or real value; *IntTyp
 | `shr`(x, n)  | x: IntType; n: `integer`  | IntType     | right-shift bits of *x* by *n* |
 | `sha`(x, n)  | x: IntType; n: `integer`  | IntType     | arithmetic right-shift bits of *x* by *n* |
 
-The bit shift operators will shift in the opposite direction if *n* is negative. Shifting by more than the
-width of *x* results in 0, or -1 in the case of an arithmetic right-shift.  
+The bit shift operators will shift in the opposite direction if *n* is negative. Shifting by more than the width of *x* results in 0, or -1 in the case of an arithmetic right-shift.  
 
 ### Memory allocation procedures
 
@@ -470,7 +500,7 @@ width of *x* results in 0, or -1 in the case of an arithmetic right-shift.
 | `new`(A, d)  | A = `ref array of` T₂; d: `integer` | A           | allocate an array of *d* elements |
 | `free`(r)    | r: `ref` T₂                         |             | free an object                    |
 
-The `new` procedure calls `ALLOCATE(SYSTEM_SIZE(T₂))` or `ALLOCATE(SYSTEM_SIZE(T₂) * d)` to obtain the address of free space for a new variable. If that address is 0 then an exception is raised, otherwise the new variable is assigned a default initial value and a reference to it is returned.
+The `new` procedure calls `ALLOCATE(SYSTEM_SIZE(T₂))` or `ALLOCATE(SYSTEM_SIZE(T₂) * d)` to obtain the address of free space for a new variable. If that address is 0 then an runtime error is raised, otherwise the new variable is assigned a default initial value and a reference to it is returned.
 
 The `free(r)` procedure calls `DEALLOCATE(SYSTEM_TYPE(r, integer))` to mark the space at *r* as free for reallocation.
 
@@ -481,15 +511,15 @@ These `ALLOCATE` and `DEALLOCATE` procedure descriptions must be included in any
 
 ### Halting procedures
 
-| Name            | Argument type  | Result type   | Function                      |
-|-----------------|----------------|---------------|-------------------------------|
-| `exit`(n)       | n: `integer`   |               | halt with exit code *n*       |
-| `assert`(x)     | x: `boolean`   |               | raise exception if not *x*    |
-| `expect`(x)     | x: `boolean`   |               | raise exception if not *x*    |
+| Name            | Argument type  | Result type   | Function                          |
+|-----------------|----------------|---------------|-----------------------------------|
+| `exit`(n)       | n: `integer`   |               | halt with exit code *n*           |
+| `assert`(x)     | x: `boolean`   |               | raise runtime error if not *x*    |
+| `expect`(x)     | x: `boolean`   |               | raise runtime error if not *x*    |
 
  `assert` is for testing if the program is correct. `expect` is for testing whether the program can continue, e.g. testing whether an operating system service is still functioning. *The execution of `assert` may optionally be turned off by the compiler.*
 
-How exceptions and exit codes are handled is implementation-dependant behaviour.
+How runtime errors and exit codes are handled is implementation-dependant behaviour.
 
 **Example**
 
