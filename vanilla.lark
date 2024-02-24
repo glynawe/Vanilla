@@ -88,7 +88,13 @@ return: "return" [expression]
 
 empty:
 
-?expression: sum
+?expression: conjunction
+        | conjunction "or" expression -> logicalor
+
+?conjunction: relation
+        | relation "and" conjunction -> logicaland
+
+?relation: sum
         | sum "=" sum  -> eq
         | sum "#" sum  -> ne
         | sum "<" sum  -> lt
@@ -99,13 +105,11 @@ empty:
 ?sum:   term
         | term "+" sum  -> plus
         | term "-" sum  -> minus
-        | term "or" sum -> logicalor
 
 ?term:  factor
         | factor "*" term   -> times
         | factor "/" term   -> divide
         | factor "mod" term -> mod
-        | factor "and" term -> logicaland
 
 ?factor: "+" factor
         | "-" factor   -> negate

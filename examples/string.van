@@ -28,7 +28,7 @@ module String =
 
    procedure Uppercase (var string: T) =
       for i := 0 until len(string) while string[i] # 0 do
-         if (string[i] >= 'A') and (string[i] <= 'Z') then
+         if string[i] >= 'A' and string[i] <= 'Z' then
             string[i] := string[i] - 'a' + 'A'
          end
       end
@@ -37,9 +37,9 @@ module String =
    procedure Compare (a, b: T) : integer =  // a < b is -1, a = b is 0, a > b is 1
       var i: integer := 1;
       do
-         if (i > len(b)) and (i <= len(a)) then  // At end of b, a is longer
+         if i > len(b) and i <= len(a) then  // At end of b, a is longer
             return 1
-         elsif (i > len(a)) and (i <= len(b)) then  // At end of a, b is longer
+         elsif i > len(a) and i <= len(b) then  // At end of a, b is longer
             return -1
          elsif i > len(a) then   // At end of arrays, same length
             return 0

@@ -108,13 +108,15 @@ A ConstDescription names a constant. A named constant may be described more than
 
 All of the variables named in the variable list of a VarDeclaration are initialized to the values in the VarDeclaration's structured constant. 
 
-`val` declares a *immutable variable*, a variable that can only be assigned once when it is declared. *The compiler may arrange for immutable variables to be stored in ROM.*
+`val` declares a *immutable variable*, a variable that can only be assigned once when it is declared. *The compiler may arrange for immutable global variables to be stored in ROM.*
 
 ## Implicit Variable Declarations
 
 A variable description has an implicit declaration if one is not given in a program's modules. 
 
 An implicit variable declaration has a default value. Numeric variables are initialized to zero. Reference values are initialized to `nil`. Procedure values are initialized to a procedure that causes an *uninitialized procedure* runtime error. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero, nil or an error procedure.
+
+The above rule is also used to initialize local variables within procedure bodies.
 
 *How uninitialized procedure runtime errors are handled is implementation-dependant behaviour.*
 
@@ -144,22 +146,6 @@ A string literal can be used to declare a byte array. If it is shorter than the 
     var bytes: array 8 of byte := "AZAZ";
 
 
-# Procedures
-
-    ProcDescription = "procedure" NAME ProcType.
-    ProcDeclaration = ProcDescription ["=" Body "end" NAME].
-
-    ProcType   = "(" [Parameters {";" Parameters}] ")" [ReturnType]
-    Parameters = ["var"] VariableList.
-    ReturnType = ":" Type
-
-The parameter names in procedure descriptions are placeholders for describing each parameter. They are not examined when determining type equivalence. However, parameters names are significant in procedure declarations.
-
-A procedure without a return type has the *statement type* which is compatible with no other type. Such a procedure may only be used as a statement.
-
-Assigning to a `var` parameter assigns to the parameter supplied by the procedure call, i.e. `var` parameters are passed by reference. Parameters without `var` are *value parameters*. Value parameters are immutable. *The compiler may pass record and array value parameters by reference.*
-
-
 # Types
 
     TypeDescription = "type" NAME "=" Type.
@@ -176,12 +162,29 @@ Arrays begin at element 0. An array with more than one length in its dimension l
 
 A reference type may refer to the name of a previously undescribed type. That type must be described later in the same module.
 
+# Procedures
+
+    ProcDescription = "procedure" NAME ProcType.
+    ProcDeclaration = ProcDescription ["=" Body "end" NAME].
+
+    ProcType   = "(" [Parameters {";" Parameters}] ")" [ReturnType]
+    Parameters = ["var"] VariableList.
+    ReturnType = ":" Type
+
+The parameter names in procedure descriptions are placeholders for describing each parameter. They are not examined when determining type equivalence. However, parameters names are significant in procedure declarations.
+
+A procedure with a return type is a *function procedure*. A procedure without a return type is a *proper procedure*. A function procedure may only be used in an expression. A proper procedure may only be used in a procedure call statement.
+
+Assigning to a `var` parameter assigns to the parameter supplied by the procedure call, i.e. `var` parameters are passed by reference. Parameters without `var` are *value parameters*. Value parameters are immutable. *The compiler may pass record and array value parameters by reference.*
+
+An array of any length may be passed to an *open array* parameter if their element types are the same. 
+
 # Statements
 
     Body = Statement {";" Statement}.
 
     Statement = LocalDescription
-              | CallOrAssignment | If | Exit | Return | Case | Empty.
+              | Assignment | ProcedureCall | If | Exit | Return | Case | Empty.
 
 Statements appear in the bodies of procedures and within other statements.
 
@@ -196,17 +199,23 @@ If a local variable declaration has an initializer expression then the expressio
 
 A local description may not have the same name as a description from the module or any surrounding body.i .e. names may not be shadowed.
 
-## Call and Assignment Statements
+## Assignments
 
-    CallOrAssignment = Designator [ {"," Designator} ":=" Expression ]
+    Assignment = Designator {"," Designator} ":=" Expression
 
-A designator with the statement type is a procedure call statement.
-
-A statement that is a list of Designators and an Expression is an assignment. The expression is evaluated once then its value is assigned to each designator in the list. The designators are evaluated in order after the expression. The designators must have the same type as the expression, with two exceptions: a `byte` expression can be assigned to `integer` designator; an `integer` constant in the range 0 to 255 may be assigned to a `byte` designator.
+The expression is evaluated once then its value is assigned to each designator in the list. The designators are evaluated in order after the expression. The designators must have the same type as the expression, with two exceptions: a `byte` expression can be assigned to `integer` designator; an `integer` constant in the range 0 to 255 may be assigned to a `byte` designator.
 
 Records of the same type and arrays of the same type and length may by assigned to each other.
 
-A string literal can be assigned to a byte array. If it is shorter than the array then it is padded with zeros.
+
+## Procedure Calls
+
+    ProcedureCall = Designator "(" [Expression {"," Expression}] ")"
+
+The designator part of a procedure call statement must designate a proper procedure. 
+
+The list of expressions in a procedure call are passed to the designated procedure as parameters. A `var` parameter must be passed a designator of the same type. A `val` parameter may be passed any expression, following the same rules as assignment.
+
 
 ## If Statements
 
@@ -239,7 +248,7 @@ If `to` is used in a `for` clause then the loop ends when the limiting expressio
                 string[i] := string[i] - 'a' + 'A'
             end
         end
-    end uppercase
+    end uppercase;
 
 
 ## Exit Statements
@@ -262,7 +271,7 @@ If `to` is used in a `for` clause then the loop ends when the limiting expressio
     Branch = "|" Range {"," Range} ":" Body.
     Range  = Constant [".." Constant].
 
-Case expressions and label constants must be integer or bytes. All Constants in a `case` statement must be unique and Ranges must not overlap. If the Expression's value is within a branch's ranges then the branch's Body is executed. If the value does not match a branch and there is an `else` clause then its body is executed; if there is no `else` clause then nothing is done.
+Case expressions and range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a branch's ranges then that branch's Body is executed. If the value does not match a branch and there is an `else` clause then its body is executed; if there is no `else` clause then nothing is done.
 
 *The highest label constant must be less than 256 higher that the lowest constant. Case statements are most useful when implemented using jump tables, and there must be some limit to the size of those tables.*
 
@@ -270,15 +279,19 @@ Case expressions and label constants must be integer or bytes. All Constants in 
 
     Empty = .
 
+The main purpose of the empy statement is to allow superflous semicolons in a body, e.g. after the final statement.
+
 # Expressions
 
-    Expression = Sum [Relation Sum].
+    Expression = Conjunction {"or" Conjunction}. 
+    Conjunction = Relation {"and" Relation}.
+    Relation = Sum [RelationOp Sum].
     Sum  = Term {AddOp Term}.
     Term = Factor {MulOp Factor}.
 
-    AddOp  = "+" | "-" | "or".
-    MulOp  = "*" | "/" | "mod" | "and".
-    Relation = "=" | "#" | ">" | "<" | ">=" | "<=".
+    AddOp  = "+" | "-".
+    MulOp  = "*" | "/" | "mod".
+    RelationOp = "=" | "#" | ">" | "<" | ">=" | "<=".
 
     Factor = UnaryOp Factor
            | Designator
@@ -286,7 +299,7 @@ Case expressions and label constants must be integer or bytes. All Constants in 
            | Conditional
            | "(" Expression ")".
 
-    UnaryOp = "+" | "-" | not.
+    UnaryOp = "+" | "-" | "not".
 
 ## Operators
 
@@ -327,7 +340,7 @@ References may only be compared for equality and inequality. Two references are 
 
 The expressions following `then` and `else` must have the same type.
 
-## Designators, Function Procedure Calls
+## Designators, Procedure Calls
 
     Designator = GlobalName {Selection | Subscript | Dereference | Call}.
 
@@ -338,7 +351,7 @@ The expressions following `then` and `else` must have the same type.
 
 Reference values are automatically dereferenced when they are the designator of a call, selection or subscript.
 
-The list of expressions in a *call* are supplied to the designated procedure as parameters. A `var` parameter must be supplied with a designator. A supplied parameter must match its parameter's type, with one exception: a `byte` value will be accepted as an `integer` value parameter. 
+The list of expressions in a call are supplied to the designated procedure as parameters. A `var` parameter must be supplied with a designator. A supplied parameter must match its parameter's type, with one exception: a `byte` value will be accepted as an `integer` value parameter. 
 
 
 ## Literals
@@ -367,9 +380,9 @@ The range of decimal literals is 0 to `maxint`. The range of hexadecimal, octal 
     ESCAPE    = "\\" | "\n" | "\f" | "\t" | "\b" | "\0" 
               | "\x" HEXDIGIT HEXDIGIT.
 
-String literals in Expressions are anonymous immutable variables of type `array of byte`. A string literal's array has an additional element at the end containing 0. 
+String literals in expressions are anonymous immutable variables of type `array of byte`. A string literal's array has an additional element at the end containing 0. 
 
-A character constant has a byte value; its value is the character set's code number for that character.
+A character literal has a byte value; its value is the character set's code number for that character.
 
 
 # Lexical Elements
@@ -500,7 +513,7 @@ The bit shift operators will shift in the opposite direction if *n* is negative.
 | `new`(A, d)  | A = `ref array of` T₂; d: `integer` | A           | allocate an array of *d* elements |
 | `free`(r)    | r: `ref` T₂                         |             | free an object                    |
 
-The `new` procedure calls `ALLOCATE(SYSTEM_SIZE(T₂))` or `ALLOCATE(SYSTEM_SIZE(T₂) * d)` to obtain the address of free space for a new variable. If that address is 0 then an runtime error is raised, otherwise the new variable is assigned a default initial value and a reference to it is returned.
+The `new` procedure calls `ALLOCATE(SYSTEM_TYPESIZE(T₂))` or `ALLOCATE(SYSTEM_TYPESIZE(T₂) * d)` to obtain the address of free space for a new variable. If that address is 0 then an runtime error is raised, otherwise the new variable is assigned a default initial value and a reference to it is returned.
 
 The `free(r)` procedure calls `DEALLOCATE(SYSTEM_TYPE(r, integer))` to mark the space at *r* as free for reallocation.
 
@@ -509,11 +522,13 @@ The `free(r)` procedure calls `DEALLOCATE(SYSTEM_TYPE(r, integer))` to mark the 
 
 These `ALLOCATE` and `DEALLOCATE` procedure descriptions must be included in any module that calls `new` or `free`. How the procedures are implemented is up to the programmer. They will typically be included from the interface of a module that manages memory on a heap. 
 
+`new` and `free` may not be used in constant expressions.
+
 ### Halting procedures
 
 | Name            | Argument type  | Result type   | Function                          |
 |-----------------|----------------|---------------|-----------------------------------|
-| `exit`(n)       | n: `integer`   |               | halt with exit code *n*           |
+| `halt`(n)       | n: `integer`   |               | halt with exit code *n*           |
 | `assert`(x)     | x: `boolean`   |               | raise runtime error if not *x*    |
 | `expect`(x)     | x: `boolean`   |               | raise runtime error if not *x*    |
 
@@ -526,7 +541,7 @@ How runtime errors and exit codes are handled is implementation-dependant behavi
     assert(String_length(text) > 0);    // The program created text.
     status := Cstdio_fputs(text, file);
     expect(status # Cstdio_EOF);        // The I/O system is working.
-    exit(0);                            // The program is finished now.
+    halt(0);                            // The program is finished now.
 
 
 # The SYSTEM Interface
@@ -539,12 +554,12 @@ In the following table *ram* refers the computer's random access memory, address
 
 |  Name         |  Parameter types         | Result type   |  Function                                |
 |---------------|--------------------------|---------------|------------------------------------------|
-| `ADDR`(v)     | v: AnyType               | `integer`     | address of variable *v*                  |
+| `ADDRESS`(v)  | v: AnyType               | `integer`     | address of variable *v*                  |
 | `MOVE`(a,b,n) | a, b, n: `integer`       |               | move *n* bytes from *ram[a]* to *ram[b]* |
 | `GET`(a, v)   | a: `integer`; v: AnyType |               | fill *v* with the bytes starting at *ram[a]*   |
 | `PUT`(a, v)   | a: `integer`; v: AnyType |               | move the bytes of *v* to *ram[a]*        |
 | `SIZE`(v)     | v: AnyType               | `integer`     | number of bytes in variable *v*          |
-| `SIZE`(T)     | T = AnyType              | `integer`     | number of bytes required by type *T*     |
+| `TYPESIZE`(T) | T = AnyType              | `integer`     | number of bytes required by type *T*     |
 | `TYPE`(x, T)  | x: AnyType; T = AnyType  | T             | give *x* the type *T*                    |
 | `REF`(v)      | v: AnyType               | `ref` AnyType | reference to an object                   |
 
