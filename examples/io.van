@@ -54,10 +54,10 @@ module IO =
             PutChar('0');
         else
             var i := 0;
-            var n  := abs(number);
+            var n := abs(number);
             while n > 0 do
                 var D: integer := n mod base;
-                buffer[i] := D + if D < 10 then '0' else 'A' end;
+                buffer[i] := low(D + if D < 10 then '0' else 'A' end);
                 n := n / base;
                 inc(i)
             end;

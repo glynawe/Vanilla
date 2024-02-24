@@ -245,7 +245,7 @@ If `to` is used in a `for` clause then the loop ends when the limiting expressio
     procedure uppercase (var string: array of byte) =
         for i := 0 until len(string) while string[i] # 0 do
             if (string[i] >= 'A') and (string[i] <= 'Z') then
-                string[i] := string[i] - 'a' + 'A'
+                string[i] := low(string[i] - 'a' + 'A')
             end
         end
     end uppercase;
