@@ -305,15 +305,15 @@ The main purpose of the empy statement is to allow superflous semicolons in a bo
 
 | Operators                 | Operand   | Operand   | Result    |
 |---------------------------|-----------|-----------|-----------|
-| `+` `-` `*` `/`           | *NumType* | *NumType* | *NumType* |
-| `mod`                     | *IntType* | *IntType* | *IntType* |
-| unary `-` `+`             | *NumType* |           | *NumType* |
+| `+` `-` `*` `/`           | *BigType* | *BigType* | *BigType* |
+| `mod`                     | `integer` | `integer` | `integer` |
+| unary `-` `+`             | *BigType* |           | *NumType* |
 | `=` `#` `<` `<=` `>` `>=` | *NumType* | *NumType* | `boolean` |
 | `=` `#`                   | *RefType* | *RefType* | `boolean` |
 | `and` `or`                | `boolean` | `boolean` | `boolean` |
 | `not`                     | `boolean` |           | `boolean` |
 
-*IntType* is `integer` or `byte`. *NumType* is `real`, `integer` or `byte`. *RefType* is any reference type. The operand and result types must be the same, with one exception: a `byte` operand will be automatically promoted to `integer` if the other operand is `integer`.
+*BigType* is `integer` or `real`. *NumType* is `real`, `integer` or `byte`. *RefType* is any reference type. The operand and result types must be the same, with one exception: `byte` operands will be automatically promoted to `integer`. Arithmetic on `byte` values yields `integer` results. 
 
 `x / y` and `x mod y` may raise an runtime error if *y* = 0. How that runtime error is handled is implementation-dependant behaviour.
 
@@ -462,8 +462,7 @@ The values of `minint`, `maxint` and `lenint` are implementation-dependant.
 
 The standard procedures are operators that resemble procedure calls. Standard procedures may be used within constant expressions. 
 
-
-In the following  tables *SimpleType* is an integer, byte, real value or boolean; *IntType* is integer or byte value; *Array* is any array variable; *AnyType* is a variable any type; *IntVar* is an integer variable; *IntConst* is an integer constant.
+In the following  tables *SimpleType* is an `integer`, `byte`, `real` or `boolean` value; *IntType* is an `integer` or `byte` value; *IntVar* is an `integer` or `byte` variable; *IntConst* is an `integer` or `byte` constant; *Array* is any array variable.
 
 | Name            | Argument type             | Result type   | Function                             |
 |-----------------|---------------------------|---------------|--------------------------------------|
@@ -501,9 +500,11 @@ In the following  tables *SimpleType* is an integer, byte, real value or boolean
 | `lxor`(x, y) | x, y: IntType             | IntType     | bitwise logical exclusive-OR   |
 | `shl`(x, n)  | x: IntType; n: `integer`  | IntType     | left-shift bits of *x* by *n*  |
 | `shr`(x, n)  | x: IntType; n: `integer`  | IntType     | right-shift bits of *x* by *n* |
-| `sha`(x, n)  | x: IntType; n: `integer`  | IntType     | arithmetic right-shift bits of *x* by *n* |
+| `sha`(x, n)  | x: `integer`; n: `integer`| IntType     | arithmetic right-shift bits of *x* by *n* |
+| `bshl`(x, n) | x: `byte`; n: `integer`   | `byte`      | left-shift bits of byte *x* by *n*  |
+| `bshr`(x, n) | x: `byte`; n: `integer`   | `byte`      | right-shift bits of byte *x* by *n*  |
 
-The bit shift operators will shift in the opposite direction if *n* is negative. Shifting by more than the width of *x* results in 0, or -1 in the case of an arithmetic right-shift.  
+The bit shift operators will shift in the opposite direction if *n* is negative. Shifting by more than the width of *x* results in 0, or -1 in the case of an arithmetic right-shift. 
 
 ### Memory allocation procedures
 
@@ -528,7 +529,7 @@ These `ALLOCATE` and `DEALLOCATE` procedure descriptions must be included in any
 
 | Name            | Argument type  | Result type   | Function                          |
 |-----------------|----------------|---------------|-----------------------------------|
-| `halt`(n)       | n: `integer`   |               | halt with exit code *n*           |
+| `halt`(n)       | n: IntType     |               | halt with exit code *n*           |
 | `assert`(x)     | x: `boolean`   |               | raise runtime error if not *x*    |
 | `expect`(x)     | x: `boolean`   |               | raise runtime error if not *x*    |
 
@@ -550,7 +551,7 @@ Including the interface `SYSTEM` allows a set of "unsafe" standard procedures to
 
 If a particular computer requires language extensions, e.g. procedures that access CPU registers, then they should be added to `SYSTEM`.
 
-In the following table *ram* refers the computer's random access memory, addressed by byte.
+In the following table *ram* refers the computer's random access memory, addressed by byte, and *AnyType* is a variable any type. 
 
 |  Name         |  Parameter types         | Result type   |  Function                                |
 |---------------|--------------------------|---------------|------------------------------------------|
