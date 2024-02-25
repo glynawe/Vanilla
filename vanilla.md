@@ -305,15 +305,16 @@ The main purpose of the empy statement is to allow superflous semicolons in a bo
 
 | Operators                 | Operand   | Operand   | Result    |
 |---------------------------|-----------|-----------|-----------|
-| `+` `-` `*` `/`           | *BigType* | *BigType* | *BigType* |
+| `+` `-` `*` `/`           | *NumType* | *NumType* | *NumType* |
 | `mod`                     | `integer` | `integer` | `integer` |
-| unary `-` `+`             | *BigType* |           | *NumType* |
+| unary `-` `+`             | *NumType* |           | *NumType* |
 | `=` `#` `<` `<=` `>` `>=` | *NumType* | *NumType* | `boolean` |
+| `=` `#` `<` `<=` `>` `>=` | `byte`    | `byte`    | `boolean` |
 | `=` `#`                   | *RefType* | *RefType* | `boolean` |
 | `and` `or`                | `boolean` | `boolean` | `boolean` |
 | `not`                     | `boolean` |           | `boolean` |
 
-*BigType* is `integer` or `real`. *NumType* is `real`, `integer` or `byte`. *RefType* is any reference type. The operand and result types must be the same, with one exception: `byte` operands will be automatically promoted to `integer`. Arithmetic on `byte` values yields `integer` results. 
+*NumType* is `integer` or `real`.*RefType* is any reference type. Operands and results must have the same type, with one exception: `byte` operands will be automatically promoted to `integer`. Therefore arithmetic on `byte` values is allowed, but yields `integer` results.
 
 `x / y` and `x mod y` may raise an runtime error if *y* = 0. How that runtime error is handled is implementation-dependant behaviour.
 
@@ -327,9 +328,7 @@ The `and` and `or` operators are "shortcut operators", they are equivalent to th
 
 ### Relational operators
 
-Relational operators compare `integer`, `byte`, `real` and reference types. They return `boolean` values.
-
-References may only be compared for equality and inequality. Two references are equal if they refer to the same variable or both are `nil`.
+Relational operators compare `integer`, `byte`, `real` and reference types. They return `boolean` values. References may only be compared for equality and inequality. Two references are equal if they refer to the same variable or both are `nil`.
 
 ## Conditional expressions
 
@@ -498,9 +497,9 @@ In the following  tables *SimpleType* is an `integer`, `byte`, `real` or `boolea
 | `land`(x, y) | x, y: IntType             | IntType     | bitwise logical AND            |
 | `lor`(x, y)  | x, y: IntType             | IntType     | bitwise logical inclusive-OR   |
 | `lxor`(x, y) | x, y: IntType             | IntType     | bitwise logical exclusive-OR   |
-| `shl`(x, n)  | x: IntType; n: `integer`  | IntType     | left-shift bits of *x* by *n*  |
-| `shr`(x, n)  | x: IntType; n: `integer`  | IntType     | right-shift bits of *x* by *n* |
-| `sha`(x, n)  | x: `integer`; n: `integer`| IntType     | arithmetic right-shift bits of *x* by *n* |
+| `shl`(x, n)  | x: `integer`; n: `integer` | `integer`  | left-shift bits of *x* by *n*  |
+| `shr`(x, n)  | x: `integer`; n: `integer` | `integer`  | right-shift bits of *x* by *n* |
+| `sha`(x, n)  | x: `integer`; n: `integer`| `integer`   | arithmetic right-shift bits of *x* by *n* |
 | `bshl`(x, n) | x: `byte`; n: `integer`   | `byte`      | left-shift bits of byte *x* by *n*  |
 | `bshr`(x, n) | x: `byte`; n: `integer`   | `byte`      | right-shift bits of byte *x* by *n*  |
 
