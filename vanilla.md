@@ -382,7 +382,7 @@ The range of BYTE literals is 0 to 255. The range of decimal INTEGER literals is
     BINDIGIT = "0" | "1".
     OCTDIGIT = "0"..."7".
     HEXDIGIT = "0"..."9" | "A"..."F" | "a"..."f".
-    ESCAPE    = "\\" | "\n" | "\f" | "\t" | "\b" | "\0" | 
+    ESCAPE    = "\a" | "\b" | "\e" | "\f" | "\n" | "\t" | "\v" | "\0" | "\\"
                 "\x" HEXDIGIT HEXDIGIT.
     STRCHAR   = " "..."~" except for "\", "'" and '"'.
 
