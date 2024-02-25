@@ -203,7 +203,7 @@ A local description may not have the same name as a description from the module 
 
     Assignment = Designator {"," Designator} ":=" Expression
 
-The expression is evaluated once then its value is assigned to each designator in the list. The designators are evaluated in order after the expression. The designators must have the same type as the expression, with two exceptions: a `byte` expression can be assigned to `integer` designator; an `integer` constant in the range 0 to 255 may be assigned to a `byte` designator.
+The expression is evaluated once then its value is assigned to each designator in the list. The designators are evaluated in order after the expression. The designators must have the same type as the expression.
 
 Records of the same type and arrays of the same type and length may by assigned to each other.
 
@@ -306,17 +306,18 @@ The main purpose of the empy statement is to allow superflous semicolons in a bo
 | Operators                 | Operand   | Operand   | Result    |
 |---------------------------|-----------|-----------|-----------|
 | `+` `-` `*` `/`           | *NumType* | *NumType* | *NumType* |
-| `mod`                     | `integer` | `integer` | `integer` |
+| `mod`                     | *IntType* | *IntType* | *IntType* |
 | unary `-` `+`             | *NumType* |           | *NumType* |
 | `=` `#` `<` `<=` `>` `>=` | *NumType* | *NumType* | `boolean` |
-| `=` `#` `<` `<=` `>` `>=` | `byte`    | `byte`    | `boolean` |
 | `=` `#`                   | *RefType* | *RefType* | `boolean` |
 | `and` `or`                | `boolean` | `boolean` | `boolean` |
 | `not`                     | `boolean` |           | `boolean` |
 
-*NumType* is `integer` or `real`.*RefType* is any reference type. Operands and results must have the same type, with one exception: `byte` operands will be automatically promoted to `integer`. Therefore arithmetic on `byte` values is allowed, but yields `integer` results.
+*NumType* is `real`, `integer` or `byte`. *IntType* is `integer` or `byte`. *RefType* is any reference type. Operands and results must have the same type.
 
 `x / y` and `x mod y` may raise an runtime error if *y* = 0. How that runtime error is handled is implementation-dependant behaviour.
+
+Relational operators compare `integer`, `byte`, `real` and reference types. They return `boolean` values. References may only be compared for equality and inequality. Two references are equal if they refer to the same variable or both are `nil`.
 
 ### Logical operators
 
@@ -326,9 +327,6 @@ The `and` and `or` operators are "shortcut operators", they are equivalent to th
 
 `a and b`  ≡  `if a then b else false end`
 
-### Relational operators
-
-Relational operators compare `integer`, `byte`, `real` and reference types. They return `boolean` values. References may only be compared for equality and inequality. Two references are equal if they refer to the same variable or both are `nil`.
 
 ## Conditional expressions
 
@@ -357,36 +355,36 @@ The list of expressions in a call are supplied to the designated procedure as pa
 
     Literal = INTEGER | REAL | CHARACTER | STRING.
 
+INTEGER literals have the type `integer`. BYTE literals have the type `byte`. REAL literals have the type `real`. 
+STRING literals  are anonymous immutable variables of type `array of byte`. A string literal's array has an additional element at the end containing 0. 
+
+The range of BYTE literals is 0 to 255. The range of decimal INTEGER literals is 0 to `maxint`. The range of hexadecimal, octal and binary INTEGER literals is 0 to 2<sup>`lenint`</sup>-1; two's-compliment encoding is ignored. This is useful when using integers to represent bit strings.
+
+# Lexical Elements
+
+## Numeric and String Literals 
+
     INTEGER  = DIGITS
              | "0x" HEXDIGIT {HEXDIGIT}
              | "0b" BINDIGIT {BINDIGIT}
              | "0o" OCTDIGIT {OCTDIGIT}.
 
-    REAL     = DIGITS "." DIGITS [EXPONENT].
-    EXPONENT = ("E" | "e") ["+" | "-"] DIGITS.
+    BYTE      = INTEGER ["X" | "x"] | CHARACTER.
+    CHARACTER = "'" (STRCHAR | '"' | "\'" | ESCAPE) "'".
 
+    STRING    = '"' {STRCHAR | "'" | '\"' | ESCAPE} '"'.
+
+    REAL     = DIGITS "." DIGITS [EXPONENT].
+
+    EXPONENT = ("E" | "e") ["+" | "-"] DIGITS.
     DIGITS   = DIGIT {DIGIT}.
     DIGIT    = "0"..."9".
     BINDIGIT = "0" | "1".
     OCTDIGIT = "0"..."7".
     HEXDIGIT = "0"..."9" | "A"..."F" | "a"..."f".
-
-The range of decimal literals is 0 to `maxint`. The range of hexadecimal, octal and binary literals is 0 to 2<sup>`lenint`</sup>-1; two's-compliment encoding is ignored. E.g. if `integer` is 16 bits wide then `0xFFFF` is equal to `-1`. This is useful when using integers to represent bit strings.
-
-    STRING    = '"' {NORMAL | "'" | '\"' | ESCAPE} '"'.
-    CHARACTER = "'" (NORMAL | '"' | "\'" | ESCAPE) "'".
-    NORMAL    = " "..."~" except for "\", "'" and '"'.
-    ESCAPE    = "\\" | "\n" | "\f" | "\t" | "\b" | "\0" 
-              | "\x" HEXDIGIT HEXDIGIT.
-
-String literals in expressions are anonymous immutable variables of type `array of byte`. A string literal's array has an additional element at the end containing 0. 
-
-A character literal has a byte value; its value is the character set's code number for that character.
-
-
-# Lexical Elements
-
-Numeric and string literals have been described above.
+    ESCAPE    = "\\" | "\n" | "\f" | "\t" | "\b" | "\0" | 
+                "\x" HEXDIGIT HEXDIGIT.
+    STRCHAR   = " "..."~" except for "\", "'" and '"'.
 
 ## Names
 
@@ -437,10 +435,6 @@ The standard descriptions are implicitly included at the start of every interfac
 
 The floating-point number representation is implementation-dependant.
 
-A `byte` value may be assigned to an `integer` designator or `integer` value parameter. 
-
-`integer` is assumed to be wide enough to contain the bits of a memory address.
-
 
 ## Standard Constants
 
@@ -461,17 +455,18 @@ The values of `minint`, `maxint` and `lenint` are implementation-dependant.
 
 The standard procedures are operators that resemble procedure calls. Standard procedures may be used within constant expressions. 
 
-In the following  tables *SimpleType* is an `integer`, `byte`, `real` or `boolean` value; *IntType* is an `integer` or `byte` value; *IntVar* is an `integer` or `byte` variable; *IntConst* is an `integer` or `byte` constant; *Array* is any array variable.
+In the following tables *IntType* is an `integer` or `byte` value and *Array* is any array variable.
 
-| Name            | Argument type             | Result type   | Function                             |
-|-----------------|---------------------------|---------------|--------------------------------------|
-| `abs`(x)        | x: NumberType             | NumberType    | absolute value of *x*                |
-| `dec`(v)        | v: IntVar                 |               | v := v - 1                           |
-| `dec`(v, n)     | v: IntVar; n: IntType     |               | v := v - n                           |
-| `inc`(v)        | v: IntVar                 |               | v := v + 1                           |
-| `inc`(v, n)     | v: IntVar; n: IntType     |               | v := v + n                           |
-| `len`(v, n)     | a: Array; n: IntConst     | `integer`     | length of dimension *n* of array *a* |
-| `len`(a)        | a: Array                  | `integer`     | equivalent to len(v, 0)              |
+| Name            | Parameter type                   | Result type   | Function                             |
+|-----------------|----------------------------------|---------------|--------------------------------------|
+| `abs`(x)        | x: `integer`                     | `integer`     | absolute value of *x*                |
+| `abs`(x)        | x: `real`                        | `real`        | absolute value of *x*                |
+| `dec`(v)        | `var` v: *IntType*               |               | v := v - 1                           |
+| `dec`(v, n)     | `var` v: *IntType*; n: *IntType* |               | v := v - n                           |
+| `inc`(v)        | `var` v: *IntType*               |               | v := v + 1                           |
+| `inc`(v, n)     | `var` v: *IntType*; n: *IntType* |               | v := v + n                           |
+| `len`(v, n)     | a: *Array*; n: *IntConst*        | `integer`     | length of dimension *n* of array *a* |
+| `len`(a)        | a: *Array*                       | `integer`     | equivalent to len(v, 0)              |
 
 `inc` and `dec` evaluate their variable parameter only once.
 
@@ -479,35 +474,34 @@ In the following  tables *SimpleType* is an `integer`, `byte`, `real` or `boolea
 
 ### Type transfer procedures
 
-| Name     | Argument type           | Result type | Function                             |
-|----------|-------------------------|-------------|--------------------------------------|
-| `int`(b) | b: `boolean`            | `integer`   | 1 if *b* is true, otherwise 0        |
-| `int`(r) | r: `real`               | `integer`   | the largest integer less than *r*    |
-| `int`(i) | i: IntType              | `integer`   | the integer *i*                      |
-| `flt`(i) | i: IntType              | `real`      | *i* as a real number                 |
-| `low`(x) | x: SimpleType           | `byte`      | int(*x*) as a byte, if 0 ≤ int(*x*) ≤ 255 |
+| Name     | Parameter type  | Result type | Function                             |
+|----------|-----------------|-------------|--------------------------------------|
+| `int`(b) | b: `boolean`    | `integer`   | 1 if *b* is true, otherwise 0        |
+| `int`(r) | r: `real`       | `integer`   | the largest integer less than *r*    |
+| `int`(x) | x: `byte`       | `integer`   | the integer *i*                      |
+| `flt`(i) | i: `integer`    | `real`      | *i* as a real number                 |
+| `low`(x) | x: `integer`    | `byte`      | *x*, if 0 ≤ *x* ≤ 255                |
+| `low`(b) | b: `boolean`    | `integer`   | 1 if *b* is true, otherwise 0        |
 
 `low(x)` may raise an runtime error if 0 > *x* > 255. How runtime errors are handled is implementation-dependant behaviour.
 
 ### Bit Manipulation Procedures
 
-| Name         | Argument type             | Result type | Function                       |
-|--------------|---------------------------|-------------|--------------------------------|
-| `lnot`(x)    | x: IntType                | IntType     | bitwise logical NOT            |
-| `land`(x, y) | x, y: IntType             | IntType     | bitwise logical AND            |
-| `lor`(x, y)  | x, y: IntType             | IntType     | bitwise logical inclusive-OR   |
-| `lxor`(x, y) | x, y: IntType             | IntType     | bitwise logical exclusive-OR   |
-| `shl`(x, n)  | x: `integer`; n: `integer` | `integer`  | left-shift bits of *x* by *n*  |
-| `shr`(x, n)  | x: `integer`; n: `integer` | `integer`  | right-shift bits of *x* by *n* |
-| `sha`(x, n)  | x: `integer`; n: `integer`| `integer`   | arithmetic right-shift bits of *x* by *n* |
-| `bshl`(x, n) | x: `byte`; n: `integer`   | `byte`      | left-shift bits of byte *x* by *n*  |
-| `bshr`(x, n) | x: `byte`; n: `integer`   | `byte`      | right-shift bits of byte *x* by *n*  |
+| Name         | Parameter type             | Result type | Function                       |
+|--------------|----------------------------|-------------|--------------------------------|
+| `lnot`(x)    | x: *IntType*               | *IntType*   | bitwise logical NOT            |
+| `land`(x, y) | x, y: *IntType*            | *IntType*   | bitwise logical AND            |
+| `lor`(x, y)  | x, y: *IntType*            | *IntType*   | bitwise logical inclusive-OR   |
+| `lxor`(x, y) | x, y: *IntType*            | *IntType*   | bitwise logical exclusive-OR   |
+| `shl`(x, n)  | x: *IntType*; n: `integer` | *IntType*   | left-shift bits of *x* by *n*  |
+| `shr`(x, n)  | x: *IntType*; n: `integer` | *IntType*   | right-shift bits of *x* by *n* |
+| `sha`(x, n)  | x: *IntType*; n: `integer` | *IntType*   | arithmetic right-shift bits of *x* by *n* |
 
 The bit shift operators will shift in the opposite direction if *n* is negative. Shifting by more than the width of *x* results in 0, or -1 in the case of an arithmetic right-shift. 
 
 ### Memory allocation procedures
 
-| Name         | Argument type                       | Result type | Function                          |
+| Name         | Parameter type                      | Result type | Function                          |
 |--------------|-------------------------------------|-------------|-----------------------------------|
 | `new`(T)     | T = `ref` T₂                        | T           | allocate an object                |
 | `new`(A, d)  | A = `ref array of` T₂; d: `integer` | A           | allocate an array of *d* elements |
@@ -526,13 +520,13 @@ These `ALLOCATE` and `DEALLOCATE` procedure descriptions must be included in any
 
 ### Halting procedures
 
-| Name            | Argument type  | Result type   | Function                          |
+| Name            | Parameter type | Result type   | Function                          |
 |-----------------|----------------|---------------|-----------------------------------|
-| `halt`(n)       | n: IntType     |               | halt with exit code *n*           |
+| `halt`(n)       | n: `integer`   |               | halt with exit code *n*           |
 | `assert`(x)     | x: `boolean`   |               | raise runtime error if not *x*    |
 | `expect`(x)     | x: `boolean`   |               | raise runtime error if not *x*    |
 
- `assert` is for testing if the program is correct. `expect` is for testing whether the program can continue, e.g. testing whether an operating system service is still functioning. *The execution of `assert` may optionally be turned off by the compiler.*
+ `assert` is for testing if the program is correct. `expect` is for testing whether the program should continue, e.g. testing whether an operating system service is still functioning. *The execution of `assert` may optionally be turned off by the compiler.*
 
 How runtime errors and exit codes are handled is implementation-dependant behaviour.
 
@@ -550,18 +544,20 @@ Including the interface `SYSTEM` allows a set of "unsafe" standard procedures to
 
 If a particular computer requires language extensions, e.g. procedures that access CPU registers, then they should be added to `SYSTEM`.
 
-In the following table *ram* refers the computer's random access memory, addressed by byte, and *AnyType* is a variable any type. 
+In the following table *RAM* refers the computer's random access memory, addressed by byte, and *AnyType* is any type. 
 
-|  Name         |  Parameter types         | Result type   |  Function                                |
-|---------------|--------------------------|---------------|------------------------------------------|
-| `ADDRESS`(v)  | v: AnyType               | `integer`     | address of variable *v*                  |
-| `MOVE`(a,b,n) | a, b, n: `integer`       |               | move *n* bytes from *ram[a]* to *ram[b]* |
-| `GET`(a, v)   | a: `integer`; v: AnyType |               | fill *v* with the bytes starting at *ram[a]*   |
-| `PUT`(a, v)   | a: `integer`; v: AnyType |               | move the bytes of *v* to *ram[a]*        |
-| `SIZE`(v)     | v: AnyType               | `integer`     | number of bytes in variable *v*          |
-| `TYPESIZE`(T) | T = AnyType              | `integer`     | number of bytes required by type *T*     |
-| `TYPE`(x, T)  | x: AnyType; T = AnyType  | T             | give *x* the type *T*                    |
-| `REF`(v)      | v: AnyType               | `ref` AnyType | reference to an object                   |
+|  Name         |  Parameter types            | Result type     |  Function                                    |
+|---------------|-----------------------------|-----------------|----------------------------------------------|
+| `ADDRESS`(v)  | `var` v: *AnyType*          | `integer`       | address of variable *v*                      |
+| `MOVE`(a,b,n) | a, b, n: `integer`          |                 | move *n* bytes from *RAM[a]* to *RAM[b]*     |
+| `GET`(a, v)   | a: `integer`; `var` v: *AnyType* |            | fill *v* with the bytes starting at *RAM[a]* |
+| `PUT`(a, v)   | a: `integer`; v: *AnyType*  |                 | move the bytes of *v* to *RAM[a]*            |
+| `SIZE`(v)     | v: *AnyType*                | `integer`       | number of bytes in variable *v*              |
+| `TYPESIZE`(T) | T = *AnyType*               | `integer`       | number of bytes required by type *T*         |
+| `TYPE`(x, T)  | x: *AnyType*; T = *AnyType* | T               | give *x* the type *T*                        |
+| `REF`(v)      | `var` v: *AnyType*          | `ref` *AnyType* | reference to an object                       |
+
+`integer` is assumed to be wide enough to contain the bits of a memory address.
 
 `TYPE` changes the type of a value or variable without altering the underlying bits that represent it. E.g. it can be used to represent a reference as an integer or a record as an array of bytes.
 
