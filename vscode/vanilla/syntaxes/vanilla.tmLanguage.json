@@ -25,19 +25,19 @@
 			"match": "`[!-_a-~]+`"
 		},{
 			"name": "constant.numeric.vanilla",
-			"match": "\\b(0b[01]+)\\b"
+			"match": "\\b(0b[01]+)[Xx]?\\b"
 		},{
 			"name": "constant.numeric.vanilla",
-			"match": "\\b(0o[0-7]+)\\b"
+			"match": "\\b(0o[0-7]+)[Xx]?\\b"
 		},{
 			"name": "constant.numeric.vanilla",
-			"match": "\\b(0x[0-9A-Fa-f]+)\\b"
+			"match": "\\b(0x[0-9A-Fa-f]+)[Xx]?\\b"
 		},{
 			"name": "constant.numeric.float.vanilla",
 			"match": "\\b([0-9]+[.][0-9]+([Ee][-+]?[0-9]+)?)\\b"
 		},{
 			"name": "constant.numeric.vanilla",
-			"match": "\\b([0-9]+)\\b"
+			"match": "\\b([0-9]+)[Xx]?\\b"
 		},{
 			"name": "comment.line.vanilla",
 			"match": "\\/\\/.*"

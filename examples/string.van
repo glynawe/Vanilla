@@ -18,18 +18,18 @@ module String =
    end Length;
 
    procedure Copy (var dst: T; src: T) =
-      for i := 0 until len(src) while src[i] # 0 do
+      for i := 0 until len(src) while src[i] # '\0' do
          dst[i] := src[i]
       end;
       if len(src) < len(dst) then  // string in dst array needs a terminator
-         dst[len(src)] := 0
+         dst[len(src)] := '\0'
       end
    end Copy;
 
    procedure Uppercase (var string: T) =
-      for i := 0 until len(string) while string[i] # 0 do
+      for i := 0 until len(string) while string[i] # 0X do
          if string[i] >= 'A' and string[i] <= 'Z' then
-            string[i] := low(string[i] - 'a' + 'A')
+            string[i] := string[i] - 'a' + 'A'
          end
       end
    end Uppercase;
@@ -47,7 +47,7 @@ module String =
             return -1
          elsif a[i] > b[i] then
             return 1
-         elsif a[i] = 0 then  // Both arrays terminate at the same place
+         elsif a[i] = '\0' then  // Both arrays terminate at the same place
             return 0
          end;
          inc(i);

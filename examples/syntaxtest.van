@@ -30,8 +30,9 @@ module ModuleName =
         Record.Element(d);
         var x, y, z: byte := 4;
         var a, b := 4;
-        var c := 5;
+        var c := 5X;
         val d := 6;
+        val e := 0xFFX;
         inc(12);
         true;
         f("a\nsd");
