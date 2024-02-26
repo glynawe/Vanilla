@@ -457,16 +457,17 @@ The standard procedures are operators that resemble procedure calls. Standard pr
 
 In the following tables *IntType* is an `integer` or `byte` value and *Array* is any array variable.
 
-| Name            | Parameter type                   | Result type   | Function                             |
-|-----------------|----------------------------------|---------------|--------------------------------------|
-| `abs`(x)        | x: `integer`                     | `integer`     | absolute value of *x*                |
-| `abs`(x)        | x: `real`                        | `real`        | absolute value of *x*                |
-| `dec`(v)        | var v: *IntType*                 |               | v := v - 1                           |
-| `dec`(v, n)     | var v: *IntType*; n: *IntType*   |               | v := v - n                           |
-| `inc`(v)        | var v: *IntType*                 |               | v := v + 1                           |
-| `inc`(v, n)     | var v: *IntType*; n: *IntType*   |               | v := v + n                           |
-| `len`(v, n)     | a: *Array*; n: *IntConst*        | `integer`     | length of dimension *n* of array *a* |
-| `len`(a)        | a: *Array*                       | `integer`     | equivalent to len(v, 0)              |
+| Description                           | Function                             |
+|---------------------------------------|--------------------------------------|
+| `abs (x: integer) : integer`          | absolute value of `x`                |
+| `abs (x: real) : real`                | absolute value of `x`                |
+| `dec (var v: IntType)`                | `v := v - 1`                         |
+| `dec (var v: IntType; n: IntType)`    | `v := v - n`                         |
+| `inc (var v: IntType)`                | `v := v + 1`                         |
+| `inc (var v: IntType; n: IntType)`    | `v := v + n`                         |
+| `len (a: Array; n: IntConst)`         | length of dimension `n` of array `a` |
+| `len (a: Array)`                      | equivalent to `len(v, 0)`            |
+
 
 `inc` and `dec` evaluate their variable parameter only once.
 
@@ -474,57 +475,57 @@ In the following tables *IntType* is an `integer` or `byte` value and *Array* is
 
 ### Type transfer procedures
 
-| Name     | Parameter type  | Result type | Function                             |
-|----------|-----------------|-------------|--------------------------------------|
-| `int`(b) | b: `boolean`    | `integer`   | 1 if *b* is true, otherwise 0        |
-| `int`(r) | r: `real`       | `integer`   | the largest integer less than *r*    |
-| `int`(x) | x: `byte`       | `integer`   | the integer *i*                      |
-| `flt`(i) | i: `integer`    | `real`      | *i* as a real number                 |
-| `low`(x) | x: `integer`    | `byte`      | *x*, if 0 ≤ *x* ≤ 255                |
-| `low`(b) | b: `boolean`    | `byte`      | 1 if *b* is true, otherwise 0        |
+| Description                  | Function                             |
+|------------------------------|--------------------------------------|
+| `int (b: boolean) : integer` | 1 if `b` is true, otherwise 0        |
+| `int (x: byte) : integer`    | `x` as an integer                    |
+| `int (r: real) : integer`    | the largest integer less than `r`    |
+| `flt (i: integer) : real`    | `i` as a real number                 |
+| `low (x: integer) : byte`    | `x` as a byte, if 0 ≤ `x` ≤ 255      |
+| `low (b: boolean) : byte`    | 1 if `b` is true, otherwise 0        |
 
 `low(x)` may raise an runtime error if 0 > *x* > 255. How runtime errors are handled is implementation-dependant behaviour.
 
 ### Bit Manipulation Procedures
 
-| Name         | Parameter type             | Result type | Function                       |
-|--------------|----------------------------|-------------|--------------------------------|
-| `lnot`(x)    | x: *IntType*               | *IntType*   | bitwise logical NOT            |
-| `land`(x, y) | x, y: *IntType*            | *IntType*   | bitwise logical AND            |
-| `lor`(x, y)  | x, y: *IntType*            | *IntType*   | bitwise logical inclusive-OR   |
-| `lxor`(x, y) | x, y: *IntType*            | *IntType*   | bitwise logical exclusive-OR   |
-| `shl`(x, n)  | x: *IntType*; n: `integer` | *IntType*   | left-shift bits of *x* by *n*  |
-| `shr`(x, n)  | x: *IntType*; n: `integer` | *IntType*   | right-shift bits of *x* by *n* |
-| `sha`(x, n)  | x: *IntType*; n: `integer` | *IntType*   | arithmetic right-shift bits of *x* by *n* |
+| Description                               | Function                                  |
+|-------------------------------------------|-------------------------------------------|
+| `lnot (x: IntType) : IntType`             | bitwise logical NOT                       |
+| `land (x, y: IntType) : IntType`          | bitwise logical AND                       |
+| `lor (x, y: IntType) : IntType`           | bitwise logical inclusive-OR              |
+| `lxor (x, y: IntType) : IntType`          | bitwise logical exclusive-OR              |
+| `shl (x: IntType; n: integer) : IntType`  | left-shift bits of `x` by `n`             |
+| `shr (x: IntType; n: integer) : IntType`  | right-shift bits of `x` by `n`            |
+| `sha (x: IntType; n: integer) : IntType`  | arithmetic right-shift bits of `x` by `n` |
 
 The bit shift operators will shift in the opposite direction if *n* is negative. Shifting by more than the width of *x* results in 0, or -1 in the case of an arithmetic right-shift. 
 
 ### Memory allocation procedures
 
-| Name         | Parameter type                      | Result type | Function                          |
-|--------------|-------------------------------------|-------------|-----------------------------------|
-| `new`(T)     | T = `ref` T₂                        | T           | allocate an object                |
-| `new`(A, d)  | A = `ref array of` T₂; d: `integer` | A           | allocate an array of *d* elements |
-| `free`(r)    | r: `ref` T₂                         |             | free an object                    |
+| Name                        | Type parameter        | Function                          |
+|-----------------------------|-----------------------|-----------------------------------|
+| `new (R) : R`               | `R = ref T`           | allocate an object                |
+| `new (A; d: integer) : A`   | `A = ref array of T`  | allocate an array of `d` elements |
+| `free (r : ref AnyType)`    |                       | free an object                    |
 
-The `new` procedure calls `ALLOCATE(SYSTEM_TYPESIZE(T₂))` or `ALLOCATE(SYSTEM_TYPESIZE(T₂) * d)` to obtain the address of free space for a new variable. If that address is 0 then an runtime error is raised, otherwise the new variable is assigned a default initial value and a reference to it is returned.
+The `new` procedure takes a type description as its first parameter. It calls `ALLOCATE(SYSTEM_TYPESIZE(T))` or `ALLOCATE(SYSTEM_TYPESIZE(T) * d)` to obtain the address of free space for a new variable. If that address is 0 then an runtime error is raised, otherwise the new variable is assigned a default initial value and a reference to it is returned.
 
 The `free(r)` procedure calls `DEALLOCATE(SYSTEM_TYPE(r, integer))` to mark the space at *r* as free for reallocation.
 
     procedure ALLOCATE (size: integer): integer;
     procedure DEALLOCATE (address: integer);
 
-These `ALLOCATE` and `DEALLOCATE` procedure descriptions must be included in any module that calls `new` or `free`. How the procedures are implemented is up to the programmer. They will typically be included from the interface of a module that manages memory on a heap. 
+These `ALLOCATE` and `DEALLOCATE` procedure descriptions must be included in any module that calls `new` or `free`. How the procedures are implemented is up to the programmer. They will typically be included from the interface of a module that manages memory on a heap. `integer` is assumed to be wide enough to hold a memory address. 
 
 `new` and `free` may not be used in constant expressions.
 
 ### Halting procedures
 
-| Name            | Parameter type | Result type   | Function                          |
-|-----------------|----------------|---------------|-----------------------------------|
-| `halt`(n)       | n: `integer`   |               | halt with exit code *n*           |
-| `assert`(x)     | x: `boolean`   |               | raise runtime error if not *x*    |
-| `expect`(x)     | x: `boolean`   |               | raise runtime error if not *x*    |
+| Description           | Function                          |
+|-----------------------|-----------------------------------|
+| `halt (n: integer)`   | halt with exit code *n*           |
+| `assert (x: boolean)` | raise runtime error if not *x*    |
+| `expect (x: boolean)` | raise runtime error if not *x*    |
 
  `assert` is for testing if the program is correct. `expect` is for testing whether the program should continue, e.g. testing whether an operating system service is still functioning. *The execution of `assert` may optionally be turned off by the compiler.*
 
@@ -544,18 +545,18 @@ Including the interface `SYSTEM` allows a set of "unsafe" standard procedures to
 
 If a particular computer requires language extensions, e.g. procedures that access CPU registers, then they should be added to `SYSTEM`.
 
-In the following table *RAM* refers the computer's random access memory, addressed by byte, and *AnyType* is any type. 
+In the following table *RAM* refers the computer's random access memory, addressed by byte; *AnyType* is any type; *T* is a type description given as a parameter. 
 
-|  Name         |  Parameter types            | Result type     |  Function                                    |
-|---------------|-----------------------------|-----------------|----------------------------------------------|
-| `ADDRESS`(v)  | var v: *AnyType*            | `integer`       | address of variable *v*                      |
-| `MOVE`(a,b,n) | a, b, n: `integer`          |                 | move *n* bytes from *RAM[a]* to *RAM[b]*     |
-| `GET`(a, v)   | a: `integer`; var v: *AnyType* |            | fill *v* with the bytes starting at *RAM[a]* |
-| `PUT`(a, v)   | a: `integer`; v: *AnyType*  |                 | move the bytes of *v* to *RAM[a]*            |
-| `SIZE`(v)     | v: *AnyType*                | `integer`       | number of bytes in variable *v*              |
-| `TYPESIZE`(T) | T = *AnyType*               | `integer`       | number of bytes required by type *T*         |
-| `TYPE`(x, T)  | x: *AnyType*; T = *AnyType* | T               | give *x* the type *T*                        |
-| `REF`(v)      | var v: *AnyType*            | `ref` *AnyType* | reference to an object                       |
+|  Description                         | Function                                     |
+|--------------------------------------|---------------------------------------------|
+| `ADDRESS (var v: AnyType) : integer` | address of variable `v`                      |
+| `MOVE (a, b, n: integer)`            | move `n` bytes from `RAM[a]` to `RAM[b]`     |
+| `GET (a: integer; var v: AnyType)`   | fill `v` with the bytes starting at `RAM[a]` |
+| `PUT (a: integer; v: AnyType)`       | move the bytes of `v` to `RAM[a]`            |
+| `SIZE (v : AnyType) : integer`       | number of bytes in variable `v`              |
+| `REF (var v: AnyType) : ref AnyType` | reference to an object                       |
+| `TYPESIZE (T)  : integer`            | number of bytes required by type `T`         |
+| `TYPE (x: AnyType; T) : T`           | give `x` the type `T`                        |
 
 `integer` is assumed to be wide enough to contain the bits of a memory address.
 
