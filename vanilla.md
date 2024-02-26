@@ -442,7 +442,7 @@ The floating-point number representation is implementation-dependant.
 |----------|-------------------------------------------------------------------|
 | `minint` | the lowest possible integer value                                 |
 | `maxint` | the highest possible integer value                                |
-| `lenint` | the number bits required to store an integer                      |
+| `lenint` | the number of bits required to store an integer                   |
 | `nil`    | is the value of ref variables that are not pointing to variables. |
 | `true`   |                                                                   |
 | `false`  |                                                                   |
@@ -461,10 +461,10 @@ In the following tables *IntType* is an `integer` or `byte` value and *Array* is
 |-----------------|----------------------------------|---------------|--------------------------------------|
 | `abs`(x)        | x: `integer`                     | `integer`     | absolute value of *x*                |
 | `abs`(x)        | x: `real`                        | `real`        | absolute value of *x*                |
-| `dec`(v)        | `var` v: *IntType*               |               | v := v - 1                           |
-| `dec`(v, n)     | `var` v: *IntType*; n: *IntType* |               | v := v - n                           |
-| `inc`(v)        | `var` v: *IntType*               |               | v := v + 1                           |
-| `inc`(v, n)     | `var` v: *IntType*; n: *IntType* |               | v := v + n                           |
+| `dec`(v)        | var v: *IntType*                 |               | v := v - 1                           |
+| `dec`(v, n)     | var v: *IntType*; n: *IntType*   |               | v := v - n                           |
+| `inc`(v)        | var v: *IntType*                 |               | v := v + 1                           |
+| `inc`(v, n)     | var v: *IntType*; n: *IntType*   |               | v := v + n                           |
 | `len`(v, n)     | a: *Array*; n: *IntConst*        | `integer`     | length of dimension *n* of array *a* |
 | `len`(a)        | a: *Array*                       | `integer`     | equivalent to len(v, 0)              |
 
@@ -481,7 +481,7 @@ In the following tables *IntType* is an `integer` or `byte` value and *Array* is
 | `int`(x) | x: `byte`       | `integer`   | the integer *i*                      |
 | `flt`(i) | i: `integer`    | `real`      | *i* as a real number                 |
 | `low`(x) | x: `integer`    | `byte`      | *x*, if 0 ≤ *x* ≤ 255                |
-| `low`(b) | b: `boolean`    | `integer`   | 1 if *b* is true, otherwise 0        |
+| `low`(b) | b: `boolean`    | `byte`      | 1 if *b* is true, otherwise 0        |
 
 `low(x)` may raise an runtime error if 0 > *x* > 255. How runtime errors are handled is implementation-dependant behaviour.
 
@@ -548,14 +548,14 @@ In the following table *RAM* refers the computer's random access memory, address
 
 |  Name         |  Parameter types            | Result type     |  Function                                    |
 |---------------|-----------------------------|-----------------|----------------------------------------------|
-| `ADDRESS`(v)  | `var` v: *AnyType*          | `integer`       | address of variable *v*                      |
+| `ADDRESS`(v)  | var v: *AnyType*            | `integer`       | address of variable *v*                      |
 | `MOVE`(a,b,n) | a, b, n: `integer`          |                 | move *n* bytes from *RAM[a]* to *RAM[b]*     |
-| `GET`(a, v)   | a: `integer`; `var` v: *AnyType* |            | fill *v* with the bytes starting at *RAM[a]* |
+| `GET`(a, v)   | a: `integer`; var v: *AnyType* |            | fill *v* with the bytes starting at *RAM[a]* |
 | `PUT`(a, v)   | a: `integer`; v: *AnyType*  |                 | move the bytes of *v* to *RAM[a]*            |
 | `SIZE`(v)     | v: *AnyType*                | `integer`       | number of bytes in variable *v*              |
 | `TYPESIZE`(T) | T = *AnyType*               | `integer`       | number of bytes required by type *T*         |
 | `TYPE`(x, T)  | x: *AnyType*; T = *AnyType* | T               | give *x* the type *T*                        |
-| `REF`(v)      | `var` v: *AnyType*          | `ref` *AnyType* | reference to an object                       |
+| `REF`(v)      | var v: *AnyType*            | `ref` *AnyType* | reference to an object                       |
 
 `integer` is assumed to be wide enough to contain the bits of a memory address.
 
