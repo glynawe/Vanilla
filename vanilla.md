@@ -1,6 +1,6 @@
 # Vanilla  [Draft]
 
-Vanilla is a language in the Pascal family, the starting point of its design was Oberon.
+Vanilla is a language in the Pascal family, the starting point of its design was [Oberon](https://people.inf.ethz.ch/wirth/Oberon/Oberon07.Report.pdf).
 
 I have taken a non-Oberon-like approach to describing declarations and modules. I will later extend the module system with [functors](https://v2.ocaml.org/manual/moduleexamples.html#s%3Afunctors). They are a handy, flexible feature that I haven't seen used in imperative system programming languages.
 
@@ -123,13 +123,13 @@ The above rule is also used to initialize local variables within procedure bodie
 
 ## Structured Constants
 
-A structured constant can be used to initialize variables of any type, including arrays and records. The value of a structured constant will become an object in the executable program.
+A structured constant can be used to initialize global variables of any type, especially arrays and records. The value of a structured constant will become an object in the executable program.
 
     StructuredConstant = Constant | StructureList.
     StructureList      = "[" StructureItems {"," StructureItems} "]".
     StructureItems     = StructuredConstant ["for" Constant].
 
-A Structure list can be assigned to a record or array variable. Each item from a structure list is assigned to
+A structure list can be assigned to a record or array variable. Each item from a structure list is assigned to
 an element of the record or array in order. For records that is that order used its description. If those
 elements are records or arrays then this rule is applied recursively.
 
@@ -139,11 +139,11 @@ A string literal can be used to declare a byte array. If it is shorter than the 
 
 **Example** This array contains a one, three sevens and a six:
 
-    var sevens: array 7 of integer := [1, 7 for 3, 6];
+    var sevens: array 5 of integer := [1, 7 for 3, 6];
 
 **Example** This array contains the bytes [64, 90, 64, 90, 0, 0, 0, 0]:
 
-    var bytes: array 8 of byte := "AZAZ";
+    val bytes: array 8 of byte := "AZAZ";
 
 
 # Types
@@ -197,7 +197,7 @@ Variables and constants defined in a Body are only valid within that body, i.e. 
 
 If a local variable declaration has an initializer expression then the expression is evaluated first and then all the variables named in its list are assigned that value, otherwise it is initialized to a default value by the same rules used to initialize global variables. If a local declaration has an initializer expression but no type then it takes on the type of its initializer. `val` declares a *immutable variable*, a variable that can only be assigned once when it is declared.  
 
-A local description may not have the same name as a description from the module or any surrounding body.i .e. names may not be shadowed.
+A local description may not have the same name as a description from the module or any surrounding body, i.e. names may not be shadowed.
 
 ## Assignments
 
@@ -244,8 +244,8 @@ If `to` is used in a `for` clause then the loop ends when the limiting expressio
 
     procedure uppercase (var string: array of byte) =
         for i := 0 until len(string) while string[i] # 0 do
-            if (string[i] >= 'A') and (string[i] <= 'Z') then
-                string[i] := low(string[i] - 'a' + 'A')
+            if string[i] >= 'A' and string[i] <= 'Z' then
+                string[i] := string[i] - 'a' + 'A'
             end
         end
     end uppercase;
@@ -355,10 +355,9 @@ The list of expressions in a call are supplied to the designated procedure as pa
 
     Literal = INTEGER | REAL | CHARACTER | STRING.
 
-INTEGER literals have the type `integer`. BYTE literals have the type `byte`. REAL literals have the type `real`. 
-STRING literals  are anonymous immutable variables of type `array of byte`. A string literal's array has an additional element at the end containing 0. 
+`INTEGER` literals have the type `integer`. `BYTE` literals have the type `byte`. `REAL` literals have the type `real`. `STRING` literals  are anonymous immutable variables of type `array of byte`. A string literal's array has an additional element at the end containing 0. 
 
-The range of BYTE literals is 0 to 255. The range of decimal INTEGER literals is 0 to `maxint`. The range of hexadecimal, octal and binary INTEGER literals is 0 to 2<sup>`lenint`</sup>-1; two's-compliment encoding is ignored. This is useful when using integers to represent bit strings.
+The range of `BYTE` literals is 0 to 255. The range of decimal `INTEGER` literals is 0 to `maxint`. The range of hexadecimal, octal and binary INTEGER literals is 0 to 2<sup>`lenint`</sup>-1; two's-compliment encoding is ignored. This is useful when using integers to represent bit strings.
 
 # Lexical Elements
 
@@ -453,7 +452,7 @@ The values of `minint`, `maxint` and `lenint` are implementation-dependant.
 
 ## Standard Procedures
 
-The standard procedures are operators that resemble procedure calls. Standard procedures may be used within constant expressions. 
+The standard procedures are operators that resemble procedure calls. Some are polymorphic, some take type descriptions as parameters. Standard procedures may be used within constant expressions. 
 
 In the following tables *IntType* is an `integer` or `byte` value and *Array* is any array variable.
 
@@ -469,9 +468,9 @@ In the following tables *IntType* is an `integer` or `byte` value and *Array* is
 | `len (a: Array)`                      | equivalent to `len(v, 0)`            |
 
 
-`inc` and `dec` evaluate their variable parameter only once.
+`inc` and `dec` evaluate their variable parameters only once.
 
-`len(a, 0)` is the length of the first dimension of array *a*.
+`len(a, 0)` is the length of the first dimension of array `a`.
 
 ### Type transfer procedures
 
@@ -548,7 +547,7 @@ If a particular computer requires language extensions, e.g. procedures that acce
 In the following table *RAM* refers the computer's random access memory, addressed by byte; *AnyType* is any type; *T* is a type description given as a parameter. 
 
 |  Description                         | Function                                     |
-|--------------------------------------|---------------------------------------------|
+|--------------------------------------|----------------------------------------------|
 | `ADDRESS (var v: AnyType) : integer` | address of variable `v`                      |
 | `MOVE (a, b, n: integer)`            | move `n` bytes from `RAM[a]` to `RAM[b]`     |
 | `GET (a: integer; var v: AnyType)`   | fill `v` with the bytes starting at `RAM[a]` |
