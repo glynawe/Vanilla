@@ -17,7 +17,7 @@ I have taken a non-Oberon-like approach to describing declarations and modules. 
 
 A *description* names and describes a data type, procedure, variable, module or constant. A description may be given more than once; descriptions with the same name must have the same type.
 
-A *declaration* is a description that also defines objects. An *object* is variable data or procedure code that will be included in an executable program. A declaration can only be made once.
+A *declaration* is a description that also defines *object code*. Object code is variable data or procedure code that will be included in an executable program. A declaration can only be made once.
 
 ## Modules and Interfaces
 
@@ -93,7 +93,7 @@ A *program* is a module that contains a procedure declaration named `main`, whic
 
     ConstDescription = "const" NAME "=" Constant.
 
-A Constant is an Expression that is evaluated by the compiler. The declared length of an array is example of an expression that must be constant.  The only names allowed in a constant expression are the names of other constants and calls to standard procedures.
+A Constant is an expression that is evaluated by the compiler. The declared length of an array is example of an expression that must be constant.  The only names allowed in a constant expression are the names of other constants and calls to standard procedures.
 
 A ConstDescription names a constant. A named constant may be described more than once, but the additional descriptions must evaluate to the same value.
 
@@ -106,24 +106,17 @@ A ConstDescription names a constant. A named constant may be described more than
     VariableList = NameList ":" Type.
     NameList     = NAME {"," NAME}.
 
+A list of distinct variable descriptions will be made if a list of names is given. `var a, b, c: t;` is shorthand for `var a: t; var b: t; var c: t;`
+
 All of the variables named in the variable list of a VarDeclaration are initialized to the values in the VarDeclaration's structured constant. 
 
 `val` declares a *immutable variable*, a variable that can only be assigned once when it is declared. *The compiler may arrange for immutable global variables to be stored in ROM.*
 
-## Implicit Variable Declarations
-
-A variable description has an implicit declaration if one is not given in a program's modules. 
-
-An implicit variable declaration has a default value. Numeric variables are initialized to zero. Reference values are initialized to `nil`. Procedure values are initialized to a procedure that causes an *uninitialized procedure* runtime error. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero, nil or an error procedure.
-
-The above rule is also used to initialize local variables within procedure bodies.
-
-*How uninitialized procedure runtime errors are handled is implementation-dependant behaviour.*
-
+A variable description has an implicit declaration if one is not given in a program's modules. E.g. the description `var i: integer;` will be provided the declaration `var i: integer := 0;`.
 
 ## Structured Constants
 
-A structured constant can be used to initialize global variables of any type, especially arrays and records. The value of a structured constant will become an object in the executable program.
+A structured constant can be used to initialize global variables of any type, especially arrays and records. The value of a structured constant will become object code for the executable program.
 
     StructuredConstant = Constant | StructureList.
     StructureList      = "[" StructureItems {"," StructureItems} "]".
@@ -146,6 +139,17 @@ A string literal can be used to declare a byte array. If it is shorter than the 
     val bytes: array 8 of byte := "AZAZ";
 
 
+## Implicit Variable Declarations
+
+A variable description has an implicit declaration if one is not given in a program's modules. 
+
+An implicit variable declaration has a default value. Numeric variables are initialized to zero. Reference values are initialized to `nil`. Procedure values are initialized to a procedure that causes an *uninitialized procedure* runtime error. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero, nil or an error procedure.
+
+The above rule is also used to initialize local variables within procedure bodies.
+
+*How uninitialized procedure runtime errors are handled is implementation-dependant behaviour.*
+
+
 # Types
 
     TypeDescription = "type" NAME "=" Type.
@@ -158,9 +162,7 @@ A string literal can be used to declare a byte array. If it is shorter than the 
 
     DimensionList = Constant {"," Constant}.
 
-Arrays begin at element 0. An array with more than one length in its dimension list describes arrays of arrays. I.e. `array a, b, c of t` stands for `array a of array b of array c of t`. An array with no dimension list is an *open array*. An open array is one dimensional, and its length can be found using the standard procedure `len`. An open array type may only be used as the type of a parameter or as the target of a reference type.
-
-A reference type may refer to the name of a previously undescribed type. That type must be described later in the same module.
+Arrays begin at element 0. An array with more than one length in its dimension list describes an array of arrays. I.e. `array a, b, c of t` stands for `array a of array b of array c of t`. An array with no dimension list is an *open array*. An open array is one dimensional, and its length can be found using the standard procedure `len`. An open array type may only be used as the type of a parameter or as the target of a reference type.
 
 # Procedures
 
@@ -178,6 +180,8 @@ A procedure with a return type is a *function procedure*. A procedure without a 
 Assigning to a `var` parameter assigns to the parameter supplied by the procedure call, i.e. `var` parameters are passed by reference. Parameters without `var` are *value parameters*. Value parameters are immutable. *The compiler may pass record and array value parameters by reference.*
 
 An array of any length may be passed to an *open array* parameter if their element types are the same. 
+
+*A `val` parameter does not come with a guarantee that the parameter will retain the same value all though the execution of its procedure. "Aliasing" is possible. If a global variable is given as a parameter then assigning to that variable from within the procedure also changes the parameter's value.*
 
 # Statements
 
@@ -279,7 +283,7 @@ Case expressions and range constants must be integers or bytes. All constants in
 
     Empty = .
 
-The main purpose of the empy statement is to allow superflous semicolons in a body, e.g. after the final statement.
+The main purpose of the empy statement is to allow superfluous semicolons in a body, e.g. after the final statement.
 
 # Expressions
 
@@ -355,9 +359,11 @@ The list of expressions in a call are supplied to the designated procedure as pa
 
     Literal = INTEGER | REAL | CHARACTER | STRING.
 
-`INTEGER` literals have the type `integer`. `BYTE` literals have the type `byte`. `REAL` literals have the type `real`. `STRING` literals  are anonymous immutable variables of type `array of byte`. A string literal's array has an additional element at the end containing 0. 
+INTEGER literals have the type `integer`. BYTE literals have the type `byte`. REAL literals have the type `real`. STRING literals  are anonymous immutable variables of type `array of byte`. A string literal's array has an additional element at the end containing `'\0'`. 
 
-The range of `BYTE` literals is 0 to 255. The range of decimal `INTEGER` literals is 0 to `maxint`. The range of hexadecimal, octal and binary INTEGER literals is 0 to 2<sup>`lenint`</sup>-1; two's-compliment encoding is ignored. This is useful when using integers to represent bit strings.
+BYTE literals are distinct from INTEGER literals. They are either integer literals with the suffix `X` or character literals in single quotes. The range of BYTE literals is 0X to 255X. 
+
+The range of decimal INTEGER literals is 0 to `maxint`. The range of hexadecimal, octal and binary INTEGER literals is 0 to 2<sup>`lenint`</sup>-1; two's-compliment encoding is ignored. This is useful when using integers to represent bit strings.
 
 # Lexical Elements
 
@@ -503,9 +509,9 @@ The bit shift operators will shift in the opposite direction if *n* is negative.
 
 | Name                        | Type parameter        | Function                          |
 |-----------------------------|-----------------------|-----------------------------------|
-| `new (R) : R`               | `R = ref T`           | allocate an object                |
+| `new (R) : R`               | `R = ref T`           | allocate data                     |
 | `new (A; d: integer) : A`   | `A = ref array of T`  | allocate an array of `d` elements |
-| `free (r : ref AnyType)`    |                       | free an object                    |
+| `free (r : ref AnyType)`    |                       | free data                         |
 
 The `new` procedure takes a type description as its first parameter. It calls `ALLOCATE(SYSTEM_TYPESIZE(T))` or `ALLOCATE(SYSTEM_TYPESIZE(T) * d)` to obtain the address of free space for a new variable. If that address is 0 then an runtime error is raised, otherwise the new variable is assigned a default initial value and a reference to it is returned.
 
@@ -553,7 +559,7 @@ In the following table *RAM* refers the computer's random access memory, address
 | `GET (a: integer; var v: AnyType)`   | fill `v` with the bytes starting at `RAM[a]` |
 | `PUT (a: integer; v: AnyType)`       | move the bytes of `v` to `RAM[a]`            |
 | `SIZE (v : AnyType) : integer`       | number of bytes in variable `v`              |
-| `REF (var v: AnyType) : ref AnyType` | reference to an object                       |
+| `REF (var v: AnyType) : ref AnyType` | make a reference to a variable or procedure  |
 | `TYPESIZE (T)  : integer`            | number of bytes required by type `T`         |
 | `TYPE (x: AnyType; T) : T`           | give `x` the type `T`                        |
 
