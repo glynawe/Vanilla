@@ -197,11 +197,11 @@ Statements appear in the bodies of procedures and within other statements.
     LocalDescription = LocalVarDeclaration | ConstDescription. 
     LocalVarDeclaration = ("var" | "val") NameList (":" Type [":=" Expression] | ":=" Expression).
 
-Variables and constants defined in a Body are only valid within that body, i.e. bodies are scopes. Variables and constants are only visible to the statements that come after their declaration statements. 
+Variables and constants defined in a statment body are only valid within that body, i.e. bodies are scopes. Variables and constants are only visible to the statements that come after their declaration statements. 
 
 If a local variable declaration has an initializer expression then the expression is evaluated first and then all the variables named in its list are assigned that value, otherwise it is initialized to a default value by the same rules used to initialize global variables. If a local declaration has an initializer expression but no type then it takes on the type of its initializer. `val` declares a *immutable variable*, a variable that can only be assigned once when it is declared.  
 
-A local description may not have the same name as a description from the module or any surrounding body, i.e. names may not be shadowed.
+A local description may not have the same name as any description in the same body or any surrounding body, including the procedure's parameter names. I.e. local names may not be shadowed. 
 
 ## Assignments
 
@@ -405,10 +405,19 @@ The underscore is reserved for prefixing imported names with module names.
 ## Keywords
 
     Keywords = 
-        "and" | "array" | "by" | "byte" | "case" | "const" | "do" | "else" | "elsif"
-        "end" | "exit" | "for" | "if" | "import" | "include" | "interface" | "loop"
-        "mod" | "module" | "not" | "of" | "or" | "procedure" | "real" | "record"
+        "and" | "array" | "by" | "byte" | "case" | "const" | "do" | "else" | "elsif" |
+        "end" | "exit" | "for" | "if" | "import" | "include" | "interface" | "loop" |
+        "mod" | "module" | "not" | "of" | "or" | "procedure" | "real" | "record" |
         "ref" | "return" | "then" | "to" | "type" | "until" | "val" | "var" | "while".
+
+    StandardDescriptionNames =
+        "abs" | "assert" | "boolean" | "byte" | "dec" | "halt" | "expect" |
+        "false" | "flt" | "free" | "inc" | "int" | "integer" | "land" | "len" | 
+        "lenint" | "lnot" | "lor" | "low" | "lxor" | "maxint" | "minint" |
+        "new" | "nil" | "real" | "sha" | "shl" | "shr" | "true" | "SYSTEM" |
+        "ADDRESS" | "GET" | "MOVE" | "PUT" | "REF" | "SIZE" | "TYPE" | "TYPESIZE".
+
+The keywords and the names for the standard descriptions may not be used for any other purpose. 
 
 ## Whitespace and comments
 
@@ -427,7 +436,7 @@ A Vanilla source file contains one or more interfaces or modules. The names of t
 
 # The Standard Descriptions
 
-The standard descriptions are implicitly included at the start of every interface and module. Consequently, their names cannot be used for other purposes.
+The standard descriptions are implicitly included at the start of every interface and module. Their names cannot be used for other purposes.
 
 ## Standard Types
 
