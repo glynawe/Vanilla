@@ -247,9 +247,9 @@ If `to` is used in a `for` clause then the loop ends when the limiting expressio
 **Example**
 
     procedure uppercase (var string: array of byte) =
-        for i := 0 until len(string) while string[i] # 0 do
+        for i := 0 until len(string) while string[i] != '\0' do
             if string[i] >= 'A' and string[i] <= 'Z' then
-                string[i] := string[i] - 'a' + 'A'
+                inc(string[i], 'A' - 'a')
             end
         end
     end uppercase;
@@ -295,7 +295,7 @@ The main purpose of the empy statement is to allow superfluous semicolons in a b
 
     AddOp  = "+" | "-".
     MulOp  = "*" | "/" | "mod".
-    RelationOp = "=" | "#" | ">" | "<" | ">=" | "<=".
+    RelationOp = "=" | "!=" | ">" | "<" | ">=" | "<=".
 
     Factor = UnaryOp Factor
            | Designator
@@ -312,16 +312,16 @@ The main purpose of the empy statement is to allow superfluous semicolons in a b
 | `+` `-` `*` `/`           | *NumType* | *NumType* | *NumType* |
 | `mod`                     | *IntType* | *IntType* | *IntType* |
 | unary `-` `+`             | *NumType* |           | *NumType* |
-| `=` `#` `<` `<=` `>` `>=` | *NumType* | *NumType* | `boolean` |
-| `=` `#`                   | *RefType* | *RefType* | `boolean` |
+| `=` `!=` `<` `<=` `>` `>=`| *NumType* | *NumType* | `boolean` |
+| `=` `!=`                  | *RefType* | *RefType* | `boolean` |
 | `and` `or`                | `boolean` | `boolean` | `boolean` |
 | `not`                     | `boolean` |           | `boolean` |
 
-*NumType* is `real`, `integer` or `byte`. *IntType* is `integer` or `byte`. *RefType* is any reference type. Operands and results must have the same type.
+*NumType* is `real`, `integer`, `word` or `byte`. *IntType* is `integer`, `word` or `byte`. *RefType* is any reference type. Operands and results must have the same type.
 
 `x / y` and `x mod y` may raise an runtime error if *y* = 0. How that runtime error is handled is implementation-dependant behaviour.
 
-Relational operators compare `integer`, `byte`, `real` and reference types. They return `boolean` values. References may only be compared for equality and inequality. Two references are equal if they refer to the same variable or both are `nil`.
+Relational operators compare `integer`, `word`, `byte`, `real` and reference types. They return `boolean` values. References may only be compared for equality and inequality. Two references are equal if they refer to the same variable or both are `nil`.
 
 ### Logical operators
 
@@ -359,11 +359,9 @@ The list of expressions in a call are supplied to the designated procedure as pa
 
     Literal = INTEGER | REAL | CHARACTER | STRING.
 
-INTEGER literals have the type `integer`. BYTE literals have the type `byte`. REAL literals have the type `real`. STRING literals  are anonymous immutable variables of type `array of byte`. A string literal's array has an additional element at the end containing `'\0'`. 
+INTEGER literals have the type `integer`. WORD literals has type `word`. BYTE literals have the type `byte`. REAL literals have the type `real`. STRING literals  are anonymous immutable variables of type `array of byte`. A string literal's array has an additional element at the end containing `'\0'`. 
 
-BYTE literals are distinct from INTEGER literals. They are either integer literals with the suffix `X` or character literals in single quotes. The range of BYTE literals is 0X to 255X. 
-
-The range of decimal INTEGER literals is 0 to `maxint`. The range of hexadecimal, octal and binary INTEGER literals is 0 to 2<sup>`lenint`</sup>-1; two's-compliment encoding is ignored. This is useful when using integers to represent bit strings.
+BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer literals with the suffix `X` or character literals in single quotes. The range of BYTE literals is 0X to 255X. The range of WORD literals is 0 to `maxword`. WORD literals are integer literals with the suffix `L`. 
 
 # Lexical Elements
 
@@ -374,7 +372,8 @@ The range of decimal INTEGER literals is 0 to `maxint`. The range of hexadecimal
              | "0b" BINDIGIT {BINDIGIT}
              | "0o" OCTDIGIT {OCTDIGIT}.
 
-    BYTE      = INTEGER ["X" | "x"] | CHARACTER.
+    BYTE      = INTEGER "X" | CHARACTER.
+    WORD      = INTEGER "L".
     CHARACTER = "'" (STRCHAR | '"' | "\'" | ESCAPE) "'".
 
     STRING    = '"' {STRCHAR | "'" | '\"' | ESCAPE} '"'.
@@ -386,7 +385,7 @@ The range of decimal INTEGER literals is 0 to `maxint`. The range of hexadecimal
     DIGIT    = "0"..."9".
     BINDIGIT = "0" | "1".
     OCTDIGIT = "0"..."7".
-    HEXDIGIT = "0"..."9" | "A"..."F" | "a"..."f".
+    HEXDIGIT = "0"..."9" | "A"..."F".
     ESCAPE    = "\a" | "\b" | "\e" | "\f" | "\n" | "\t" | "\v" | "\0" | "\\"
                 "\x" HEXDIGIT HEXDIGIT.
     STRCHAR   = " "..."~" except for "\", "'" and '"'.
@@ -413,8 +412,8 @@ The underscore is reserved for prefixing imported names with module names.
     StandardDescriptionNames =
         "abs" | "assert" | "boolean" | "byte" | "dec" | "halt" | "expect" |
         "false" | "flt" | "free" | "inc" | "int" | "integer" | "land" | "len" | 
-        "lenint" | "lnot" | "lor" | "low" | "lxor" | "maxint" | "minint" |
-        "new" | "nil" | "real" | "sha" | "shl" | "shr" | "true" | "SYSTEM" |
+        "lenint" | "lnot" | "lor" | "short" | "lxor" | "maxint" | "maxword" | "minint" |
+        "new" | "nil" | "real" | "sha" | "shl" | "shr" | "true" | "word" | "SYSTEM" |
         "ADDRESS" | "GET" | "MOVE" | "PUT" | "REF" | "SIZE" | "TYPE" | "TYPESIZE".
 
 The keywords and the names for the standard descriptions may not be used for any other purpose. 
@@ -444,10 +443,11 @@ The standard descriptions are implicitly included at the start of every interfac
 |-----------|------------------------------------------------------------|
 | `boolean` | The logical values `true` or `false`.                      |
 | `integer` | Two's-complement signed integers.                          |
+| `word`    | Unsigned integers between 0 and `maxword`.                 |
 | `byte`    | Integers between 0 and 255. Also used to store characters. |
 | `real`    | Floating-point numbers.                                    |
 
-The floating-point number representation is implementation-dependant.
+The floating-point number representation is implementation-dependant. `integer` should have a convenient range for arithmetic. `word` must be wide enough to contain a memory address.
 
 
 ## Standard Constants
@@ -456,7 +456,9 @@ The floating-point number representation is implementation-dependant.
 |----------|-------------------------------------------------------------------|
 | `minint` | the lowest possible integer value                                 |
 | `maxint` | the highest possible integer value                                |
+| `maxword` | the highest possible word value                               |
 | `lenint` | the number of bits required to store an integer                   |
+| `lenword` | the number of bits required to store a word                    |
 | `nil`    | is the value of ref variables that are not pointing to variables. |
 | `true`   |                                                                   |
 | `false`  |                                                                   |
@@ -469,7 +471,7 @@ The values of `minint`, `maxint` and `lenint` are implementation-dependant.
 
 The standard procedures are operators that resemble procedure calls. Some are polymorphic, some take type descriptions as parameters. Standard procedures may be used within constant expressions. 
 
-In the following tables *IntType* is an `integer` or `byte` value and *Array* is any array variable.
+In the following tables *IntType* is an `integer`, `word` or `byte` value and *Array* is any array variable.
 
 | Description                           | Function                             |
 |---------------------------------------|--------------------------------------|
@@ -491,14 +493,17 @@ In the following tables *IntType* is an `integer` or `byte` value and *Array* is
 
 | Description                  | Function                             |
 |------------------------------|--------------------------------------|
-| `int (b: boolean) : integer` | 1 if `b` is true, otherwise 0        |
-| `int (x: byte) : integer`    | `x` as an integer                    |
+| `flt (i: IntType) : real`    | `i` as a real number                 |
 | `int (r: real) : integer`    | the largest integer less than `r`    |
-| `flt (i: integer) : real`    | `i` as a real number                 |
-| `low (x: integer) : byte`    | `x` as a byte, if 0 ≤ `x` ≤ 255      |
-| `low (b: boolean) : byte`    | 1 if `b` is true, otherwise 0        |
+| `int (x: IntType) : integer` | `x` as an integer                    |
+| `int (b: boolean) : integer` | 1 if `b` is true, otherwise 0        |
+| `long (i: IntType) : word`   | `x` as a word                        |
+| `long (b: boolean) : word`   | `1L` if `b` is true, otherwise 0L    |
+| `short (i: IntType) : byte`  | `x` as a byte                        |
+| `short (b: boolean) : byte`  | 1X if `b` is true, otherwise 0X      |
 
-`low(x)` may raise an runtime error if 0 > *x* > 255. How runtime errors are handled is implementation-dependant behaviour.
+
+`short`, `int` and `long` may raise an runtime error if their parameter values are outside their return type's ranges. How runtime errors are handled is implementation-dependant behaviour.
 
 ### Bit Manipulation Procedures
 
@@ -549,7 +554,7 @@ How runtime errors and exit codes are handled is implementation-dependant behavi
 
     assert(String_length(text) > 0);    // The program created text.
     status := Cstdio_fputs(text, file);
-    expect(status # Cstdio_EOF);        // The I/O system is working.
+    expect(status != Cstdio_EOF);       // The I/O system is working.
     halt(0);                            // The program is finished now.
 
 
@@ -563,16 +568,14 @@ In the following table *RAM* refers the computer's random access memory, address
 
 |  Description                         | Function                                     |
 |--------------------------------------|----------------------------------------------|
-| `ADDRESS (var v: AnyType) : integer` | address of variable `v`                      |
+| `ADDRESS (var v: AnyType) : word`    | address of variable `v`                      |
 | `MOVE (a, b, n: integer)`            | move `n` bytes from `RAM[a]` to `RAM[b]`     |
-| `GET (a: integer; var v: AnyType)`   | fill `v` with the bytes starting at `RAM[a]` |
-| `PUT (a: integer; v: AnyType)`       | move the bytes of `v` to `RAM[a]`            |
+| `GET (a: word; var v: AnyType)`      | fill `v` with the bytes starting at `RAM[a]` |
+| `PUT (a: word; v: AnyType)`          | move the bytes of `v` to `RAM[a]`            |
 | `SIZE (v : AnyType) : integer`       | number of bytes in variable `v`              |
 | `REF (var v: AnyType) : ref AnyType` | make a reference to a variable or procedure  |
-| `TYPESIZE (T)  : integer`            | number of bytes required by type `T`         |
+| `TYPESIZE (T)  : word`               | number of bytes required by type `T`         |
 | `TYPE (x: AnyType; T) : T`           | give `x` the type `T`                        |
-
-`integer` is assumed to be wide enough to contain the bits of a memory address.
 
 `TYPE` changes the type of a value or variable without altering the underlying bits that represent it. E.g. it can be used to represent a reference as an integer or a record as an array of bytes.
 

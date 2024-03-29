@@ -10,10 +10,10 @@
 			"match": "\\b(and|mod|or)\\b"
 		},{
 			"name": "support.type.vanilla",
-			"match": "\\b(boolean|byte|integer|real)\\b"
+			"match": "\\b(boolean|byte|integer|real|word)\\b"
 		},{
 			"name": "support.function.vanilla",
-			"match": "\\b(abs|assert|expect|dec|exit|inc|len|int|low|flt|lnot|land|lor|lxor|shl|shr|sha|SYSTEM_ADDR|SYSTEM_GET|SYSTEM_MOVE|SYSTEM_PUT|SYSTEM_SIZE|SYSTEM_TYPE|SYSTEM_REF)\\b"
+			"match": "\\b(abs|assert|expect|dec|exit|inc|len|long|int|flt|lnot|land|lor|lxor|shl|shr|sha|short|SYSTEM_ADDR|SYSTEM_GET|SYSTEM_MOVE|SYSTEM_PUT|SYSTEM_SIZE|SYSTEM_TYPE|SYSTEM_REF)\\b"
 		},{
 			"name": "constant.language.vanilla",
 			"match": "\\b(true|false|nil|maxint|minint|lenint)\\b"
@@ -25,13 +25,13 @@
 			"match": "`[!-_a-~]+`"
 		},{
 			"name": "constant.numeric.vanilla",
-			"match": "\\b(0b[01]+)[Xx]?\\b"
+			"match": "\\b(0b[01]+)[XL]?\\b"
 		},{
 			"name": "constant.numeric.vanilla",
-			"match": "\\b(0o[0-7]+)[Xx]?\\b"
+			"match": "\\b(0o[0-7]+)[XL]?\\b"
 		},{
 			"name": "constant.numeric.vanilla",
-			"match": "\\b(0x[0-9A-Fa-f]+)[Xx]?\\b"
+			"match": "\\b(0x[0-9A-F]+)[XL]?\\b"
 		},{
 			"name": "constant.numeric.float.vanilla",
 			"match": "\\b([0-9]+[.][0-9]+([Ee][-+]?[0-9]+)?)\\b"

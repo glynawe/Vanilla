@@ -49,6 +49,7 @@ type : globalname                         -> namedtype
         | "ref" type                      -> referencetype
         | "byte"                          -> bytetype
         | "integer"                       -> integertype
+        | "word"                          -> wordtype
         | "real"                          -> realtype
         | "boolean"                       -> booleantype
         | "procedure" proctype            -> proceduretype
@@ -96,7 +97,7 @@ empty:
 
 ?relation: sum
         | sum "=" sum  -> eq
-        | sum "#" sum  -> ne
+        | sum "!=" sum -> ne
         | sum "<" sum  -> lt
         | sum "<=" sum -> le
         | sum ">" sum  -> gt
@@ -146,7 +147,7 @@ TRUE: "true"
 FALSE: "false"
 NAME: /[A-Za-z][A-Za-z0-9]*/
 
-INTEGER:   /[0-9]+[Xx]?/ | /0x[0-9A-Fa-f]+[Xx]?/ | /0o[0-7]+[Xx]?/ | /0b[01]+[Xx]?/
+INTEGER:   /[0-9]+[XL]?/ | /0x[0-9A-Fa-f]+[XL]?/ | /0o[0-7]+[XL]?/ | /0b[01]+[XL]?/
 REAL:      /[0-9]+[.][0-9]+([Ee][+-]?[0-9]+)?/
 STRING:    "\"" (NORMAL | "'"  | "\\\"" | ESCAPE)* "\""
 CHARACTER: "'"  (NORMAL | "\"" | "\\'"  | ESCAPE) "'"

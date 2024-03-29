@@ -20,15 +20,15 @@ module IO =
         // Read a line, copying as many of the leading characters as possible into 's'.
         var c := stdio_getchar();
         var i := 0;
-        while (i < len(s)) and (c # Character_LF) and (c # stdio_EOF) do
-            s[i] := low(c);
+        while (i < len(s)) and (c != Character_LF) and (c != stdio_EOF) do
+            s[i] := short(c);
             c := stdio_getchar();
             inc(i)
         end;
         if i < len(s) then
             s[i] := 0    // add terminator
         else
-            while (c # Character_LF) and (c # stdio_EOF) do  // Consume remainder of line.
+            while (c != Character_LF) and (c != stdio_EOF) do  // Consume remainder of line.
                 c := stdio_getchar()
             end
         end
@@ -40,7 +40,7 @@ module IO =
     end PutChar;
 
     procedure PutString (s: array of byte) =
-        for i := 0 until len(s) while s[i] # 0 do
+        for i := 0 until len(s) while s[i] != 0 do
             PutChar(s[i])
         end;
         PutChar(Character_LF)
@@ -56,7 +56,7 @@ module IO =
             var i := 0;
             var n := abs(number);
             while n > 0 do
-                var digit: byte := low(n mod base);
+                var digit: byte := short(n mod base);
                 buffer[i] := digit + if digit < 10 then '0' else 'A' end;
                 n := n / base;
                 inc(i)

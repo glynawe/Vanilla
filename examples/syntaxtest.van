@@ -33,12 +33,13 @@ module ModuleName =
         var c := 5X;
         val d := 6;
         val e := 0xFFX;
+        val f := 0xFFFFFFFL;
         inc(12);
         true;
         f("a\nsd");
         g('a', '\x1f');
         aa, bb := 4.0 + 0.123E6 + 0.123E+6 + 1.0E-6 + flt(4);
         inc(i);
-        a := (2 + 3) * 4 mod 6 + 0xFFFF + 0b10101111 / 0o644 + 0xdead1337;
+        a := (2 + 3) * 4 mod 6 + 0xFFFF + 0b10101111 / 0o644 + 0xDEAD1337;
     end Procedure;
 end ModuleName.
