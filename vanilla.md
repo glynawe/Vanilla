@@ -411,8 +411,8 @@ The underscore is reserved for prefixing imported names with module names.
 
     StandardDescriptionNames =
         "abs" | "assert" | "boolean" | "byte" | "dec" | "halt" | "expect" |
-        "false" | "flt" | "free" | "inc" | "int" | "integer" | "land" | "len" | 
-        "lenint" | "lnot" | "lor" | "short" | "lxor" | "maxint" | "maxword" | "minint" |
+        "false" | "free" | "inc" | "integer" | "land" | "len" | 
+        "lenint" | "lnot" | "lor" |  "lxor" | "maxint" | "maxword" | "minint" |
         "new" | "nil" | "real" | "sha" | "shl" | "shr" | "true" | "word" | "SYSTEM" |
         "ADDRESS" | "GET" | "MOVE" | "PUT" | "REF" | "SIZE" | "TYPE" | "TYPESIZE".
 
@@ -471,7 +471,7 @@ The values of `minint`, `maxint` and `lenint` are implementation-dependant.
 
 The standard procedures are operators that resemble procedure calls. Some are polymorphic, some take type descriptions as parameters. Standard procedures may be used within constant expressions. 
 
-In the following tables *IntType* is an `integer`, `word` or `byte` value and *Array* is any array variable.
+In the following tables *IntType* is an `integer`, `word` or `byte` value, *NumType* is an integer type or `real`, `T` is a name of a type and *Array* is any array variable.
 
 | Description                           | Function                             |
 |---------------------------------------|--------------------------------------|
@@ -483,27 +483,15 @@ In the following tables *IntType* is an `integer`, `word` or `byte` value and *A
 | `inc (var v: IntType; n: IntType)`    | `v := v + n`                         |
 | `len (a: Array; n: IntConst)`         | length of dimension `n` of array `a` |
 | `len (a: Array)`                      | equivalent to `len(v, 0)`            |
+| `as (v: NumType; T): NumType`         | convert `v` to numeric type `T`.     |
+| `fits (T; v: NumType): boolean`       | true if `v` will fit in type `T`.    |
 
 
 `inc` and `dec` evaluate their variable parameters only once.
 
 `len(a, 0)` is the length of the first dimension of array `a`.
 
-### Type transfer procedures
-
-| Description                  | Function                             |
-|------------------------------|--------------------------------------|
-| `flt (i: IntType) : real`    | `i` as a real number                 |
-| `int (r: real) : integer`    | the largest integer less than `r`    |
-| `int (x: IntType) : integer` | `x` as an integer                    |
-| `int (b: boolean) : integer` | 1 if `b` is true, otherwise 0        |
-| `long (i: IntType) : word`   | `x` as a word                        |
-| `long (b: boolean) : word`   | `1L` if `b` is true, otherwise 0L    |
-| `short (i: IntType) : byte`  | `x` as a byte                        |
-| `short (b: boolean) : byte`  | 1X if `b` is true, otherwise 0X      |
-
-
-`short`, `int` and `long` may raise an runtime error if their parameter values are outside their return type's ranges. How runtime errors are handled is implementation-dependant behaviour.
+`as` may raise an runtime error if its parameter value are outside its return type's range. `fits` can be used to determine if that will happen. How runtime errors are handled is implementation-dependant behaviour.
 
 ### Bit Manipulation Procedures
 

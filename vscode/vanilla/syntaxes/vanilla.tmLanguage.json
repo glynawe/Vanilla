@@ -13,7 +13,7 @@
 			"match": "\\b(boolean|byte|integer|real|word)\\b"
 		},{
 			"name": "support.function.vanilla",
-			"match": "\\b(abs|assert|expect|dec|exit|inc|len|long|int|flt|lnot|land|lor|lxor|shl|shr|sha|short|SYSTEM_ADDR|SYSTEM_GET|SYSTEM_MOVE|SYSTEM_PUT|SYSTEM_SIZE|SYSTEM_TYPE|SYSTEM_REF)\\b"
+			"match": "\\b(abs|as|assert|expect|dec|exit|fits|inc|len|lnot|land|lor|lxor|shl|shr|sha|SYSTEM_ADDR|SYSTEM_GET|SYSTEM_MOVE|SYSTEM_PUT|SYSTEM_SIZE|SYSTEM_TYPE|SYSTEM_REF)\\b"
 		},{
 			"name": "constant.language.vanilla",
 			"match": "\\b(true|false|nil|maxint|minint|lenint)\\b"

@@ -21,7 +21,7 @@ module IO =
         var c := stdio_getchar();
         var i := 0;
         while (i < len(s)) and (c != Character_LF) and (c != stdio_EOF) do
-            s[i] := short(c);
+            s[i] := as(byte, c);
             c := stdio_getchar();
             inc(i)
         end;
@@ -56,7 +56,7 @@ module IO =
             var i := 0;
             var n := abs(number);
             while n > 0 do
-                var digit: byte := short(n mod base);
+                var digit := as(byte, n mod base);
                 buffer[i] := digit + if digit < 10 then '0' else 'A' end;
                 n := n / base;
                 inc(i)
