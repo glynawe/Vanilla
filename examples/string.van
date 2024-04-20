@@ -4,7 +4,7 @@ interface String =
    procedure Compare (a, b: T) : integer;  // a < b is -1, a = b is 0, a > b is 1
    procedure Copy (var dst: T; src: T);    // Note: this may truncate the string.
    procedure Uppercase (var s: T);
-end String.
+end.
 
 
 module String =
@@ -15,7 +15,7 @@ module String =
          if s[i] = 0 then return i end
       end;
       return len(s)
-   end Length;
+   end;
 
    procedure Copy (var dst: T; src: T) =
       for i := 0 until len(src) while src[i] != '\0' do
@@ -24,7 +24,7 @@ module String =
       if len(src) < len(dst) then  // string in dst array needs a terminator
          dst[len(src)] := '\0'
       end
-   end Copy;
+   end;
 
    procedure Uppercase (var string: T) =
       for i := 0 until len(string) while string[i] != 0X do
@@ -32,7 +32,7 @@ module String =
             string[i] := string[i] - 'a' + 'A'
          end
       end
-   end Uppercase;
+   end;
 
    procedure Compare (a, b: T) : integer =  // a < b is -1, a = b is 0, a > b is 1
       var i: integer := 1;
@@ -52,6 +52,6 @@ module String =
          end;
          inc(i);
       end
-   end Compare;
+   end; //Compare
 
-end String.
+end.

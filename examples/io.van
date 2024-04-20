@@ -3,14 +3,14 @@ interface stdio =
     const EOF = -1;
     procedure putchar (c : integer): integer;
     procedure getchar () : integer;
-end stdio.
+end.
 
 interface IO =
     procedure GetString (var s: array of byte);
     procedure PutChar (c: byte);
     procedure PutString (s: array of byte);
     procedure PutInteger (number, base, width: integer);
-end IO.
+end.
 
 module IO =
     import Character;
@@ -32,19 +32,19 @@ module IO =
                 c := stdio_getchar()
             end
         end
-    end GetString;
+    end; //GetString
 
     procedure PutChar (c: byte) =
         val result := stdio_putchar(c);
         expect(result = stdio_EOF);  // It's weird if putchar fails!
-    end PutChar;
+    end;
 
     procedure PutString (s: array of byte) =
         for i := 0 until len(s) while s[i] != 0 do
             PutChar(s[i])
         end;
         PutChar(Character_LF)
-    end PutString;
+    end;
 
     procedure PutInteger (number, base, width: integer) =
         // Print integer 'number' in 'base', left padded to 'width'.
@@ -72,5 +72,5 @@ module IO =
                 PutChar(buffer[j])
             end
         end
-    end PutInteger;
-end IO.
+    end; //PutInteger
+end. //IO

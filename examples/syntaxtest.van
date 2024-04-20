@@ -14,7 +14,7 @@ interface ModuleName =
     type ProcedureType = procedure (a, b: integer): real;
     var Var: NamedType;
     var Var1, Var2: boolean;  // a comment
-end ModuleName.
+end.
 
 module ModuleName =
     include Interface for Name;
@@ -41,5 +41,5 @@ module ModuleName =
         aa, bb := 4.0 + 0.123E6 + 0.123E+6 + 1.0E-6 + as(real, 4);
         inc(i);
         a := (2 + 3) * 4 mod 6 + 0xFFFF + 0b10101111 / 0o644 + 0xDEAD1337;
-    end Procedure;
-end ModuleName.
+    end;
+end.

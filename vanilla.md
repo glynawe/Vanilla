@@ -23,11 +23,11 @@ A *declaration* is a description that also defines *object code*. Object code is
 
     Interface = "interface" NAME "="
                 {Description ";"}
-                "end" NAME ".".
+                "end" ".".
 
     Module = "module" NAME "="
              {DeclarationOrDescription ";"}
-             "end" NAME ".".
+             "end" ".".
 
 An interface contains a set of descriptions.
 
@@ -58,7 +58,7 @@ A module or interface's *global names* are the names of all its descriptions.
         include Types for char;
         type T = array of char;
         procedure Length (s: T) : integer;
-    end String.
+    end.
 
     module String =
         import Character;
@@ -68,8 +68,8 @@ A module or interface's *global names* are the names of all its descriptions.
                 if s[i] = Character_NUL then return i end
             end;
             return len(s)
-        end Length;
-    end String.
+        end;
+    end.
 
 ## Programs
 
@@ -84,7 +84,7 @@ A *program* is a module that contains a procedure declaration named `main`, whic
             expect(Args_argc >= 1);
             IO_Writeln(Args_argv[0])
         end main
-    end Program.
+    end.
 
 
 # Constants
@@ -167,7 +167,7 @@ Arrays begin at element 0. An array with more than one length in its dimension l
 # Procedures
 
     ProcDescription = "procedure" NAME ProcType.
-    ProcDeclaration = ProcDescription ["=" Body "end" NAME].
+    ProcDeclaration = ProcDescription ["=" Body "end"].
 
     ProcType   = "(" [Parameters {";" Parameters}] ")" [ReturnType]
     Parameters = ["var"] VariableList.
@@ -181,7 +181,7 @@ Assigning to a `var` parameter assigns to the parameter supplied by the procedur
 
 An array of any length may be passed to an *open array* parameter if their element types are the same. 
 
-*A `val` parameter does not come with a guarantee that the parameter will retain the same value all though the execution of its procedure. "Aliasing" is possible. If a global variable is given as a parameter then assigning to that variable from within the procedure also changes the parameter's value.*
+*A value parameter does not come with a guarantee that the parameter will retain the same value all though the execution of its procedure. "Aliasing" is possible. If a global variable is given as a parameter then assigning to that variable from within the procedure also changes the parameter's value.*
 
 # Statements
 
@@ -252,7 +252,7 @@ If `to` is used in a `for` clause then the loop ends when the limiting expressio
                 inc(string[i], 'A' - 'a')
             end
         end
-    end uppercase;
+    end;
 
 
 ## Exit Statements
@@ -416,7 +416,7 @@ The underscore is reserved for prefixing imported names with module names.
         "new" | "nil" | "real" | "sha" | "shl" | "shr" | "true" | "word" | "SYSTEM" |
         "ADDRESS" | "GET" | "MOVE" | "PUT" | "REF" | "SIZE" | "TYPE" | "TYPESIZE".
 
-The keywords and the names for the standard descriptions may not be used for any other purpose. 
+Keywords and the names of standard descriptions may not be used for any other purpose. 
 
 ## Whitespace and comments
 
@@ -571,7 +571,7 @@ In the following table *RAM* refers the computer's random access memory, address
 
     interface IntegerRepresentation =
         procedure EndianReversal (x: integer) : integer;
-    end IntegerRepresentation.
+    end.
 
     module IntegerRepresentation =
         include SYSTEM;
@@ -583,5 +583,5 @@ In the following table *RAM* refers the computer's random access memory, address
                 b[i] := a[w - i - 1]
             end;
             return TYPE(b, integer)
-        end EndianReversal;
-    end IntegerRepresentation.
+        end;
+    end.

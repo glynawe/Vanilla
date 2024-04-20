@@ -6,8 +6,8 @@
 
 start: (module | interface)+
 
-module    : "module" NAME "=" declarationlist "end" NAME "."
-interface : "interface" NAME "=" descriptionlist "end" NAME "."
+module    : "module" NAME "=" declarationlist "end" "."
+interface : "interface" NAME "=" descriptionlist "end" "."
 
 descriptionlist: (description ";")*
 declarationlist: (declarationordescription ";")*
@@ -36,7 +36,7 @@ structureitems: structuredconstant ["for" constant]
 procdescription: "procedure" NAME proctype
 procdeclaration: procdescription [procbody]
 proctype:        "(" parameterlist ")" [":" type]
-procbody:        "=" body "end" NAME
+procbody:        "=" body "end"
 parameterlist:   (parameters (";" parameters)*)?
 parameters: varlist       -> constparameters
         | "var" varlist   -> varparameters
