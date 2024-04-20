@@ -515,14 +515,12 @@ The bit shift operators will shift in the opposite direction if *n* is negative.
 | `new (A; d: integer) : A`   | `A = ref array of T`  | allocate an array of `d` elements |
 | `free (r : ref AnyType)`    |                       | free data                         |
 
-The `new` procedure takes a type description as its first parameter. It calls `ALLOCATE(SYSTEM_TYPESIZE(T))` or `ALLOCATE(SYSTEM_TYPESIZE(T) * d)` to obtain the address of free space for a new variable. If that address is 0 then an runtime error is raised, otherwise the new variable is assigned a default initial value and a reference to it is returned.
+The `new` procedure takes a type description as its first parameter. It calls `ALLOCATE(SYSTEM_TYPESIZE(T))` or `ALLOCATE(SYSTEM_TYPESIZE(T) * d)` to obtain the address of free space for a new variable. If that address is 0 then an runtime error is raised, otherwise the new variable is assigned a default initial value and a reference to it is returned. The `free(r)` procedure calls `DEALLOCATE(SYSTEM_TYPE(r, integer))` to mark the space at *r* as free for reallocation.
 
-The `free(r)` procedure calls `DEALLOCATE(SYSTEM_TYPE(r, integer))` to mark the space at *r* as free for reallocation.
+    procedure ALLOCATE (size: integer): word;  // returns an address
+    procedure DEALLOCATE (address: word);
 
-    procedure ALLOCATE (size: integer): integer;
-    procedure DEALLOCATE (address: integer);
-
-These `ALLOCATE` and `DEALLOCATE` procedure descriptions must be included in any module that calls `new` or `free`. How the procedures are implemented is up to the programmer. They will typically be included from the interface of a module that manages memory on a heap. `integer` is assumed to be wide enough to hold a memory address. 
+These `ALLOCATE` and `DEALLOCATE` procedure descriptions must be included in any module that calls `new` or `free`. How the procedures are implemented is up to the programmer. They will typically be included from the interface of a module that manages memory on a heap. 
 
 `new` and `free` may not be used in constant expressions.
 
