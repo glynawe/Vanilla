@@ -2,8 +2,7 @@
 
 Vanilla is a language in the Pascal family, the starting point of its design was [Oberon](https://people.inf.ethz.ch/wirth/Oberon/Oberon07.Report.pdf).
 
-I have taken a non-Oberon-like approach to describing declarations and modules. I will later extend the module system with [functors](https://v2.ocaml.org/manual/moduleexamples.html#s%3Afunctors). They are a handy, flexible feature that I haven't seen used in imperative system programming languages.
-
+I have taken a non-Oberon-like approach to describing declarations and modules. I will be extending the module system with [functors](https://v2.ocaml.org/manual/moduleexamples.html#s%3Afunctors). They are a handy, flexible feature that I haven't seen used in imperative system programming languages.
 
 # Program Structure
 
@@ -21,71 +20,114 @@ A *declaration* is a description that also defines *object code*. Object code is
 
 ## Modules and Interfaces
 
-    Interface = "interface" NAME "="
-                Description ";"... [";"]
-                "end" ".".
+    File = (Interface | Module) "."... ["."].
 
-    Module = "module" NAME "="
-             DeclarationOrDescription ";"... [";"]
-             "end" ".".
+A Vanilla program consists of one or more source code files. A file may contain any number of interfaces and modules separated by full stops.
 
-An interface contains a set of descriptions.
+    Interface = "interface" InterfaceName "=" 
+                {Description ";"} 
+                "end".
 
-A module contains a set of descriptions and declarations. If there is an interface with the same name then the module implicitly contains that interface's descriptions.
+    Module    = "module" ModuleName [ModuleParameters] [":" InterfaceName] "=" 
+                {DeclarationOrDescription ";"} 
+                "end".
+
+    ModuleParameters =  "(" ModuleParameter ";"... ")" [ "where" TypeConstraint ","... ].
+    ModuleParameter  = ModuleName ":" InterfaceName.
+    TypeConstraint   = ImportedName "=" ImportedName.
+    InterfaceName    = NAME.
+
+An *interface* contains a set of descriptions. A *module* contains a set of descriptions and declarations. 
 
 All interfaces and modules implicitly contain a set of *standard descriptions* supplied by the Vanilla language. For example, the type `integer` is a standard description.
+
+*[Describe ModuleParameters.]*
 
 ### Inclusion
 
     Inclusion = Include | Import.
     Include   = "include" NAME ["for" NAME ","...].
-    Import    = "import" NAME.
+    Import    = "import" NAME [":=" ParameterizedModule].
+
+    ParameterizedModule = NAME "(" NAME ","... ")".
 
     ImportedName = ModuleName "_" NAME.
     ModuleName   = NAME.
     GlobalName   = NAME | ImportedName. 
 
-`include` includes descriptions from other interfaces. If the `include` has a `for` clause then only a selection of its descriptions are included. 
+`include` includes content from other modules and interfaces. The contents of an interface are its descriptions, the contents of a module are its declarations. If an `include` has a `for` clause then only a selection of its contents are included. 
 
-`import` includes descriptions from other interfaces, but each description is given an *imported name*, which is the description's name prefixed with the name of the interface. 
+`import` includes content from other interfaces and modules, but each description is given an *imported name*, which is the description's name prefixed with the name of the interface. 
+
+*[Describe ParameterizedModule.]*
 
 A module or interface's *global names* are the names of all its descriptions.
 
-
-**Example**
-
-    interface String =
-        include Types for char;
-        type T = array of char;
-        procedure Length (s: T) : integer;
-    end.
-
-    module String =
-        import Character;
-        type T = array of char;
-        procedure Length (s: T) : integer =
-            for i := 0 until len(s) do
-                if s[i] = Character_NUL then return i end
-            end;
-            return len(s)
-        end;
-    end.
-
-## Programs
+### Programs
 
 A *program* is a module that contains a procedure declaration named `main`, which will be the first procedure to be executed.  
 
 **Example**
 
-    module Program =
-        import Args;
-        import IO;
-        procedure main () =
-            expect(Args_argc >= 1);
-            IO_Writeln(Args_argv[0])
-        end main
+    interface COMPARABLE =
+        type T;
+        procedure Equal (a, b: T) : boolean;
     end.
 
+    interface STRING =
+        include COMPARABLE;
+        procedure Create (text: array of byte): T;
+    end.
+
+    module String : STRING =
+        type T = ref array of byte;
+        procedure Equal (a, b: T) : boolean =
+            return a = b or len(a) = len(b) and a^ = b^;
+        end;
+        procedure Create (text: array of byte): T =
+            var s := new(byte, len(text)); s^ := text; return s;
+        end;
+    end.
+
+    interface SET =
+        type T;
+        type ET;
+        val empty: T;
+        procedure Add (set: T; element: ET) : T;
+        procedure Includes (set: T; element: ET) : boolean;
+    end.
+
+    module SetOf (Element: COMPARABLE): SET where Set_ET = Element_T =
+        type ET;
+        type T = ref record value: Element; next: T end;
+        val Empty: T := nil;
+        procedure Add (set: T; element: ET) : T =
+            var list := new(T); list.head := head; list.tail := tail;
+            return list
+        end;
+        procedure Includes (set: T; element: ET) : boolean =
+            while set != nil do
+                if Element_Equal(set.head, element) then return true
+                else set := set.tail 
+                end
+            end;
+            return false
+        end;
+    end.
+
+    module Program =
+        import Print;
+        import String;
+        import StringSet := SetOf(String);
+        procedure main () =
+            val s := String_Create("Hello World!");
+            var set := StringSet_Empty;
+            set := StringSet_Add(set, s);
+            if StringSet_Contains(set, s) then
+                Print_String("Success!")
+            end
+        end; 
+    end.
 
 # Constants
 
@@ -152,7 +194,8 @@ The above rule is also used to initialize local variables within procedure bodie
 
 # Types
 
-    TypeDescription = "type" NAME "=" Type.
+    TypeDescription = "type" NAME "=" Type | AbstractType.
+    AbstractType    = "type" NAME.
 
     Type = GlobalName
          | "array" [DimensionList] "of" Type
@@ -163,6 +206,8 @@ The above rule is also used to initialize local variables within procedure bodie
     DimensionList = Constant ","... .
 
 Arrays begin at element 0. An array with more than one length in its dimension list describes an array of arrays. I.e. `array a, b, c of t` stands for `array a of array b of array c of t`. An array with no dimension list is an *open array*. An open array is one dimensional, and its length can be found using the standard procedure `len`. An open array type may only be used as the type of a parameter or as the target of a reference type.
+
+*[Describe abstract types.]*
 
 # Procedures
 
@@ -407,7 +452,8 @@ The underscore is reserved for prefixing imported names with module names.
         "and" | "array" | "by" | "byte" | "case" | "const" | "do" | "else" | "elsif" |
         "end" | "exit" | "for" | "if" | "import" | "include" | "interface" | "loop" |
         "mod" | "module" | "not" | "of" | "or" | "procedure" | "real" | "record" |
-        "ref" | "return" | "then" | "to" | "type" | "until" | "val" | "var" | "while".
+        "ref" | "return" | "then" | "to" | "type" | "until" | "val" | "var" | where" | 
+        "while".
 
     StandardDescriptionNames =
         "abs" | "assert" | "boolean" | "byte" | "dec" | "halt" | "expect" |

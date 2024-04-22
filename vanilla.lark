@@ -4,10 +4,16 @@
 # The grammar is LL(1), so just about any parsing method will do. 
 #
 
-start: (module | interface)+
+file: (module | interface) ("." (module | interface))* ["."]
 
-module    : "module" NAME "=" declarationlist "end" "."
-interface : "interface" NAME "=" descriptionlist "end" "."
+module    : "module" NAME [moduleparameters] [interfaceconstraint] [typeconstraints] "=" declarationlist "end"
+interface : "interface" NAME "=" descriptionlist "end"
+
+moduleparameters : "(" moduleparameter (";" moduleparameter)* ")"
+typeconstraints : "where" typeconstraint ("," typeconstraint)*
+moduleparameter : NAME ":" NAME
+typeconstraint : importedname "=" importedname
+interfaceconstraint : ":" NAME
 
 descriptionlist: (description ";")*
 declarationlist: (declarationordescription ";")*
@@ -17,8 +23,11 @@ declarationlist: (declarationordescription ";")*
 ?otherdescriptions : inclusion | constdescription | typedescription
 
 inclusion : include | import
-import : "import" NAME
+import : "import" NAME [":=" parameterizedmodule]
 include : "include" NAME ("for" NAME ("," NAME)*)?
+
+parameterizedmodule : NAME "(" NAME ("," NAME)* ")"
+
 importedname : NAME "_" NAME
 globalname : NAME | NAME "_" NAME
 
@@ -41,7 +50,7 @@ parameterlist:   (parameters (";" parameters)*)?
 parameters: varlist       -> constparameters
         | "var" varlist   -> varparameters
 
-typedescription : "type" NAME "=" type
+typedescription : "type" NAME ("=" type)?
 type : globalname                         -> namedtype
         | "array" dimensionlist "of" type -> arraytype
         | "record" elementlist "end"      -> recordtype
