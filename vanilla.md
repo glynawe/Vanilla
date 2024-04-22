@@ -22,11 +22,11 @@ A *declaration* is a description that also defines *object code*. Object code is
 ## Modules and Interfaces
 
     Interface = "interface" NAME "="
-                {Description ";"}
+                Description ";"... [";"]
                 "end" ".".
 
     Module = "module" NAME "="
-             {DeclarationOrDescription ";"}
+             DeclarationOrDescription ";"... [";"]
              "end" ".".
 
 An interface contains a set of descriptions.
@@ -38,7 +38,7 @@ All interfaces and modules implicitly contain a set of *standard descriptions* s
 ### Inclusion
 
     Inclusion = Include | Import.
-    Include   = "include" NAME ["for" NAME {"," NAME}].
+    Include   = "include" NAME ["for" NAME ","...].
     Import    = "import" NAME.
 
     ImportedName = ModuleName "_" NAME.
@@ -104,7 +104,7 @@ A ConstDescription names a constant. A named constant may be described more than
     VarDeclaration = VarDescription [":=" StructuredConstant].
 
     VariableList = NameList ":" Type.
-    NameList     = NAME {"," NAME}.
+    NameList     = NAME ","... .
 
 A list of distinct variable descriptions will be made if a list of names is given. `var a, b, c: t;` is shorthand for `var a: t; var b: t; var c: t;`
 
@@ -119,7 +119,7 @@ A variable description has an implicit declaration if one is not given in a prog
 A structured constant can be used to initialize global variables of any type, especially arrays and records. The value of a structured constant will become object code for the executable program.
 
     StructuredConstant = Constant | StructureList.
-    StructureList      = "[" StructureItems {"," StructureItems} "]".
+    StructureList      = "[" StructureItems ","... "]".
     StructureItems     = StructuredConstant ["for" Constant].
 
 A structure list can be assigned to a record or array variable. Each item from a structure list is assigned to
@@ -156,11 +156,11 @@ The above rule is also used to initialize local variables within procedure bodie
 
     Type = GlobalName
          | "array" [DimensionList] "of" Type
-         | "record" VariableList {";" VariableList} "end"
+         | "record" VariableList ";"... "end"
          | "ref" Type
          | "procedure" ProcType.
 
-    DimensionList = Constant {"," Constant}.
+    DimensionList = Constant ","... .
 
 Arrays begin at element 0. An array with more than one length in its dimension list describes an array of arrays. I.e. `array a, b, c of t` stands for `array a of array b of array c of t`. An array with no dimension list is an *open array*. An open array is one dimensional, and its length can be found using the standard procedure `len`. An open array type may only be used as the type of a parameter or as the target of a reference type.
 
@@ -169,7 +169,7 @@ Arrays begin at element 0. An array with more than one length in its dimension l
     ProcDescription = "procedure" NAME ProcType.
     ProcDeclaration = ProcDescription ["=" Body "end"].
 
-    ProcType   = "(" [Parameters {";" Parameters}] ")" [ReturnType]
+    ProcType   = "(" [Parameters ";"...] ")" [ReturnType]
     Parameters = ["var"] VariableList.
     ReturnType = ":" Type
 
@@ -185,7 +185,7 @@ An array of any length may be passed to an *open array* parameter if their eleme
 
 # Statements
 
-    Body = Statement {";" Statement}.
+    Body = Statement ";"... [";"].
 
     Statement = LocalDescription
               | Assignment | ProcedureCall | If | Exit | Return | Case | Empty.
@@ -197,7 +197,7 @@ Statements appear in the bodies of procedures and within other statements.
     LocalDescription = LocalVarDeclaration | ConstDescription. 
     LocalVarDeclaration = ("var" | "val") NameList (":" Type [":=" Expression] | ":=" Expression).
 
-Variables and constants defined in a statment body are only valid within that body, i.e. bodies are scopes. Variables and constants are only visible to the statements that come after their declaration statements. 
+Variables and constants defined in a statement body are only valid within that body, i.e. bodies are scopes. Variables and constants are only visible to the statements that come after their declaration statements. 
 
 If a local variable declaration has an initializer expression then the expression is evaluated first and then all the variables named in its list are assigned that value, otherwise it is initialized to a default value by the same rules used to initialize global variables. If a local declaration has an initializer expression but no type then it takes on the type of its initializer. `val` declares a *immutable variable*, a variable that can only be assigned once when it is declared.  
 
@@ -205,7 +205,7 @@ A local description may not have the same name as any description in the same bo
 
 ## Assignments
 
-    Assignment = Designator {"," Designator} ":=" Expression
+    Assignment = Designator ","... ":=" Expression
 
 The expression is evaluated once then its value is assigned to each designator in the list. The designators are evaluated in order after the expression. The designators must have the same type as the expression.
 
@@ -214,7 +214,7 @@ Records of the same type and arrays of the same type and length may by assigned 
 
 ## Procedure Calls
 
-    ProcedureCall = Designator "(" [Expression {"," Expression}] ")"
+    ProcedureCall = Designator "(" [Expression ","...] ")"
 
 The designator part of a procedure call statement must designate a proper procedure. 
 
@@ -272,7 +272,7 @@ If `to` is used in a `for` clause then the loop ends when the limiting expressio
 ## Case statements
 
     Case   = "case" Expression "of" {Branch} ["else" Body] "end".
-    Branch = "|" Range {"," Range} ":" Body.
+    Branch = "|" Range ","... ":" Body.
     Range  = Constant [".." Constant].
 
 Case expressions and range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a branch's ranges then that branch's Body is executed. If the value does not match a branch and there is an `else` clause then its body is executed; if there is no `else` clause then nothing is done.
@@ -283,7 +283,7 @@ Case expressions and range constants must be integers or bytes. All constants in
 
     Empty = .
 
-The main purpose of the empy statement is to allow superfluous semicolons in a body, e.g. after the final statement.
+The main purpose of the empty statement is to allow superfluous semicolons in a body, e.g. after the final statement.
 
 # Expressions
 
@@ -346,9 +346,9 @@ The expressions following `then` and `else` must have the same type.
     Designator = GlobalName {Selection | Subscript | Dereference | Call}.
 
     Selection   = "." NAME.
-    Subscript   = "[" Expression {"," Expression} "]".
+    Subscript   = "[" Expression ","... "]".
     Dereference = "^".
-    Call        = "(" [Expression {"," Expression}] ")"
+    Call        = "(" [Expression ","...] ")"
 
 Reference values are automatically dereferenced when they are the designator of a call, selection or subscript.
 
