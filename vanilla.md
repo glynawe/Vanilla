@@ -20,9 +20,9 @@ A *declaration* is a description that also defines *object code*. Object code is
 
 ## Modules and Interfaces
 
-    File = (Interface | Module) "."... ["."].
+    Program = (Interface | Module) "."... ["."].
 
-A Vanilla program consists of one or more source code files. A file may contain any number of interfaces and modules separated by full stops. A program is a collection of interfaces and modules that declare a procedure called `main`, which will be the first procedure to be executed.
+A Vanilla program may contain any number of interfaces and modules separated by full stops. One module must declare a procedure called `main`, which will be the first procedure to be executed.
 
     Interface = "interface" InterfaceName "=" 
                 {Description ";"} 
