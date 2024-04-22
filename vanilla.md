@@ -76,6 +76,7 @@ A *program* is a module that contains a procedure declaration named `main`, whic
 
     interface STRING =
         include COMPARABLE;
+        type T;
         procedure Create (text: array of byte): T;
     end.
 
@@ -97,7 +98,7 @@ A *program* is a module that contains a procedure declaration named `main`, whic
         procedure Includes (set: T; element: ET) : boolean;
     end.
 
-    module SetOf (Element: COMPARABLE): SET where Set_ET = Element_T =
+    module Set (Element: COMPARABLE): SET where Set_ET = Element_T =
         type ET;
         type T = ref record value: Element; next: T end;
         val Empty: T := nil;
@@ -118,7 +119,7 @@ A *program* is a module that contains a procedure declaration named `main`, whic
     module Program =
         import Print;
         import String;
-        import StringSet := SetOf(String);
+        import StringSet := Set(String);
         procedure main () =
             val s := String_Create("Hello World!");
             var set := StringSet_Empty;
@@ -555,20 +556,30 @@ The bit shift operators will shift in the opposite direction if *n* is negative.
 
 ### Memory allocation procedures
 
-| Name                        | Type parameter        | Function                          |
-|-----------------------------|-----------------------|-----------------------------------|
-| `new (R) : R`               | `R = ref T`           | allocate data                     |
-| `new (A; d: integer) : A`   | `A = ref array of T`  | allocate an array of `d` elements |
-| `free (r : ref AnyType)`    |                       | free data                         |
+| Name                                   | Function                          |
+|----------------------------------------|-----------------------------------|
+| `new (T) : ref T`                      | allocate data                     |
+| `new (T; d: integer) : ref array of T` | allocate an array of `d` elements |
+| `free (r : ref T)`                     | free data                         |
 
-The `new` procedure takes a type description as its first parameter. It calls `ALLOCATE(SYSTEM_TYPESIZE(T))` or `ALLOCATE(SYSTEM_TYPESIZE(T) * d)` to obtain the address of free space for a new variable. If that address is 0 then an runtime error is raised, otherwise the new variable is assigned a default initial value and a reference to it is returned. The `free(r)` procedure calls `DEALLOCATE(SYSTEM_TYPE(r, integer))` to mark the space at *r* as free for reallocation.
+`new` and `free` may not be used in constant expressions.
+
+#### Garbage Collection Option
+
+The `new` procedure takes a type description as its first parameter, finds memory space for an anonymous variable of that type, assigns a default initial value to the variable and returns a reference to it. If no memory space is available then a runtime error is raised. 
+
+The `free` procedure does nothing. 
+
+#### Manual Allocation Option
+
+The `new` procedure calls `ALLOCATE(SYSTEM_TYPESIZE(T))` or `ALLOCATE(SYSTEM_TYPESIZE(T) * d)` to obtain the address of memory space for an anonymous variable of  type `T`. If that address is 0 then an runtime error is raised, otherwise the anonymous variable is assigned a default initial value and a reference to it is returned.
+
+The `free(r)` procedure calls `DEALLOCATE(SYSTEM_TYPE(r, integer))` to mark the space at *r* as free for reallocation.
 
     procedure ALLOCATE (size: integer): word;  // returns an address
     procedure DEALLOCATE (address: word);
 
 These `ALLOCATE` and `DEALLOCATE` procedure descriptions must be included in any module that calls `new` or `free`. How the procedures are implemented is up to the programmer. They will typically be included from the interface of a module that manages memory on a heap. 
-
-`new` and `free` may not be used in constant expressions.
 
 ### Halting procedures
 

@@ -1,0 +1,73 @@
+interface ADT =
+    type t;
+end.
+
+interface COMPARABLE =
+    include ADT;
+    procedure equal (a, b: t) : boolean;
+end.
+
+interface HASHABLE =
+    include COMPARABLE;
+    procedure hash (a: t) : integer;
+end.
+
+interface HASHMAP =
+    type t;
+    type kt;
+    type vt;
+    procedure create (sizelimit: integer): t;
+    procedure set (m: t; k: kt; v: vt);
+    procedure get (m: t; k: kt; var v: vt) : boolean;
+end.
+
+module HashMap (Key: HASHABLE; Value: ADT) : HASHMAP 
+    where HashMap_kt = Key_t, 
+          HashMap_vt = Value_t  =
+
+    type t = record
+        size, count: integer;
+        table: ref array of ref Value.t;
+    end;
+
+    procedure create (sizelimit: integer): t =
+        var m := new(t);
+        m.size := sizelimit;
+        m.count := 0;
+        m.table := new(ref Value.t, size);
+        for i := 0 until TableSize do 
+            m.table := nil;
+        end;
+        return m;
+    end;
+
+    procedure place (m: t; k: kt; v: vt): integer =
+        expect(m.count < m.size);
+        var i := Key_hash(k) mod m.size;
+        while m.table[i] != nil do
+            if Key_equal(m.table[i], k) then
+                m.table[i] := v;
+                return i;
+            end;
+            i := (i + 1) mod m.size
+        end;
+        return i;
+    end;
+
+    procedure set (m: t; k: kt; v: vt) =
+        val i := place(m, k, v);
+        if m.table[i] = nil then inc(m.count) end;
+        m.table[i] := v
+    end;
+
+    procedure get (m: t; k: kt; var v: vt) : boolean =
+        val i := place(m, k, v);
+        if m.table[i] = nil then 
+            return false;
+        else
+            v := m.table[i];
+            return true;
+        end;
+    end;
+end.
+
