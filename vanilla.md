@@ -22,7 +22,7 @@ A *declaration* is a description that also defines *object code*. Object code is
 
     File = (Interface | Module) "."... ["."].
 
-A Vanilla program consists of one or more source code files. A file may contain any number of interfaces and modules separated by full stops.
+A Vanilla program consists of one or more source code files. A file may contain any number of interfaces and modules separated by full stops. A program is a collection of interfaces and modules that declare a procedure called `main`, which will be the first procedure to be executed.
 
     Interface = "interface" InterfaceName "=" 
                 {Description ";"} 
@@ -63,13 +63,9 @@ All interfaces and modules implicitly contain a set of *standard descriptions* s
 
 A module or interface's *global names* are the names of all its descriptions.
 
-### Programs
-
-A *program* is a module that contains a procedure declaration named `main`, which will be the first procedure to be executed.  
-
 ### Example
 
-This very cut-down program defines strings and generic sets as abstract data types. They are then used to create sets of strings. 
+This very simplified program defines strings and generic sets as abstract data types. They are then used to create sets of strings. 
 
     interface COMPARABLE =
         type T;
@@ -119,7 +115,7 @@ This very cut-down program defines strings and generic sets as abstract data typ
     end.
 
     module Program =
-        import Print;
+        import Print;  
         import String;
         import StringSet := Set(String);
         procedure main () =
@@ -461,7 +457,7 @@ The underscore is reserved for prefixing imported names with module names.
     StandardDescriptionNames =
         "abs" | "assert" | "boolean" | "byte" | "dec" | "halt" | "expect" |
         "false" | "free" | "inc" | "integer" | "land" | "len" | 
-        "lenint" | "lnot" | "lor" |  "lxor" | "maxint" | "maxword" | "minint" |
+        "lenint" | "lnot" | "lor" |  "lxor" | "main" | "maxint" | "maxword" | "minint" |
         "new" | "nil" | "real" | "sha" | "shl" | "shr" | "true" | "word" | "SYSTEM" |
         "ADDRESS" | "GET" | "MOVE" | "PUT" | "REF" | "SIZE" | "TYPE" | "TYPESIZE".
 
