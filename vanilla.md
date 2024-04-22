@@ -67,7 +67,9 @@ A module or interface's *global names* are the names of all its descriptions.
 
 A *program* is a module that contains a procedure declaration named `main`, which will be the first procedure to be executed.  
 
-**Example**
+### Example
+
+This very cut-down program defines strings and generic sets as abstract data types. They are then used to create sets of strings. 
 
     interface COMPARABLE =
         type T;
