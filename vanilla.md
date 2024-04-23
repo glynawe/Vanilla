@@ -1,6 +1,6 @@
 # Vanilla  [Draft]
 
-Vanilla is a language in the Pascal family, the starting point of its design was [Oberon](https://people.inf.ethz.ch/wirth/Oberon/Oberon07.Report.pdf). It has a module system with [functors](https://v2.ocaml.org/manual/moduleexamples.html#s%3Afunctors).
+Vanilla is a language in the Pascal family, the starting point of its design was Oberon. Vanilla has a module system with *functors*, a feature taken from OCaml. Functors are modules that take other modules as parameters. They are a single, simple mechanism that can provide features like abstract data types, generic types, traits, dependency injection and module extension.
 
 # Program Structure
 
@@ -50,8 +50,7 @@ An *interface* contains a set of definitions. A *module* contains a set of defin
 
 If a module is declared with a *public interface* then only the definitions in that interface will be available when the module is imported. The module must contain declarations for all the definitions in its public interface.
 
-A *functor* is a module parametrized with a list of modules it can import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each module parameter has an interface that specifies a minimum set of definitions that the actual module must provide. A functor with a `where` clause specifies that it will various types parameter modules are equivalent (this is important when defining generic types). 
-A *functor* is a module parametrized with a list of modules that it can import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each module parameter has an interface that specifies a minimum set of definitions the actual module must provide. A `where` clause specifies types from different parameter modules that are to be equivalent (this is important when defining generic types). 
+ A *functor* is a module parametrized with a list of modules that it can import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each module parameter has an interface that specifies a minimum set of definitions the actual module must provide. A `where` clause specifies types from different parameter modules that are to be equivalent (this is important when defining generic types). 
 
 All interfaces and modules implicitly contain a set of *standard declarations* supplied by the Vanilla language. For example, the type `integer` is a standard declaration.
 
@@ -519,9 +518,9 @@ The floating-point number representation is implementation-dependant. `integer` 
 |----------|-------------------------------------------------------------------|
 | `minint` | the lowest possible integer value                                 |
 | `maxint` | the highest possible integer value                                |
-| `maxword` | the highest possible word value                               |
+| `maxword`| the highest possible word value                                   |
 | `lenint` | the number of bits required to store an integer                   |
-| `lenword` | the number of bits required to store a word                    |
+| `lenword`| the number of bits required to store a word                       |
 | `nil`    | is the value of ref variables that are not pointing to variables. |
 | `true`   |                                                                   |
 | `false`  |                                                                   |
@@ -536,7 +535,7 @@ The standard procedures are operators that resemble procedure calls. Some are po
 
 In the following tables *IntType* is an `integer`, `word` or `byte` value, *NumType* is an integer type or `real`, `T` is a name of a type and *Array* is any array variable.
 
-| Definition                           | Function                             |
+| Definition                            | Function                             |
 |---------------------------------------|--------------------------------------|
 | `abs (x: integer) : integer`          | absolute value of `x`                |
 | `abs (x: real) : real`                | absolute value of `x`                |
@@ -558,7 +557,7 @@ In the following tables *IntType* is an `integer`, `word` or `byte` value, *NumT
 
 ### Bit Manipulation Procedures
 
-| Definition                               | Function                                  |
+| Definition                                | Function                                  |
 |-------------------------------------------|-------------------------------------------|
 | `lnot (x: IntType) : IntType`             | bitwise logical NOT                       |
 | `land (x, y: IntType) : IntType`          | bitwise logical AND                       |
@@ -572,7 +571,7 @@ The bit shift operators will shift in the opposite direction if *n* is negative.
 
 ### Memory allocation procedures
 
-| Name                                   | Function                          |
+| Definition                             | Function                          |
 |----------------------------------------|-----------------------------------|
 | `new (T) : ref T`                      | allocate data                     |
 | `new (T; d: integer) : ref array of T` | allocate an array of `d` elements |
@@ -588,18 +587,18 @@ The `free` procedure does nothing.
 
 #### Manual Allocation Option
 
-The `new` procedure calls `ALLOCATE(SYSTEM_TYPESIZE(T))` or `ALLOCATE(SYSTEM_TYPESIZE(T) * d)` to obtain the address of memory space for an anonymous variable of  type `T`. If that address is 0 then an runtime error is raised, otherwise the anonymous variable is assigned a default initial value and a reference to it is returned.
-
-The `free(r)` procedure calls `DEALLOCATE(SYSTEM_TYPE(r, integer))` to mark the space at *r* as free for reallocation.
+`new` and `free` exist to provide a type safe way to use low-level `ALLOCATE` and `DEALLOCATE` procedures. `ALLOCATE` and `DEALLOCATE` procedure definitions must be included in any module that calls `new` or `free`. How the procedures are implemented is up to the programmer. They will typically be included from the interface of a module that manages memory on a heap. 
 
     procedure ALLOCATE (size: integer): word;  // returns an address
     procedure DEALLOCATE (address: word);
 
-These `ALLOCATE` and `DEALLOCATE` procedure definitions must be included in any module that calls `new` or `free`. How the procedures are implemented is up to the programmer. They will typically be included from the interface of a module that manages memory on a heap. 
+The `new` procedure calls `ALLOCATE(SYSTEM_TYPESIZE(T))` or `ALLOCATE(SYSTEM_TYPESIZE(T) * d)` to obtain the address of memory space for an anonymous variable of  type `T`. If that address is 0 then an runtime error is raised, otherwise the anonymous variable is assigned a default initial value and a reference to it is returned.
+
+The `free(r)` procedure calls `DEALLOCATE(SYSTEM_TYPE(r, integer))` to mark the space at *r* as free for reallocation.
 
 ### Halting procedures
 
-| Definition           | Function                          |
+| Definition            | Function                          |
 |-----------------------|-----------------------------------|
 | `halt (n: integer)`   | halt with exit code *n*           |
 | `assert (x: boolean)` | raise runtime error if not *x*    |
@@ -636,7 +635,7 @@ In the following table *RAM* refers the computer's random access memory, address
 | `TYPESIZE (T)  : word`               | number of bytes required by type `T`         |
 | `TYPE (x: AnyType; T) : T`           | give `x` the type `T`                        |
 
-`TYPE` changes the type of a value or variable without altering the underlying bits that represent it. E.g. it can be used to represent a reference as an integer or a record as an array of bytes.
+`TYPE` changes the type of a value or variable without altering the underlying bits that represent it. E.g. it can be used to represent a reference as an word or a record as an array of bytes.
 
 **Example**
 
