@@ -1,8 +1,6 @@
 # Vanilla  [Draft]
 
-Vanilla is a language in the Pascal family, the starting point of its design was [Oberon](https://people.inf.ethz.ch/wirth/Oberon/Oberon07.Report.pdf).
-
-I have taken a non-Oberon-like approach to describing declarations and modules. I will be extending the module system with [functors](https://v2.ocaml.org/manual/moduleexamples.html#s%3Afunctors). They are a handy, flexible feature that I haven't seen used in imperative system programming languages.
+Vanilla is a language in the Pascal family, the starting point of its design was [Oberon](https://people.inf.ethz.ch/wirth/Oberon/Oberon07.Report.pdf). It has a module system with [functors](https://v2.ocaml.org/manual/moduleexamples.html#s%3Afunctors).
 
 # Program Structure
 
@@ -52,9 +50,9 @@ An *interface* contains a set of definitions. A *module* contains a set of defin
 
 If a module is declared with a *public interface* then only the definitions in that interface will be available when the module is imported. The module must contain declarations for all the definitions in its public interface.
 
-All interfaces and modules implicitly contain a set of *standard declarations* supplied by the Vanilla language. For example, the type `integer` is a standard declaration.
+A *functor* is a module parametrized with a list of modules it can import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each module parameter has an interface that specifies a minimum set of definitions that the actual module must provide. A functor with a `where` clause specifies that it will various types parameter modules are equivalent (this is important when defining generic types). 
 
-A *functor* is a module parametrized with a list of modules it can import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each module parameter has an interface that specifies a minimum set of definitions the actual module must provide. A functor with a `where` clause specifies that it will various types parameter modules are equivalent (this is important when defining generic types). 
+All interfaces and modules implicitly contain a set of *standard declarations* supplied by the Vanilla language. For example, the type `integer` is a standard declaration.
 
 **Example**
 
