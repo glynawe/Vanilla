@@ -30,14 +30,14 @@ A Vanilla program may contain any number of interfaces, modules and functor sepa
                 {DeclarationOrDefinition ";"} 
                 "end".
 
-    PublicInterface  = ":" InterfaceName.
-
     Functor   = "module" ModuleName "(" ModuleParameter ";"... ")" 
                 [PublicInterface] 
                 ["where" TypeEquivalence ","...] 
                 "=" 
                 {DeclarationOrDefinition ";"} 
                 "end".
+
+    PublicInterface  = ":" InterfaceName.
     ModuleParameter  = ModuleName ":" InterfaceName.
     TypeEquivalence  = TypeName "=" TypeName.
     TypeName         = ModuleName "_" NAME.
@@ -51,6 +51,7 @@ An *interface* contains a set of definitions. A *module* contains a set of defin
 If a module is declared with a *public interface* then only the definitions in that interface will be available when the module is imported. The module must contain declarations for all the definitions in its public interface.
 
 A *functor* is a module parametrized with a list of modules it can import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each module parameter has an interface that specifies a minimum set of definitions that the actual module must provide. A functor with a `where` clause specifies that it will various types parameter modules are equivalent (this is important when defining generic types). 
+A *functor* is a module parametrized with a list of modules that it can import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each module parameter has an interface that specifies a minimum set of definitions the actual module must provide. A `where` clause specifies types from different parameter modules that are to be equivalent (this is important when defining generic types). 
 
 All interfaces and modules implicitly contain a set of *standard declarations* supplied by the Vanilla language. For example, the type `integer` is a standard declaration.
 
