@@ -32,14 +32,14 @@ A Vanilla program may contain any number of interfaces, modules and functor sepa
                 {DeclarationOrDefinition ";"} 
                 "end".
 
-    PublicInterface  = ":" InterfaceName.
-
     Functor   = "module" ModuleName "(" ModuleParameter ";"... ")" 
                 [PublicInterface] 
                 ["where" TypeEquivalence ","...] 
                 "=" 
                 {DeclarationOrDefinition ";"} 
                 "end".
+
+    PublicInterface  = ":" InterfaceName.
     ModuleParameter  = ModuleName ":" InterfaceName.
     TypeEquivalence  = TypeName "=" TypeName.
     TypeName         = ModuleName "_" NAME.
