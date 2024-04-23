@@ -1,4 +1,4 @@
-interface String =
+interface STRING =
    type T = array of byte;
    procedure Length (s: T) : integer;
    procedure Compare (a, b: T) : integer;  // a < b is -1, a = b is 0, a > b is 1
@@ -7,7 +7,7 @@ interface String =
 end.
 
 
-module String =
+module String: STRING =
    type T = array of byte;
 
    procedure Length (s: T) : integer =

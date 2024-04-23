@@ -6,62 +6,81 @@ I have taken a non-Oberon-like approach to describing declarations and modules. 
 
 # Program Structure
 
-## Descriptions and Declarations
+## Definitions and Declarations
 
-    Description = VarDescription | ProcDescription | OtherDescriptions.
+    Definition = VarDefinition | ProcDefinition | OtherDefinitions.
 
-    DeclarationOrDescription  = VarDeclaration | ProcDeclaration | OtherDescriptions.
+    DeclarationOrDefinition  = VarDeclaration | ProcDeclaration | OtherDefinitions.
 
-    OtherDescriptions = Inclusion | ConstDescription | TypeDescription.
+    OtherDefinitions = Inclusion | ConstDefinition | TypeDefinition.
 
-A *description* names and describes a data type, procedure, variable, module or constant. A description may be given more than once; descriptions with the same name must have the same type.
+A *definition* names and describes a data type, procedure, variable, module or constant. A definition may be given more than once; definitions with the same name must have the same type.
 
-A *declaration* is a description that also defines *object code*. Object code is variable data or procedure code that will be included in an executable program. A declaration can only be made once.
+A *declaration* is a definition that also defines *object code*. Object code is variable data or procedure code that will be included in an executable program. A declaration can only be made once.
 
 ## Modules and Interfaces
 
-    Program = (Interface | Module) "."... ["."].
+    Program = (Interface | Module| Functor) "."... ["."].
 
-A Vanilla program may contain any number of interfaces and modules separated by full stops. One module must declare a procedure called `main`, which will be the first procedure to be executed.
+A Vanilla program may contain any number of interfaces, modules and functor separated by full stops. One module must declare a procedure called `main`, which will be the first procedure to be executed.
 
     Interface = "interface" InterfaceName "=" 
-                {Description ";"} 
+                {Definition ";"} 
                 "end".
 
-    Module    = "module" ModuleName [ModuleParameters] [":" InterfaceName] "=" 
-                {DeclarationOrDescription ";"} 
+    Module    = "module" ModuleName [PublicInterface] "=" 
+                {DeclarationOrDefinition ";"} 
                 "end".
 
-    ModuleParameters =  "(" ModuleParameter ";"... ")" [ "where" TypeConstraint ","... ].
+    PublicInterface  = ":" InterfaceName.
+
+    Functor   = "module" ModuleName "(" ModuleParameter ";"... ")" 
+                [PublicInterface] 
+                ["where" TypeEquivalence ","...] 
+                "=" 
+                {DeclarationOrDefinition ";"} 
+                "end".
     ModuleParameter  = ModuleName ":" InterfaceName.
-    TypeConstraint   = ImportedName "=" ImportedName.
-    InterfaceName    = NAME.
+    TypeEquivalence  = TypeName "=" TypeName.
+    TypeName         = ModuleName "_" NAME.
 
-An *interface* contains a set of descriptions. A *module* contains a set of descriptions and declarations. 
+    InterfaceName = NAME.
+    ModuleName    = NAME.
+    FunctorName   = NAME.
 
-All interfaces and modules implicitly contain a set of *standard descriptions* supplied by the Vanilla language. For example, the type `integer` is a standard description.
+An *interface* contains a set of definitions. A *module* contains a set of definitions and declarations. The primary purpose of modules is group together collections of types and procedures to define abstract data types.
 
-*[Describe ModuleParameters.]*
+If a module is declared with a *public interface* then only the definitions in that interface will be available when the module is imported. The module must contain declarations for all the definitions in its public interface.
+
+All interfaces and modules implicitly contain a set of *standard declarations* supplied by the Vanilla language. For example, the type `integer` is a standard declaration.
+
+A *functor* is a module parametrized with a list of modules it can import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each module parameter has an interface that specifies a minimum set of definitions the actual module must provide. A functor with a `where` clause specifies that it will various types parameter modules are equivalent (this is important when defining generic types). 
+
+**Example**
+
+    module Map (Key: Comparable; Value: ADT) where Map_KeyType = Key_Type, Map_ValueType = Value_Type =
+        type MapType;
+        type ValueType;
+        type KeyType;
+        procedure Set (map: MapType; key: KeyType; value: ValueType) = ... 
+        ...
+    end.
 
 ### Inclusion
 
-    Inclusion = Include | Import.
-    Include   = "include" NAME ["for" NAME ","...].
-    Import    = "import" NAME [":=" ParameterizedModule].
-
-    ParameterizedModule = NAME "(" NAME ","... ")".
+    Inclusion     = Include | Import | FunctorImport.
+    Include       = "include" ModuleName ["for" NAME ","...].
+    Import        = "import" ModuleName.
+    FunctorImport = "import" ModuleName ":=" FunctorName "(" ModuleName ","... ")".
 
     ImportedName = ModuleName "_" NAME.
-    ModuleName   = NAME.
     GlobalName   = NAME | ImportedName. 
 
-`include` includes content from other modules and interfaces. The contents of an interface are its descriptions, the contents of a module are its declarations. If an `include` has a `for` clause then only a selection of its contents are included. 
+`include` includes content from other modules or interfaces. The contents of an interface are its definitions, the contents of a module are its declarations. If an `include` has a `for` clause then only a selection of its contents are included. 
 
-`import` includes content from other interfaces and modules, but each description is given an *imported name*, which is the description's name prefixed with the name of the interface. 
+`import` includes content from other interfaces and modules, but each definition is given an *imported name*, which is the definition's name prefixed with the name of the interface. A *functor import* imports a new module created from a functor and a list of modules.
 
-*[Describe ParameterizedModule.]*
-
-A module or interface's *global names* are the names of all its descriptions.
+A module or interface's *global names* are the names of all its definitions.
 
 ### Example
 
@@ -132,28 +151,28 @@ This very simplified program defines strings and generic sets as abstract data t
 
     Constant = Expression.
 
-    ConstDescription = "const" NAME "=" Constant.
+    ConstDefinition = "const" NAME "=" Constant.
 
 A Constant is an expression that is evaluated by the compiler. The declared length of an array is example of an expression that must be constant.  The only names allowed in a constant expression are the names of other constants and calls to standard procedures.
 
-A ConstDescription names a constant. A named constant may be described more than once, but the additional descriptions must evaluate to the same value.
+A ConstDefinition names a constant. A named constant may be described more than once, but the additional definitions must evaluate to the same value.
 
 
 # Variables
 
-    VarDescription = ("var" | "val") VariableList.
-    VarDeclaration = VarDescription [":=" StructuredConstant].
+    VarDefinition = ("var" | "val") VariableList.
+    VarDeclaration = VarDefinition [":=" StructuredConstant].
 
     VariableList = NameList ":" Type.
     NameList     = NAME ","... .
 
-A list of distinct variable descriptions will be made if a list of names is given. `var a, b, c: t;` is shorthand for `var a: t; var b: t; var c: t;`
+A list of distinct variable definitions will be made if a list of names is given. `var a, b, c: t;` is shorthand for `var a: t; var b: t; var c: t;`
 
 All of the variables named in the variable list of a VarDeclaration are initialized to the values in the VarDeclaration's structured constant. 
 
 `val` declares a *immutable variable*, a variable that can only be assigned once when it is declared. *The compiler may arrange for immutable global variables to be stored in ROM.*
 
-A variable description has an implicit declaration if one is not given in a program's modules. E.g. the description `var i: integer;` will be provided the declaration `var i: integer := 0;`.
+A variable definition has an implicit declaration if one is not given in a program's modules. E.g. the definition `var i: integer;` will be provided the declaration `var i: integer := 0;`.
 
 ## Structured Constants
 
@@ -164,7 +183,7 @@ A structured constant can be used to initialize global variables of any type, es
     StructureItems     = StructuredConstant ["for" Constant].
 
 A structure list can be assigned to a record or array variable. Each item from a structure list is assigned to
-an element of the record or array in order. For records that is that order used its description. If those
+an element of the record or array in order. For records that is that order used its definition. If those
 elements are records or arrays then this rule is applied recursively.
 
 A `for` clause indicates that an item should be repeated a number of times within its structure list.
@@ -182,7 +201,7 @@ A string literal can be used to declare a byte array. If it is shorter than the 
 
 ## Implicit Variable Declarations
 
-A variable description has an implicit declaration if one is not given in a program's modules. 
+A variable definition has an implicit declaration if one is not given in a program's modules. 
 
 An implicit variable declaration has a default value. Numeric variables are initialized to zero. Reference values are initialized to `nil`. Procedure values are initialized to a procedure that causes an *uninitialized procedure* runtime error. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero, nil or an error procedure.
 
@@ -193,7 +212,7 @@ The above rule is also used to initialize local variables within procedure bodie
 
 # Types
 
-    TypeDescription = "type" NAME "=" Type | AbstractType.
+    TypeDefinition = "type" NAME "=" Type | AbstractType.
     AbstractType    = "type" NAME.
 
     Type = GlobalName
@@ -206,18 +225,18 @@ The above rule is also used to initialize local variables within procedure bodie
 
 Arrays begin at element 0. An array with more than one length in its dimension list describes an array of arrays. I.e. `array a, b, c of t` stands for `array a of array b of array c of t`. An array with no dimension list is an *open array*. An open array is one dimensional, and its length can be found using the standard procedure `len`. An open array type may only be used as the type of a parameter or as the target of a reference type.
 
-*[Describe abstract types.]*
+An *abstract type* must be defined before it can be used in a module, either by a type definition or a functor type equivalence.
 
 # Procedures
 
-    ProcDescription = "procedure" NAME ProcType.
-    ProcDeclaration = ProcDescription ["=" Body "end"].
+    ProcDefinition = "procedure" NAME ProcType.
+    ProcDeclaration = ProcDefinition ["=" Body "end"].
 
     ProcType   = "(" [Parameters ";"...] ")" [ReturnType]
     Parameters = ["var"] VariableList.
     ReturnType = ":" Type
 
-The parameter names in procedure descriptions are placeholders for describing each parameter. They are not examined when determining type equivalence. However, parameters names are significant in procedure declarations.
+The parameter names in procedure definitions are placeholders for describing each parameter. They are not examined when determining type equivalence. However, parameters names are significant in procedure declarations.
 
 A procedure with a return type is a *function procedure*. A procedure without a return type is a *proper procedure*. A function procedure may only be used in an expression. A proper procedure may only be used in a procedure call statement.
 
@@ -231,21 +250,21 @@ An array of any length may be passed to an *open array* parameter if their eleme
 
     Body = Statement ";"... [";"].
 
-    Statement = LocalDescription
+    Statement = LocalDefinition
               | Assignment | ProcedureCall | If | Exit | Return | Case | Empty.
 
 Statements appear in the bodies of procedures and within other statements.
 
 ## Local Declarations
 
-    LocalDescription = LocalVarDeclaration | ConstDescription. 
+    LocalDefinition = LocalVarDeclaration | ConstDefinition. 
     LocalVarDeclaration = ("var" | "val") NameList (":" Type [":=" Expression] | ":=" Expression).
 
 Variables and constants defined in a statement body are only valid within that body, i.e. bodies are scopes. Variables and constants are only visible to the statements that come after their declaration statements. 
 
 If a local variable declaration has an initializer expression then the expression is evaluated first and then all the variables named in its list are assigned that value, otherwise it is initialized to a default value by the same rules used to initialize global variables. If a local declaration has an initializer expression but no type then it takes on the type of its initializer. `val` declares a *immutable variable*, a variable that can only be assigned once when it is declared.  
 
-A local description may not have the same name as any description in the same body or any surrounding body, including the procedure's parameter names. I.e. local names may not be shadowed. 
+A local definition may not have the same name as any definition in the same body or any surrounding body, including the procedure's parameter names. I.e. local names may not be shadowed. 
 
 ## Assignments
 
@@ -310,7 +329,7 @@ If `to` is used in a `for` clause then the loop ends when the limiting expressio
 
     Return = "return" [Expression].
 
-`return` returns from a procedure immediately. If the procedure has a return type specified in its ProcDescription then a return value must be supplied, and the procedure's execution must end with a return statement in every case.
+`return` returns from a procedure immediately. If the procedure has a return type specified in its ProcDefinition then a return value must be supplied, and the procedure's execution must end with a return statement in every case.
 
 
 ## Case statements
@@ -454,14 +473,14 @@ The underscore is reserved for prefixing imported names with module names.
         "ref" | "return" | "then" | "to" | "type" | "until" | "val" | "var" | where" | 
         "while".
 
-    StandardDescriptionNames =
+    StandardDefinitionNames =
         "abs" | "assert" | "boolean" | "byte" | "dec" | "halt" | "expect" |
         "false" | "free" | "inc" | "integer" | "land" | "len" | 
         "lenint" | "lnot" | "lor" |  "lxor" | "main" | "maxint" | "maxword" | "minint" |
         "new" | "nil" | "real" | "sha" | "shl" | "shr" | "true" | "word" | "SYSTEM" |
         "ADDRESS" | "GET" | "MOVE" | "PUT" | "REF" | "SIZE" | "TYPE" | "TYPESIZE".
 
-Keywords and the names of standard descriptions may not be used for any other purpose. 
+Keywords and the names of standard declarations may not be used for any other purpose. 
 
 ## Whitespace and comments
 
@@ -478,9 +497,9 @@ Adjacent names and keywords must be separated by whitespace. Whitespace is allow
 A Vanilla source file contains one or more interfaces or modules. The names of the files are not significant, but the file extension `.van` should be used by convention.
 
 
-# The Standard Descriptions
+# The standard declarations
 
-The standard descriptions are implicitly included at the start of every interface and module. Their names cannot be used for other purposes.
+The standard declarations are implicitly included at the start of every interface and module. Their names cannot be used for other purposes.
 
 ## Standard Types
 
@@ -514,11 +533,11 @@ The values of `minint`, `maxint` and `lenint` are implementation-dependant.
 
 ## Standard Procedures
 
-The standard procedures are operators that resemble procedure calls. Some are polymorphic, some take type descriptions as parameters. Standard procedures may be used within constant expressions. 
+The standard procedures are operators that resemble procedure calls. Some are polymorphic, some take type definitions as parameters. Standard procedures may be used within constant expressions. 
 
 In the following tables *IntType* is an `integer`, `word` or `byte` value, *NumType* is an integer type or `real`, `T` is a name of a type and *Array* is any array variable.
 
-| Description                           | Function                             |
+| Definition                           | Function                             |
 |---------------------------------------|--------------------------------------|
 | `abs (x: integer) : integer`          | absolute value of `x`                |
 | `abs (x: real) : real`                | absolute value of `x`                |
@@ -540,7 +559,7 @@ In the following tables *IntType* is an `integer`, `word` or `byte` value, *NumT
 
 ### Bit Manipulation Procedures
 
-| Description                               | Function                                  |
+| Definition                               | Function                                  |
 |-------------------------------------------|-------------------------------------------|
 | `lnot (x: IntType) : IntType`             | bitwise logical NOT                       |
 | `land (x, y: IntType) : IntType`          | bitwise logical AND                       |
@@ -564,7 +583,7 @@ The bit shift operators will shift in the opposite direction if *n* is negative.
 
 #### Garbage Collection Option
 
-The `new` procedure takes a type description as its first parameter, finds memory space for an anonymous variable of that type, assigns a default initial value to the variable and returns a reference to it. If no memory space is available then a runtime error is raised. 
+The `new` procedure takes a type definition as its first parameter, finds memory space for an anonymous variable of that type, assigns a default initial value to the variable and returns a reference to it. If no memory space is available then a runtime error is raised. 
 
 The `free` procedure does nothing. 
 
@@ -577,11 +596,11 @@ The `free(r)` procedure calls `DEALLOCATE(SYSTEM_TYPE(r, integer))` to mark the 
     procedure ALLOCATE (size: integer): word;  // returns an address
     procedure DEALLOCATE (address: word);
 
-These `ALLOCATE` and `DEALLOCATE` procedure descriptions must be included in any module that calls `new` or `free`. How the procedures are implemented is up to the programmer. They will typically be included from the interface of a module that manages memory on a heap. 
+These `ALLOCATE` and `DEALLOCATE` procedure definitions must be included in any module that calls `new` or `free`. How the procedures are implemented is up to the programmer. They will typically be included from the interface of a module that manages memory on a heap. 
 
 ### Halting procedures
 
-| Description           | Function                          |
+| Definition           | Function                          |
 |-----------------------|-----------------------------------|
 | `halt (n: integer)`   | halt with exit code *n*           |
 | `assert (x: boolean)` | raise runtime error if not *x*    |
@@ -605,9 +624,9 @@ Including the interface `SYSTEM` allows a set of "unsafe" standard procedures to
 
 If a particular computer requires language extensions, e.g. procedures that access CPU registers, then they should be added to `SYSTEM`.
 
-In the following table *RAM* refers the computer's random access memory, addressed by byte; *AnyType* is any type; *T* is a type description given as a parameter. 
+In the following table *RAM* refers the computer's random access memory, addressed by byte; *AnyType* is any type; *T* is a type definition given as a parameter. 
 
-|  Description                         | Function                                     |
+|  Definition                         | Function                                     |
 |--------------------------------------|----------------------------------------------|
 | `ADDRESS (var v: AnyType) : word`    | address of variable `v`                      |
 | `MOVE (a, b, n: integer)`            | move `n` bytes from `RAM[a]` to `RAM[b]`     |

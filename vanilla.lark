@@ -6,21 +6,21 @@
 
 file: (module | interface) ("." (module | interface))* ["."]
 
-module    : "module" NAME [moduleparameters] [interfaceconstraint] [typeconstraints] "=" declarationlist "end"
-interface : "interface" NAME "=" descriptionlist "end"
+module    : "module" NAME [moduleparameters] [interfaceequivalence] [typeequivalences] "=" declarationlist "end"
+interface : "interface" NAME "=" definitionlist "end"
 
 moduleparameters : "(" moduleparameter (";" moduleparameter)* ")"
-typeconstraints : "where" typeconstraint ("," typeconstraint)*
+typeequivalences : "where" typeequivalence ("," typeequivalence)*
 moduleparameter : NAME ":" NAME
-typeconstraint : importedname "=" importedname
-interfaceconstraint : ":" NAME
+typeequivalence : importedname "=" importedname
+interfaceequivalence : ":" NAME
 
-descriptionlist: (description ";")*
-declarationlist: (declarationordescription ";")*
+definitionlist: (definition ";")*
+declarationlist: (declarationordefinition ";")*
 
-?description : vardescription | procdescription | otherdescriptions
-?declarationordescription: vardeclaration | procdeclaration | otherdescriptions
-?otherdescriptions : inclusion | constdescription | typedescription
+?definition : vardefinition | procdefinition | otherdefinitions
+?declarationordefinition: vardeclaration | procdeclaration | otherdefinitions
+?otherdefinitions : inclusion | constdefinition | typedefinition
 
 inclusion : include | import
 import : "import" NAME [":=" parameterizedmodule]
@@ -31,26 +31,26 @@ parameterizedmodule : NAME "(" NAME ("," NAME)* ")"
 importedname : NAME "_" NAME
 globalname : NAME | NAME "_" NAME
 
-constdescription : "const" NAME "=" constant
+constdefinition : "const" NAME "=" constant
 constant: expression
 
-vardescription : ("var" | "val") varlist
-vardeclaration : vardescription [":=" structuredconstant]
+vardefinition : ("var" | "val") varlist
+vardeclaration : vardefinition [":=" structuredconstant]
 varlist:  namelist ":" type
 namelist: NAME ("," NAME)*
 ?structuredconstant : constant | structure
 structure: "[" structureitems ("," structureitems)* "]"
 structureitems: structuredconstant ["for" constant]
 
-procdescription: "procedure" NAME proctype
-procdeclaration: procdescription [procbody]
+procdefinition: "procedure" NAME proctype
+procdeclaration: procdefinition [procbody]
 proctype:        "(" parameterlist ")" [":" type]
 procbody:        "=" body "end"
 parameterlist:   (parameters (";" parameters)*)?
 parameters: varlist       -> constparameters
         | "var" varlist   -> varparameters
 
-typedescription : "type" NAME ("=" type)?
+typedefinition : "type" NAME ("=" type)?
 type : globalname                         -> namedtype
         | "array" dimensionlist "of" type -> arraytype
         | "record" elementlist "end"      -> recordtype
@@ -66,7 +66,7 @@ dimensionlist: constant ("," constant)*
 elementlist: varlist (";" varlist)*
 
 body:      statement (";" statement)*
-statement: localvardeclaration | constdescription
+statement: localvardeclaration | constdefinition
          | assignment | call | if | loop | exit | return | switch | empty
 
 localvardeclaration : ("var" | "val") namelist (":" type [":=" expression] | ":=" expression)
