@@ -201,11 +201,9 @@ A string literal can be used to declare a byte array. If it is shorter than the 
 
 A variable definition has an implicit declaration if one is not given in a program's modules. 
 
-An implicit variable declaration has a default value. Numeric variables are initialized to zero. Reference values are initialized to `nil`. Procedure values are initialized to a procedure that causes an *uninitialized procedure* runtime error. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero, nil or an error procedure.
+An implicit variable declaration has a default value. Numeric variables are initialized to zero. Reference values are initialized to `nil`. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero or nil.
 
 The above rule is also used to initialize local variables within procedure bodies.
-
-*How uninitialized procedure runtime errors are handled is implementation-dependant behaviour.*
 
 
 # Types
@@ -222,6 +220,8 @@ The above rule is also used to initialize local variables within procedure bodie
     DimensionList = Constant ","... .
 
 Arrays begin at element 0. An array with more than one length in its dimension list describes an array of arrays. I.e. `array a, b, c of t` stands for `array a of array b of array c of t`. An array with no dimension list is an *open array*. An open array is one dimensional, and its length can be found using the standard procedure `len`. An open array type may only be used as the type of a parameter or as the target of a reference type.
+
+A procedure type may only be used as the type of a parameter or as the target of a reference type.
 
 An *abstract type* must be defined before it can be used in a module, either by a type definition or a functor type equivalence.
 
