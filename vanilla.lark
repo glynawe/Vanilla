@@ -1,12 +1,13 @@
 #
 # Vanilla grammar in Lark. 
 #
-# The grammar is LL(1), so just about any parsing method will do. 
+# The grammar is (or can be made) LL(1), so just about any parsing method will do. 
 #
 
-file: (module | interface) ("." (module | interface))* ["."]
+file: (module | interface | functor) ("." (module | interface| functor))* ["."]
 
-module    : "module" NAME [moduleparameters] [interfaceequivalence] [typeequivalences] "=" declarationlist "end"
+module    : "module" NAME [interfaceequivalence] "=" declarationlist "end"
+functor   : "module" NAME moduleparameters [interfaceequivalence] [typeequivalences] "=" declarationlist "end"
 interface : "interface" NAME "=" definitionlist "end"
 
 moduleparameters : "(" moduleparameter (";" moduleparameter)* ")"
@@ -124,6 +125,9 @@ empty:
 ?factor: "+" factor
         | "-" factor   -> negate
         | "not" factor -> not
+        | "new" "(" type ["," constant] ")"
+        | "TYPESIZE" "(" type ")" 
+        | "TYPE" "(" expression "," type ")" 
         | designator
         | conditional
         | "(" expression ")"

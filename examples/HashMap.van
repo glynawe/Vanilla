@@ -27,14 +27,14 @@ module HashMap (Key: HASHABLE; Value: ADT) : HASHMAP
 
     type t = record
         size, count: integer;
-        table: ref array of ref Value.t;
+        table: ref array of ref Value_t;
     end;
 
     procedure create (sizelimit: integer): t =
         var m := new(t);
         m.size := sizelimit;
         m.count := 0;
-        m.table := new(ref Value.t, size);
+        m.table := new(ref Value_t, size);
         for i := 0 until TableSize do 
             m.table := nil;
         end;

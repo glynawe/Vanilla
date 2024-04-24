@@ -20,7 +20,7 @@ A *declaration* is a definition that also defines *object code*. Object code is 
 
     Program = (Interface | Module| Functor) "."... ["."].
 
-A Vanilla program may contain any number of interfaces, modules and functor separated by full stops. One module must declare a procedure called `main`, which will be the first procedure to be executed.
+A Vanilla program may contain any number of interfaces, modules and functors separated by full stops. One module must declare a procedure called `main`, which will be the first procedure to be executed.
 
     Interface = "interface" InterfaceName "=" 
                 {Definition ";"} 
@@ -32,8 +32,7 @@ A Vanilla program may contain any number of interfaces, modules and functor sepa
 
     Functor   = "module" ModuleName "(" ModuleParameter ";"... ")" 
                 [PublicInterface] 
-                ["where" TypeEquivalence ","...] 
-                "=" 
+                ["where" TypeEquivalence ","...] "=" 
                 {DeclarationOrDefinition ";"} 
                 "end".
 
@@ -50,7 +49,7 @@ An *interface* contains a set of definitions. A *module* contains a set of defin
 
 If a module is declared with a *public interface* then only the definitions in that interface will be available when the module is imported. The module must contain declarations for all the definitions in its public interface.
 
- A *functor* is a module parametrized with a list of modules that it can import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each module parameter has an interface that specifies a minimum set of definitions the actual module must provide. A `where` clause specifies types from different parameter modules that are to be equivalent (this is important when defining generic types). 
+ A *functor* is a module parametrized with a list of interfaces for modules that it can import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each module parameter has an interface that specifies a minimum set of definitions that the actual module must provide. A `where` clause specifies types from different parameter modules that are to be equivalent (this is important when defining generic types). 
 
 All interfaces and modules implicitly contain a set of *standard declarations* supplied by the Vanilla language. For example, the type `integer` is a standard declaration.
 
