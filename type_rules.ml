@@ -64,12 +64,13 @@ let rec equal a b =
   | Record e1, Record e2 -> equal_elements e1 e2 
   | _ -> false 
 
-(* Lists of procedure parameters are equal if the parameters from each list be paired, 
-    and each pair of parameters has an equal mutability and type. 
-    (Parameter names are ignored, they are just placeholders.) *)
+(* Lists of procedure parameters are equal if the parameters from each list can be 
+   paired, and each pair of parameters has an equal passing method (var or val) and type. 
+   (Parameter names are ignored, they are just placeholders.) *)
  
 and equal_parameters p1 p2 =
   match p1, p2 with
+  | VarParameter (_, t1) :: p1', VarParameter (_, t2) :: p2' -> equal t1 t2 && equal_parameters p1' p2'
   | VarParameter (_, t1) :: p1', ValParameter (_, t2) :: p2' -> equal t1 t2 && equal_parameters p1' p2'
   | [], [] -> true
   | _ -> false
