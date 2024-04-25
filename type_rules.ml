@@ -71,7 +71,7 @@ let rec equal a b =
 and equal_parameters p1 p2 =
   match p1, p2 with
   | VarParameter (_, t1) :: p1', VarParameter (_, t2) :: p2' -> equal t1 t2 && equal_parameters p1' p2'
-  | VarParameter (_, t1) :: p1', ValParameter (_, t2) :: p2' -> equal t1 t2 && equal_parameters p1' p2'
+  | ValParameter (_, t1) :: p1', ValParameter (_, t2) :: p2' -> equal t1 t2 && equal_parameters p1' p2'
   | [], [] -> true
   | _ -> false
 
