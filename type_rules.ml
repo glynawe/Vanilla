@@ -57,15 +57,11 @@ let rec equal a b =
   | Boolean, Boolean
   | Nil, Nil
   | Statement, Statement -> true
-  | Ref t1, Ref t2 when equal t1 t2 -> true  
-  | Array (len1, t1), 
-    Array (len2, t2) when len1 = len2 && equal t1 t2 -> true
-  | Procedure (p1, t1), 
-    Procedure (p2, t2) when equal_parameters p1 p2 && equal t1 t2 -> true
-  | OpenArray t1, 
-    OpenArray t2 when equal t1 t2 -> true
-  | Record e1, 
-    Record e2 when equal_elements e1 e2 -> true 
+  | Ref t1, Ref t2 -> equal t1 t2  
+  | Array (len1, t1), Array (len2, t2) -> len1 = len2 && equal t1 t2
+  | Procedure (p1, t1), Procedure (p2, t2) -> equal_parameters p1 p2 && equal t1 t2
+  | OpenArray t1, OpenArray t2 -> equal t1 t2
+  | Record e1, Record e2 -> equal_elements e1 e2 
   | _ -> false 
 
 (* Lists of procedure parameters are equal if the parameters from each list be paired, 
@@ -74,10 +70,7 @@ let rec equal a b =
  
 and equal_parameters p1 p2 =
   match p1, p2 with
-  | VarParameter (_, t1) :: p1', 
-    ValParameter (_, t2) :: p2' when equal t1 t2 -> equal_parameters p1' p2'
-  | ValParameter (_, t1) :: p1', 
-    VarParameter (_, t2) :: p2' when equal t1 t2 -> equal_parameters p1' p2'
+  | VarParameter (_, t1) :: p1', ValParameter (_, t2) :: p2' -> equal t1 t2 && equal_parameters p1' p2'
   | [], [] -> true
   | _ -> false
 
@@ -86,10 +79,7 @@ and equal_parameters p1 p2 =
 
 and equal_elements e1 e2 =
   match e1, e2 with
-  | (n1, t1) :: e1', 
-    (n2, t2) :: e2' when Name.equal n1 n2 && equal t1 t2 -> equal_elements e1' e2'
-  | (n1, t1) :: e1', 
-    (n2, t2) :: e2' when Name.equal n1 n2 && equal t1 t2 -> equal_elements e1' e2'
+  | (n1, t1) :: e1', (n2, t2) :: e2' -> Name.equal n1 n2 && equal t1 t2 && equal_elements e1' e2'
   | [], [] -> true
   | _ -> false
 
@@ -181,8 +171,8 @@ let assignment_compatable dst src =
 
 let var_parameter_compatable dst src =
   match dst, src with
-  | OpenArray t1, Array (_, t2) when equal t1 t2 -> true
-  | OpenArray t1, OpenArray t2 when equal t1 t2 -> true
+  | OpenArray t1, Array (_, t2) -> equal t1 t2
+  | OpenArray t1, OpenArray t2 -> equal t1 t2
   | t1, t2 -> equal t1 t2
   
 
@@ -195,8 +185,8 @@ let var_parameter_compatable dst src =
 
 let val_parameter_compatable dst src =
   match dst, src with
-  | OpenArray t1, Array (_, t2) when equal t1 t2 -> true
-  | OpenArray t1, OpenArray t2 when equal t1 t2 -> true
+  | OpenArray t1, Array (_, t2) -> equal t1 t2
+  | OpenArray t1, OpenArray t2 -> equal t1 t2
   | t1, t2 -> assignment_compatable t1 t2
 
 
