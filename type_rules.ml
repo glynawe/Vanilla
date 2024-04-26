@@ -1,7 +1,7 @@
 (* The Vanilla type rules in OCaml. These will later be defined in Gallina for Coq proofs. *)
 
 
-(* Identifiers. (Note: this is a dumy, Name.t and Name.equal will be defined elsewhere.) *)
+(* Identifiers. (Note: this is a dummy, Name.t and Name.equal will be defined elsewhere.) *)
 module Name = struct
   type t = string
   let equal = String.equal
