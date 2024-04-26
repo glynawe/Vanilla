@@ -106,7 +106,6 @@ let rec valid_value a =
   | Integer | Byte | Word | Real | Boolean -> true
   | Ref b -> valid_target b
   | Nil -> true
-  | Statement -> false 
   | _ -> false
 
 (** [valid_target a] is true if type [a] can be used as a reference type target 
@@ -115,11 +114,11 @@ let rec valid_value a =
 and valid_target a =
   match a with
   | OpenArray a -> valid_value a
-  | Procedure (ps, rt) -> List.for_all valid_target (List.map parameter_type ps) && valid_value rt
+  | Procedure (ps, rt) -> List.for_all valid_target (List.map parameter_type ps) && valid_return rt
   | a -> valid_value a 
 
 
-(** [valid_variable a] is true if type [a] is can be stored in a variable,
+(** [valid_variable a] is true if type [a] can be stored in a variable,
     is assignable and is otherwise generally valid.  *)
 
 and valid_variable a = 
@@ -127,7 +126,14 @@ and valid_variable a =
   | Array (d, e) -> d > 0 && valid_variable e
   | Record es -> List.length es > 0 &&  all_different ns && List.for_all valid_variable ts
   | a -> valid_value a
-  
+
+(** [valid_return a] is true if type [a] can be returned by a procedure. *)
+
+and valid_return a =
+  match a with
+  | Statement -> true
+  | a -> valid_value
+
 
 (* ------------------------------------------------------------------------------- *)
 (* Assignment Compatabilities *)
