@@ -44,7 +44,7 @@ and call_parameter_t =
   | SuppliedDesignator of t
 
 
-let parameter_type (p: parameter_t): t =
+let parameter_type (p: parameter_t): vanilla_t =
   match p with
   | VarParameter (_, pt) -> pt
   | ValueParameter (_, pt) -> pt
@@ -57,7 +57,7 @@ let parameter_type (p: parameter_t): t =
 
 (** [equal a b] True if types [a] and [b] are equal by structural equivalence. *)
 
-let rec equal (a: t) (b: t): bool =
+let rec equal (a: vanilla_t) (b: vanilla_t): bool =
   match a, b with
   | Integer, Integer
   | Byte, Byte
@@ -77,7 +77,7 @@ let rec equal (a: t) (b: t): bool =
    paired, and each pair of parameters has an equal passing method (var or val) and type.
    (Parameter names are ignored, they are just placeholders.) *)
 
-and equal_parameters (p1: parameter_t list) (p2: parameter_t list) : bool =
+and equal_parameters (p1: parameter_t) (p2: parameter_t): bool =
   match p1, p2 with
   | VarParameter (_, t1) :: p1', VarParameter (_, t2) :: p2' ->
       equal t1 t2 && equal_parameters p1' p2'
@@ -123,12 +123,12 @@ and valid_target (a: t) : bool =
 (** [valid_variable a] is true if type [a] can be stored in a variable,
     is assignable and is otherwise generally valid.  *)
 
-and valid_variable (a: t) : bool =
+and valid_variable a =
   match a with
   | Array (d, e) -> d > 0 && valid_variable e
   | Record es ->
       let ns, ts = List.split es in
-      List.length es > 0 && Name.all_different ns && List.for_all valid_variable ts
+      List.length es > 0 && all_different ns && List.for_all valid_variable ts
   | a -> valid_value a
 
 (** [valid_return a] is true if type [a] can be returned by a procedure. *)
@@ -152,7 +152,7 @@ and valid_return (a: t) : bool =
     to a procedure can be assigned a procedure of the correct type.
     But otherwise open arrays, procedures and statements cannot be assigned. *)
 
-let assignment_compatible (dst: t) (src: t) : bool =
+let assignment_compatible dst src =
   match dst, src with
   | Ref _, Nil -> true
   | Ref (Procedure (_, _) as a), (Procedure (_, _) as b) -> equal a b
@@ -168,7 +168,7 @@ let assignment_compatible (dst: t) (src: t) : bool =
     their types are equal. The exception is that arrays are compatible
     with open arrays if their element types are equal. *)
 
-let var_parameter_compatible (dst: t) (src: t) : bool =
+let var_parameter_compatible dst src =
   match dst, src with
   | OpenArray t1, Array (_, t2) -> equal t1 t2
   | OpenArray t1, OpenArray t2 -> equal t1 t2
@@ -182,7 +182,7 @@ let var_parameter_compatible (dst: t) (src: t) : bool =
     their types are equal. The exception is that arrays are compatible
     with open arrays if their element types are equal. *)
 
-let value_parameter_compatible (dst: t) (src: t) : bool =
+let value_parameter_compatible dst src =
   match dst, src with
   | OpenArray t1, Array (_, t2) -> equal t1 t2
   | OpenArray t1, OpenArray t2 -> equal t1 t2
