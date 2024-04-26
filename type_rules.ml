@@ -33,7 +33,7 @@ type t =
 
 and parameter_t = 
   |  VarParameter of Name.t * t
-  |  ValParameter of Name.t * t
+  |  ValueParameter of Name.t * t
 
 
 type procedure_call_t = 
