@@ -132,7 +132,7 @@ and valid_variable a =
 and valid_return a =
   match a with
   | Statement -> true
-  | a -> valid_value
+  | a -> valid_value a
 
 
 (* ------------------------------------------------------------------------------- *)
