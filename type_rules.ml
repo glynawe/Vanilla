@@ -115,7 +115,7 @@ let rec valid_value (a: t) : bool =
 
 and valid_target (a: t) : bool =
   match a with
-  | OpenArray a -> valid_value a
+  | OpenArray a -> valid_variable a
   | Procedure (ps, rt) -> List.for_all valid_target (List.map parameter_type ps) && valid_return rt
   | a -> valid_variable a
 
@@ -152,7 +152,7 @@ and valid_return (a: t) : bool =
     to a procedure can be assigned a procedure of the correct type.
     But otherwise open arrays, procedures and statements cannot be assigned. *)
 
-let assignment_compatible dst src =
+let assignment_compatible (dst: t) (src: t) : bool =
   match dst, src with
   | Ref _, Nil -> true
   | Ref (Procedure (_, _) as a), (Procedure (_, _) as b) -> equal a b
@@ -168,7 +168,7 @@ let assignment_compatible dst src =
     their types are equal. The exception is that arrays are compatible
     with open arrays if their element types are equal. *)
 
-let var_parameter_compatible dst src =
+let var_parameter_compatible (dst: t) (src: t) : bool =
   match dst, src with
   | OpenArray t1, Array (_, t2) -> equal t1 t2
   | OpenArray t1, OpenArray t2 -> equal t1 t2
@@ -182,7 +182,7 @@ let var_parameter_compatible dst src =
     their types are equal. The exception is that arrays are compatible
     with open arrays if their element types are equal. *)
 
-let value_parameter_compatible dst src =
+let value_parameter_compatible (dst: t) (src: t) : bool =
   match dst, src with
   | OpenArray t1, Array (_, t2) -> equal t1 t2
   | OpenArray t1, OpenArray t2 -> equal t1 t2
@@ -198,7 +198,9 @@ let value_parameter_compatible dst src =
     are supplied designators, not values, and the types of each pair of procedure
     parameter and supplied parameter are compatible. *)
 
-let procedure_call_valid (Procedure (procedure_parameters, _)) call_parameters =
+let procedure_call_valid
+    (Procedure (procedure_parameters, _): t)
+    (call_parameters: call_parameter_t list) : bool =
   let parameter_compatible (p, s) =
     match p, s with
     | ValueParameter (_, pt), SuppliedValue      st -> value_parameter_compatible pt st
