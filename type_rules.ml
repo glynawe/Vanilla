@@ -1,10 +1,14 @@
-(* The Vanilla type rules in OCaml. These will later be defined in Gallina for Coq proofs. *)
+(* The Vanilla type rules in OCaml. *)
 
 
 (* Identifiers. (Note: this is a dummy, Name.t and Name.equal will be defined elsewhere.) *)
 module Name = struct
   type t = string
   let equal = String.equal
+  let rec all_different =
+    function
+    | [] -> true
+    | n :: ns -> not (List.exists (Name.equal n) ns) && all_different ns
 end
 
 
@@ -40,6 +44,11 @@ and call_parameter_t =
   | SuppliedDesignator of t
 
 
+let parameter_type (p: parameter_t): vanilla_t = 
+  match p with 
+  | VarParameter (_, pt) -> pt
+  | ValueParameter (_, pt) -> pt
+
 
 (* ------------------------------------------------------------------------------- *)
 (* Type Equality *)
@@ -48,7 +57,7 @@ and call_parameter_t =
 
 (** [equal a b] True if types [a] and [b] are equal by structural equivalence. *)
 
-let rec equal a b =  
+let rec equal (a: vanilla_t) (b: vanilla_t): bool =  
   match a, b with
   | Integer, Integer
   | Byte, Byte
@@ -68,10 +77,10 @@ let rec equal a b =
    paired, and each pair of parameters has an equal passing method (var or val) and type. 
    (Parameter names are ignored, they are just placeholders.) *)
  
-and equal_parameters p1 p2 =
+and equal_parameters (p1: parameter_t) (p2: parameter_t): bool =
   match p1, p2 with
-  | VarParameter (_, t1) :: p1', VarParameter (_, t2) :: p2' -> equal t1 t2 && equal_parameters p1' p2'
-  | ValParameter (_, t1) :: p1', ValParameter (_, t2) :: p2' -> equal t1 t2 && equal_parameters p1' p2'
+  | VarParameter (_, t1) :: p1',   VarParameter (_, t2) :: p2'   -> equal t1 t2 && equal_parameters p1' p2'
+  | ValueParameter (_, t1) :: p1', ValueParameter (_, t2) :: p2' -> equal t1 t2 && equal_parameters p1' p2'
   | [], [] -> true
   | _ -> false
 
@@ -117,28 +126,8 @@ and valid_variable a =
   | Ref b -> valid_target b
   | Array (d, e) -> d > 0 && valid_variable e
   | OpenArray _ | Statement | Nil -> false
-  | Procedure (ps, rt) -> 
-      let ptype p = 
-        match p with 
-        | VarParameter (_, pt) -> pt
-        | ValParameter (_, pt) -> pt
-      in
-      List.for_all valid_target (List.map ptype ps) 
-      && valid_return_type rt
-  | Record es -> 
-      let (ns, ts) = List.split es in
-      let rec all_different =  (* for checking element names *)
-        function
-        | [] -> true
-        | n :: ns -> not (List.exists (Name.equal n) ns) && all_different ns
-      in
-      List.length es > 0 && all_different ns 
-      && List.for_all valid_variable ts 
- 
-
-(** [valid_return_type a] is true if type [a] can be used as a procedure return type. *)
-
-and valid_return_type a = (a = Nil) || valid_value a
+  | Procedure (ps, rt) -> List.for_all valid_target (List.map parameter_type ps) && valid_value rt
+  | Record es -> List.length es > 0 &&  all_different ns && List.for_all valid_variable ts 
 
 
 (* ------------------------------------------------------------------------------- *)
@@ -150,9 +139,9 @@ and valid_return_type a = (a = Nil) || valid_value a
     assigned a value of type [src]. 
 
     Two types are usually assignment compatable if they have equal types.
-    The exceptions are that any reference can be assigned nil and a reference 
-    to a procedure can be assigned an procedure. But otherwise open arrays, 
-    procedures and statements cannot be assigned. *)
+    The exceptions are that any reference can be assigned [nil] and a reference 
+    to a procedure can be assigned a procedure of the correct type. 
+    But otherwise open arrays, procedures and statements cannot be assigned. *)
 
 let assignment_compatable dst src =
   match dst, src with
@@ -164,27 +153,27 @@ let assignment_compatable dst src =
     
 
 (** [var_parameter_compatable dst src] is true if a designator of type
-    [src] can by supplid to porocedure parameter of type [dst].contents
+    [src] can by supplied to a procedure parameter of type [dst].
 
-    An supplied parameter is type compatible with a 'var' formal parameter if 
-    their types are equal. The exception is that open arrays are compatible 
-    with arrays if their element types are equal. *)
+    A supplied parameter is type compatable with a [var] formal parameter if 
+    their types are equal. The exception is that arrays are compatable 
+    with open arrays if their element types are equal. *)
 
 let var_parameter_compatable dst src =
   match dst, src with
   | OpenArray t1, Array (_, t2) -> equal t1 t2
   | OpenArray t1, OpenArray t2 -> equal t1 t2
   | t1, t2 -> equal t1 t2
-  
 
-(** [var_parameter_type_compatable dst src] is true if a designator of type
-    [src] can by supplid to porocedure parameter of type [dst].contents
 
-    An supplied parameter is type compatible with a 'var' formal parameter if 
-    their types are equal. The exception is that open arrays are compatible 
-    with arrays if their element types are equal. *)
+(** [value_parameter_type_compatable dst src] is true if a value of type
+    [src] can by supplied to a value parameter of type [dst].
 
-let val_parameter_compatable dst src =
+    An supplied parameter is type compatable with a value formal parameter if 
+    their types are equal. The exception is that arrays are compatable 
+    with open arrays if their element types are equal. *)
+
+let value_parameter_compatable dst src =
   match dst, src with
   | OpenArray t1, Array (_, t2) -> equal t1 t2
   | OpenArray t1, OpenArray t2 -> equal t1 t2
@@ -195,19 +184,18 @@ let val_parameter_compatable dst src =
 (* Procedure Call Validity *)
 (* ------------------------------------------------------------------------------- *)
 
-
-(** [procedure_call_valid procedure_type call_parameters] is true if
-    there are the same number of [call_parameters] as [procedure_type]
-    parameters, var parameters are not supplied values, and the types of each 
-    pair of procedure parameter and supplied parameter are compatible. *)  
+(** [procedure_call_valid procedure_type call_parameters] is true if there are the
+    same number of supplied call parameters as procedure parameters, [var] parameters
+    are supplied designators, not values, and the types of each pair of procedure 
+    parameter and supplied parameter are compatable. *)  
 
 let procedure_call_valid (Procedure (procedure_parameters, _)) call_parameters =
   let parameter_compatable (p, s) =
     match p, s with
-    | ValParameter (_, pt), SuppliedValue      st -> val_parameter_compatable pt st 
-    | ValParameter (_, pt), SuppliedDesignator st -> val_parameter_compatable pt st 
-    | VarParameter (_, pt), SuppliedValue      st -> false
-    | VarParameter (_, pt), SuppliedDesignator st -> var_parameter_compatable pt st
+    | ValueParameter (_, pt), SuppliedValue      st -> value_parameter_compatable pt st 
+    | ValueParameter (_, pt), SuppliedDesignator st -> value_parameter_compatable pt st 
+    | VarParameter (_, pt),   SuppliedValue      st -> false
+    | VarParameter (_, pt),   SuppliedDesignator st -> var_parameter_compatable pt st
   in
   List.length procedure_parameters = List.length call_parameters &&
   List.for_all parameter_compatable (List.combine procedure_parameters call_parameters)
