@@ -44,7 +44,7 @@ and call_parameter_t =
   | SuppliedDesignator of t
 
 
-let parameter_type (p: parameter_t): vanilla_t =
+let parameter_type (p: parameter_t): t =
   match p with
   | VarParameter (_, pt) -> pt
   | ValueParameter (_, pt) -> pt
@@ -57,7 +57,7 @@ let parameter_type (p: parameter_t): vanilla_t =
 
 (** [equal a b] True if types [a] and [b] are equal by structural equivalence. *)
 
-let rec equal (a: vanilla_t) (b: vanilla_t): bool =
+let rec equal (a: t) (b: t): bool =
   match a, b with
   | Integer, Integer
   | Byte, Byte
@@ -77,7 +77,7 @@ let rec equal (a: vanilla_t) (b: vanilla_t): bool =
    paired, and each pair of parameters has an equal passing method (var or val) and type.
    (Parameter names are ignored, they are just placeholders.) *)
 
-and equal_parameters (p1: parameter_t) (p2: parameter_t): bool =
+and equal_parameters (p1: parameter_t list) (p2: parameter_t list): bool =
   match p1, p2 with
   | VarParameter (_, t1) :: p1', VarParameter (_, t2) :: p2' ->
       equal t1 t2 && equal_parameters p1' p2'
@@ -128,7 +128,7 @@ and valid_variable a =
   | Array (d, e) -> d > 0 && valid_variable e
   | Record es ->
       let ns, ts = List.split es in
-      List.length es > 0 && all_different ns && List.for_all valid_variable ts
+      List.length es > 0 && Name.all_different ns && List.for_all valid_variable ts
   | a -> valid_value a
 
 (** [valid_return a] is true if type [a] can be returned by a procedure. *)
