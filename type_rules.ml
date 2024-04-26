@@ -25,18 +25,18 @@ type t =
   | Boolean
   | Statement                     (* The type of statements. (Like C's void.) *)
   | Ref of t
-  | Nil                           (* compatable with any reference *)
+  | Nil                           (* compatible with any reference *)
   | Array of int * t
   | OpenArray of t                (* Array whose length is only known at runtime.*)
   | Record of (Name.t * t) list
   | Procedure of parameter_t list * t
 
-and parameter_t = 
+and parameter_t =
   |  VarParameter of Name.t * t
   |  ValueParameter of Name.t * t
 
 
-type procedure_call_t = 
+type procedure_call_t =
   Call of call_parameter_t list
 
 and call_parameter_t =
@@ -44,8 +44,8 @@ and call_parameter_t =
   | SuppliedDesignator of t
 
 
-let parameter_type (p: parameter_t): vanilla_t = 
-  match p with 
+let parameter_type (p: parameter_t): vanilla_t =
+  match p with
   | VarParameter (_, pt) -> pt
   | ValueParameter (_, pt) -> pt
 
@@ -57,7 +57,7 @@ let parameter_type (p: parameter_t): vanilla_t =
 
 (** [equal a b] True if types [a] and [b] are equal by structural equivalence. *)
 
-let rec equal (a: vanilla_t) (b: vanilla_t): bool =  
+let rec equal (a: vanilla_t) (b: vanilla_t): bool =
   match a, b with
   | Integer, Integer
   | Byte, Byte
@@ -66,17 +66,17 @@ let rec equal (a: vanilla_t) (b: vanilla_t): bool =
   | Boolean, Boolean
   | Nil, Nil
   | Statement, Statement -> true
-  | Ref t1, Ref t2 -> equal t1 t2  
+  | Ref t1, Ref t2 -> equal t1 t2
   | Array (len1, t1), Array (len2, t2) -> len1 = len2 && equal t1 t2
   | Procedure (p1, t1), Procedure (p2, t2) -> equal_parameters p1 p2 && equal t1 t2
   | OpenArray t1, OpenArray t2 -> equal t1 t2
-  | Record e1, Record e2 -> equal_elements e1 e2 
-  | _ -> false 
+  | Record e1, Record e2 -> equal_elements e1 e2
+  | _ -> false
 
-(* Lists of procedure parameters are equal if the parameters from each list can be 
-   paired, and each pair of parameters has an equal passing method (var or val) and type. 
+(* Lists of procedure parameters are equal if the parameters from each list can be
+   paired, and each pair of parameters has an equal passing method (var or val) and type.
    (Parameter names are ignored, they are just placeholders.) *)
- 
+
 and equal_parameters (p1: parameter_t) (p2: parameter_t): bool =
   match p1, p2 with
   | VarParameter (_, t1) :: p1',   VarParameter (_, t2) :: p2'   -> equal t1 t2 && equal_parameters p1' p2'
@@ -84,7 +84,7 @@ and equal_parameters (p1: parameter_t) (p2: parameter_t): bool =
   | [], [] -> true
   | _ -> false
 
-(* Lists of record elements are equal if the elements from each list be paired, 
+(* Lists of record elements are equal if the elements from each list be paired,
     and each pair of elements has the an equal name and equal type. *)
 
 and equal_elements e1 e2 =
@@ -108,23 +108,25 @@ let rec valid_value a =
   | Nil -> true
   | _ -> false
 
-(** [valid_target a] is true if type [a] can be used as a reference type target 
+(** [valid_target a] is true if type [a] can be used as a reference type target
     or a procedure parameter. *)
 
 and valid_target a =
   match a with
   | OpenArray a -> valid_value a
   | Procedure (ps, rt) -> List.for_all valid_target (List.map parameter_type ps) && valid_return rt
-  | a -> valid_variable a 
+  | a -> valid_variable a
 
 
 (** [valid_variable a] is true if type [a] can be stored in a variable,
     is assignable and is otherwise generally valid.  *)
 
-and valid_variable a = 
+and valid_variable a =
   match a with
   | Array (d, e) -> d > 0 && valid_variable e
-  | Record es -> List.length es > 0 &&  all_different ns && List.for_all valid_variable ts
+  | Record es ->
+      let ns, ts = List.split es in
+      List.length es > 0 && all_different ns && List.for_all valid_variable ts
   | a -> valid_value a
 
 (** [valid_return a] is true if type [a] can be returned by a procedure. *)
@@ -136,53 +138,53 @@ and valid_return a =
 
 
 (* ------------------------------------------------------------------------------- *)
-(* Assignment Compatabilities *)
+(* Assignment Compatibilities *)
 (* ------------------------------------------------------------------------------- *)
 
 
-(** [assignment_compatable dst src] is true if a variable of type [dst] can be
-    assigned a value of type [src]. 
+(** [assignment_compatible dst src] is true if a variable of type [dst] can be
+    assigned a value of type [src].
 
-    Two types are usually assignment compatable if they have equal types.
-    The exceptions are that any reference can be assigned [nil] and a reference 
-    to a procedure can be assigned a procedure of the correct type. 
+    Two types are usually assignment compatible if they have equal types.
+    The exceptions are that any reference can be assigned [nil] and a reference
+    to a procedure can be assigned a procedure of the correct type.
     But otherwise open arrays, procedures and statements cannot be assigned. *)
 
-let assignment_compatable dst src =
+let assignment_compatible dst src =
   match dst, src with
   | Ref _, Nil -> true
   | Ref (Procedure (_, _) as a), (Procedure (_, _) as b) -> equal a b
-  | (Nil | OpenArray _ | Statement | Procedure (_,_)), _ -> false 
-  | _, (Nil | OpenArray _ | Statement | Procedure (_,_)) -> false 
+  | (Nil | OpenArray _ | Statement | Procedure (_,_)), _ -> false
+  | _, (Nil | OpenArray _ | Statement | Procedure (_,_)) -> false
   | t1, t2 -> equal t1 t2
-    
 
-(** [var_parameter_compatable dst src] is true if a designator of type
+
+(** [var_parameter_compatible dst src] is true if a designator of type
     [src] can by supplied to a procedure parameter of type [dst].
 
-    A supplied parameter is type compatable with a [var] formal parameter if 
-    their types are equal. The exception is that arrays are compatable 
+    A supplied parameter is type compatible with a [var] formal parameter if
+    their types are equal. The exception is that arrays are compatible
     with open arrays if their element types are equal. *)
 
-let var_parameter_compatable dst src =
+let var_parameter_compatible dst src =
   match dst, src with
   | OpenArray t1, Array (_, t2) -> equal t1 t2
   | OpenArray t1, OpenArray t2 -> equal t1 t2
   | t1, t2 -> equal t1 t2
 
 
-(** [value_parameter_type_compatable dst src] is true if a value of type
+(** [value_parameter_type_compatible dst src] is true if a value of type
     [src] can by supplied to a value parameter of type [dst].
 
-    An supplied parameter is type compatable with a value formal parameter if 
-    their types are equal. The exception is that arrays are compatable 
+    An supplied parameter is type compatible with a value formal parameter if
+    their types are equal. The exception is that arrays are compatible
     with open arrays if their element types are equal. *)
 
-let value_parameter_compatable dst src =
+let value_parameter_compatible dst src =
   match dst, src with
   | OpenArray t1, Array (_, t2) -> equal t1 t2
   | OpenArray t1, OpenArray t2 -> equal t1 t2
-  | t1, t2 -> assignment_compatable t1 t2
+  | t1, t2 -> assignment_compatible t1 t2
 
 
 (* ------------------------------------------------------------------------------- *)
@@ -191,16 +193,16 @@ let value_parameter_compatable dst src =
 
 (** [procedure_call_valid procedure_type call_parameters] is true if there are the
     same number of supplied call parameters as procedure parameters, [var] parameters
-    are supplied designators, not values, and the types of each pair of procedure 
-    parameter and supplied parameter are compatable. *)  
+    are supplied designators, not values, and the types of each pair of procedure
+    parameter and supplied parameter are compatible. *)
 
 let procedure_call_valid (Procedure (procedure_parameters, _)) call_parameters =
-  let parameter_compatable (p, s) =
+  let parameter_compatible (p, s) =
     match p, s with
-    | ValueParameter (_, pt), SuppliedValue      st -> value_parameter_compatable pt st 
-    | ValueParameter (_, pt), SuppliedDesignator st -> value_parameter_compatable pt st 
+    | ValueParameter (_, pt), SuppliedValue      st -> value_parameter_compatible pt st
+    | ValueParameter (_, pt), SuppliedDesignator st -> value_parameter_compatible pt st
     | VarParameter (_, pt),   SuppliedValue      st -> false
-    | VarParameter (_, pt),   SuppliedDesignator st -> var_parameter_compatable pt st
+    | VarParameter (_, pt),   SuppliedDesignator st -> var_parameter_compatible pt st
   in
   List.length procedure_parameters = List.length call_parameters &&
-  List.for_all parameter_compatable (List.combine procedure_parameters call_parameters)
+  List.for_all parameter_compatible (List.combine procedure_parameters call_parameters)
