@@ -5,10 +5,10 @@
 module Name = struct
   type t = string
   let equal = String.equal
-  let rec all_different =
+  let rec all_different : t list -> bool =
     function
     | [] -> true
-    | n :: ns -> not (List.exists (Name.equal n) ns) && all_different ns
+    | n :: ns -> not (List.exists (equal n) ns) && all_different ns
 end
 
 
