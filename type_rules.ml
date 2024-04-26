@@ -103,18 +103,20 @@ and equal_elements e1 e2 =
 
 let rec valid_value a =
   match a with
+  | Integer | Byte | Word | Real | Boolean -> true
+  | Ref b -> valid_target b
   | Nil -> true
   | Statement -> false 
-  | a -> valid_variable a 
-
+  | _ -> false
 
 (** [valid_target a] is true if type [a] can be used as a reference type target 
     or a procedure parameter. *)
 
 and valid_target a =
   match a with
-  | OpenArray a -> valid_variable a
-  | a -> valid_variable a 
+  | OpenArray a -> valid_value a
+  | Procedure (ps, rt) -> List.for_all valid_target (List.map parameter_type ps) && valid_value rt
+  | a -> valid_value a 
 
 
 (** [valid_variable a] is true if type [a] is can be stored in a variable,
@@ -122,13 +124,10 @@ and valid_target a =
 
 and valid_variable a = 
   match a with
-  | Integer | Byte | Word | Real | Boolean -> true
-  | Ref b -> valid_target b
   | Array (d, e) -> d > 0 && valid_variable e
-  | OpenArray _ | Statement | Nil -> false
-  | Procedure (ps, rt) -> List.for_all valid_target (List.map parameter_type ps) && valid_value rt
-  | Record es -> List.length es > 0 &&  all_different ns && List.for_all valid_variable ts 
-
+  | Record es -> List.length es > 0 &&  all_different ns && List.for_all valid_variable ts
+  | a -> valid_value a
+  
 
 (* ------------------------------------------------------------------------------- *)
 (* Assignment Compatabilities *)
