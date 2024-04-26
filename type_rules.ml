@@ -115,7 +115,7 @@ and valid_target a =
   match a with
   | OpenArray a -> valid_value a
   | Procedure (ps, rt) -> List.for_all valid_target (List.map parameter_type ps) && valid_return rt
-  | a -> valid_value a 
+  | a -> valid_variable a 
 
 
 (** [valid_variable a] is true if type [a] can be stored in a variable,
