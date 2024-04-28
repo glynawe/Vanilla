@@ -1,11 +1,11 @@
 (* The Vanilla type rules in OCaml. *)
 
 
-(* Identifiers. (Note: this is a dummy, Name.t and Name.equal will be defined elsewhere.) *)
+(* Identifiers. (Note: this is a dummy, Name.type_t and Name.equal will be defined elsewhere.) *)
 module Name = struct
-  type t = string
+  type type_t = string
   let equal = String.equal
-  let rec all_different : t list -> bool =
+  let rec all_different : type_t list -> bool =
     function
     | [] -> true
     | n :: ns -> not (List.exists (equal n) ns) && all_different ns
@@ -17,34 +17,39 @@ end
 (* ------------------------------------------------------------------------------- *)
 
 
-type t =
+type type_t =
+  (* Atomic types. *)
   | Integer
   | Byte
   | Word
   | Real
   | Boolean
-  | Statement                     (* The type of statements. (Like C's void.) *)
-  | Ref of t
-  | Nil                           (* compatible with any reference *)
-  | Array of int * t
-  | OpenArray of t                (* Array whose length is only known at runtime.*)
-  | Record of (Name.t * t) list
-  | Procedure of parameter_t list * t
+  | Ref of type_t
+  | Nil       (* compatible with any reference *)
+
+  (* Structured types. *)
+  | Array of int * type_t
+  | OpenArray of type_t               (* Array whose length is only known at runtime.*)
+  | Record of (Name.type_t * type_t) list
+  | Procedure of parameter_t list * type_t
+
+  (* The "type" of statements. Like C's void. *)
+  | Statement                     
 
 and parameter_t =
-  |  VarParameter of Name.t * t
-  |  ValueParameter of Name.t * t
+  |  VarParameter of Name.type_t * type_t
+  |  ValueParameter of Name.type_t * type_t
 
 
 type procedure_call_t =
   Call of call_parameter_t list
 
 and call_parameter_t =
-  | SuppliedValue of t
-  | SuppliedDesignator of t
+  | SuppliedValue of type_t
+  | SuppliedDesignator of type_t
 
 
-let parameter_type (p: parameter_t): t =
+let parameter_type (p: parameter_t): type_t =
   match p with
   | VarParameter (_, pt) -> pt
   | ValueParameter (_, pt) -> pt
@@ -55,23 +60,24 @@ let parameter_type (p: parameter_t): t =
 (* ------------------------------------------------------------------------------- *)
 
 
-(** [equal a b] True if types [a] and [b] are equal by structural equivalence. *)
+(** [equal a b] is true if types [a] and [b] are equal by structural equivalence. *)
 
-let rec equal (a: t) (b: t): bool =
+let rec equal (a: type_t) (b: type_t): bool =
   match a, b with
   | Integer, Integer
   | Byte, Byte
   | Word, Word
   | Real, Real
   | Boolean, Boolean
-  | Nil, Nil
-  | Statement, Statement -> true
+  | Nil, Nil -> true
   | Ref t1, Ref t2 -> equal t1 t2
   | Array (len1, t1), Array (len2, t2) -> len1 = len2 && equal t1 t2
   | Procedure (p1, t1), Procedure (p2, t2) -> equal_parameters p1 p2 && equal t1 t2
   | OpenArray t1, OpenArray t2 -> equal t1 t2
   | Record e1, Record e2 -> equal_elements e1 e2
+  | Statement, Statement -> true
   | _ -> false
+
 
 (* Lists of procedure parameters are equal if the parameters from each list can be
    paired, and each pair of parameters has an equal passing method (var or val) and type.
@@ -86,10 +92,9 @@ and equal_parameters (p1: parameter_t list) (p2: parameter_t list): bool =
   | [], [] -> true
   | _ -> false
 
-(* Lists of record elements are equal if the elements from each list be paired,
-    and each pair of elements has the an equal name and equal type. *)
+(*  *)
 
-and equal_elements (e1: (Name.t * t) list) (e2 : (Name.t * t) list) : bool =
+and equal_elements (e1: (Name.type_t * type_t) list) (e2 : (Name.type_t * type_t) list) : bool =
   match e1, e2 with
   | (n1, t1) :: e1', (n2, t2) :: e2' -> Name.equal n1 n2 && equal t1 t2 && equal_elements e1' e2'
   | [], [] -> true
@@ -101,27 +106,39 @@ and equal_elements (e1: (Name.t * t) list) (e2 : (Name.t * t) list) : bool =
 (* ------------------------------------------------------------------------------- *)
 
 
-(** [valid_value a] is true if type [a] is an acceptable expression value.  *)
+(** [valid_value a] is true if type [a] is an acceptable expression value. 
+    (Vanilla expressions have atomic types.) *)
 
-let rec valid_value (a: t) : bool =
+let rec valid_value (a: type_t) : bool =
   match a with
   | Integer | Byte | Word | Real | Boolean -> true
-  | Ref b -> valid_target b
+  | Ref b -> valid_reference b
   | Nil -> true
   | _ -> false
 
-(** [valid_target a] is true if type [a] can be used as a reference type target
-    or a procedure parameter. *)
 
-and valid_target (a: t) : bool =
+(** [valid_parameter a] is true if type [a] can be used as a value procedure parameter. 
+    (Structured types are allowed. They are passed by reference, but are made immutuable.) *)
+
+and valid_parameter (a: type_t) : bool =
   match a with
   | OpenArray a -> valid_variable a
-  | Procedure (ps, rt) -> List.for_all valid_target (List.map parameter_type ps) && valid_return rt
+  | Procedure (ps, rt) -> List.for_all valid_reference (List.map parameter_type ps) && valid_return rt
+  | a -> valid_value a
+
+
+(** [valid_reference a] is true if type [a] can be used as a reference type target
+    or a pass-by-reference procedure parameter. *)
+
+and valid_reference (a: type_t) : bool =
+  match a with
+  | OpenArray a -> valid_variable a
+  | Procedure (ps, rt) -> List.for_all valid_reference (List.map parameter_type ps) && valid_return rt
   | a -> valid_variable a
 
 
-(** [valid_variable a] is true if type [a] can be stored in a variable,
-    is assignable and is otherwise generally valid.  *)
+(** [valid_variable a] is true if type [a] can be stored in a variable, or is assignable.  
+    (Vanilla's assignment operator works on equally-typed records and arrays. *)
 
 and valid_variable a =
   match a with
@@ -133,9 +150,9 @@ and valid_variable a =
 
 (** [valid_return a] is true if type [a] can be returned by a procedure. *)
 
-and valid_return (a: t) : bool =
+and valid_return (a: type_t) : bool =
   match a with
-  | Statement -> true
+  | Statement -> true   (* i.e. returns nothing *)
   | a -> valid_value a
 
 
@@ -152,7 +169,7 @@ and valid_return (a: t) : bool =
     to a procedure can be assigned a procedure of the correct type.
     But otherwise open arrays, procedures and statements cannot be assigned. *)
 
-let assignment_compatible (dst: t) (src: t) : bool =
+let assignment_compatible (dst: type_t) (src: type_t) : bool =
   match dst, src with
   | Ref _, Nil -> true
   | Ref (Procedure (_, _) as a), (Procedure (_, _) as b) -> equal a b
@@ -168,7 +185,7 @@ let assignment_compatible (dst: t) (src: t) : bool =
     their types are equal. The exception is that arrays are compatible
     with open arrays if their element types are equal. *)
 
-let var_parameter_compatible (dst: t) (src: t) : bool =
+let var_parameter_compatible (dst: type_t) (src: type_t) : bool =
   match dst, src with
   | OpenArray t1, Array (_, t2) -> equal t1 t2
   | OpenArray t1, OpenArray t2 -> equal t1 t2
@@ -182,7 +199,7 @@ let var_parameter_compatible (dst: t) (src: t) : bool =
     their types are equal. The exception is that arrays are compatible
     with open arrays if their element types are equal. *)
 
-let value_parameter_compatible (dst: t) (src: t) : bool =
+let value_parameter_compatible (dst: type_t) (src: type_t) : bool =
   match dst, src with
   | OpenArray t1, Array (_, t2) -> equal t1 t2
   | OpenArray t1, OpenArray t2 -> equal t1 t2
@@ -199,13 +216,13 @@ let value_parameter_compatible (dst: t) (src: t) : bool =
     parameter and supplied parameter are compatible. *)
 
 let procedure_call_valid
-    (Procedure (procedure_parameters, _): t)
+    (procedure_parameters: parameter_t list)
     (call_parameters: call_parameter_t list) : bool =
   let parameter_compatible (p, s) =
     match p, s with
     | ValueParameter (_, pt), SuppliedValue      st -> value_parameter_compatible pt st
     | ValueParameter (_, pt), SuppliedDesignator st -> value_parameter_compatible pt st
-    | VarParameter (_, pt),   SuppliedValue      st -> false
+    | VarParameter (_, _),   SuppliedValue _        -> false
     | VarParameter (_, pt),   SuppliedDesignator st -> var_parameter_compatible pt st
   in
   List.length procedure_parameters = List.length call_parameters &&

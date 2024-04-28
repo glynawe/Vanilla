@@ -1,0 +1,7 @@
+(library
+ (name vanilla)
+ (modules
+   types
+   types_subset
+   modules
+ ))
