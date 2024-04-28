@@ -294,21 +294,16 @@ Inductive call_parameter_t : Type :=
   | SuppliedDesignator (designator: type_t).
 
 
-Definition parameter_pair_compatible 
-      (param_pair: (name_t * passing_t * type_t) * call_parameter_t) : Prop :=
-  match param_pair with
-  | ((_, ByValue, pt), SuppliedValue st) => 
-      value_parameter_compatible pt st
-  | ((_, ByValue, pt), SuppliedDesignator st) => 
-      value_parameter_compatible pt st
-  | ((_, ByReference, _), SuppliedValue _) => 
-      False
-  | ((_, ByReference, pt), SuppliedDesignator st) => 
-      var_parameter_compatible pt st
-  end.
-
-Definition procedure_call_valid
+Fixpoint procedure_call_valid
     (parameters: list (name_t * passing_t * type_t))
     (supplied: list call_parameter_t) : Prop :=
-  length parameters = length supplied /\
-  forallb parameter_pair_compatible (combine parameters supplied).
+  match parameters, supplied with
+  | [], [] => True
+  | (_, ByValue, pt) :: ps, SuppliedValue st :: ss => 
+      value_parameter_compatible pt st /\ procedure_call_valid ps ss 
+  | (_, ByValue, pt) :: ps, SuppliedDesignator st :: ss => 
+      value_parameter_compatible pt st /\ procedure_call_valid ps ss
+  | (_, ByReference, pt) :: ps, SuppliedDesignator st :: ss => 
+      var_parameter_compatible pt st /\ procedure_call_valid ps ss
+  | _,  _ => False
+  end.
