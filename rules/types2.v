@@ -1,7 +1,7 @@
 (* The Vanilla type rules in Gallina. *)
 
 (* Not dealt with: anonymous types, which are allowed in interfaces. *)
-(* Not dealt with: recurive reference-to-record types. XXX *)
+(* Not dealt with: recursive reference-to-record types. XXX *)
 
 Require Import Coq.Lists.List.
 Import ListNotations.
@@ -36,7 +36,7 @@ Inductive type_t : Type :=
   | Procedure (parameters: list (name_t * passing_t * type_t)) 
               (return_type: type_t)
   
-  (* The "type" of proper procedures statements. *)
+(* The "type" of proper procedures and statements. *)
   | Statement.
 
 
@@ -95,8 +95,8 @@ Fixpoint equal (t1: type_t) (t2: type_t) : Prop :=
 
 
 (** [valid_variable a] is True if type [a] can be stored in a variable, or is
-    assignable.  (Vanilla's assignment operator works on equally-typed records 
-    and arrays. *)
+  assignable.  (Vanilla's assignment operator works on atomic types and 
+  equally-typed records and arrays. *)
 
 Fixpoint valid_variable (t: type_t) : Prop :=
   match t with
@@ -269,8 +269,8 @@ Definition var_parameter_compatible (dst: type_t) (src: type_t) : Prop :=
     [src] can by supplied to a pass-by-value parameter of type [dst].
 
     An supplied parameter is type compatible with a value formal parameter if
-    their types are equal. The exception is that arrays are compatible
-    with open arrays if their element types are equal. *)
+    their types are assignment comatible. The exception is that arrays are 
+    compatible with open arrays if their element types are equal. *)
 
 Definition value_parameter_compatible (dst: type_t) (src: type_t) : Prop :=
   match dst, src with
@@ -285,7 +285,7 @@ Definition value_parameter_compatible (dst: type_t) (src: type_t) : Prop :=
 (* -------------------------------------------------------------------------- *)
 
 (** [procedure_call_valid] is True if: there are the same number of supplied 
-    call parameters as procedure parameters; pass-by-reference parameters are 
+    parameters as procedure parameters; pass-by-reference parameters are 
     supplied designators, not values; and the types of each pair of procedure 
     parameter and supplied parameter are compatible. *)
 
