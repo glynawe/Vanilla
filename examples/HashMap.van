@@ -13,7 +13,8 @@ interface HASHABLE =
 end.
 
 interface HASHMAP =
-    type t;
+    type r;
+    type t = ref r;
     type kt;
     type vt;
     procedure create (sizelimit: integer): t;
@@ -23,11 +24,11 @@ end.
 
 module HashMap (Key: HASHABLE; Value: ADT) : HASHMAP 
     where HashMap_kt = Key_t, 
-          HashMap_vt = Value_t  =
+          HashMap_VT = Value_T  =
 
-    type t = record
+    type r = record
         size, count: integer;
-        table: ref array of ref Value_t;
+        table: ref array of ref Value_T;
     end;
 
     procedure create (sizelimit: integer): t =

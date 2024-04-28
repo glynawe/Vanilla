@@ -90,12 +90,13 @@ This very simplified program defines strings and generic sets as abstract data t
 
     interface STRING =
         include COMPARABLE;
-        type T;
+        type R;
+        type T = ref R;
         procedure Create (text: array of byte): T;
     end.
 
     module String : STRING =
-        type T = ref array of byte;
+        type R = array of byte;
         procedure Equal (a, b: T) : boolean =
             return a = b or len(a) = len(b) and a^ = b^;
         end;
@@ -105,7 +106,8 @@ This very simplified program defines strings and generic sets as abstract data t
     end.
 
     interface SET =
-        type T;
+        type R;
+        type T = ref R;
         type ET;
         val empty: T;
         procedure Add (set: T; element: ET) : T;
@@ -114,7 +116,7 @@ This very simplified program defines strings and generic sets as abstract data t
 
     module Set (Element: COMPARABLE): SET where Set_ET = Element_T =
         type ET;
-        type T = ref record value: Element; next: T end;
+        type R = record value: Element; next: T end;
         val Empty: T := nil;
         procedure Add (set: T; element: ET) : T =
             var list := new(T); list.head := head; list.tail := tail;
@@ -621,7 +623,7 @@ Including the interface `SYSTEM` allows a set of "unsafe" standard procedures to
 
 If a particular computer requires language extensions, e.g. procedures that access CPU registers, then they should be added to `SYSTEM`.
 
-In the following table *RAM* refers the computer's random access memory, addressed by byte; *AnyType* is any type; *T* is a type definition given as a parameter. 
+In the following table *RAM* refers the computer's random access memory, addressed by byte; *AnyType* is any type; *T* is a type definition given as a parameter.
 
 |  Definition                         | Function                                     |
 |--------------------------------------|----------------------------------------------|
