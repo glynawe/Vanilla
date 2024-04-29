@@ -38,14 +38,19 @@ Inductive type_t : Type :=
   
   (* The "type" of proper procedures statements. *)
   | Statement.
+  
+Definition parameter_t : Type := name_t * passing_t * type_t.
 
+Definition procedure_t : Type := list parameter_t * type_t.
+
+Definition element_t : Type := name_t * type_t.
 
 (* -------------------------------------------------------------------------- *)
 (* Type Equality *)
 (* -------------------------------------------------------------------------- *)
 
 
-(** [equal a b] is True if types [a] and [b] are structurally equivalent. 
+(** [Equal a b] is True if types [a] and [b] are structurally equivalent. 
 
   Lists of procedure parameters are equal if the parameters from each list can 
   be paired, and each pair of parameters has an equal parameter passing method 
@@ -54,7 +59,7 @@ Inductive type_t : Type :=
   Lists of record elements are equal if the elements from each list be paired,
   and each pair of elements has the an equal name and equal type. *)
 
-Fixpoint equal (t1: type_t) (t2: type_t) : Prop :=
+Fixpoint Equal (t1: type_t) (t2: type_t) : Prop :=
   match t1, t2 with
   | Integer, Integer => True
   | Boolean, Boolean => True
@@ -62,24 +67,24 @@ Fixpoint equal (t1: type_t) (t2: type_t) : Prop :=
   | Word, Word => True
   | Real, Real => True
   | NilReference, NilReference => True
-  | Reference rt1, Reference rt2 => equal rt1 rt2  
-  | Array len1 et1, Array len2 et2 => len1 = len2 /\ equal et1 et2
-  | OpenArray et1, OpenArray et2 => equal et1 et2
+  | Reference rt1, Reference rt2 => Equal rt1 rt2  
+  | Array len1 et1, Array len2 et2 => len1 = len2 /\ Equal et1 et2
+  | OpenArray et1, OpenArray et2 => Equal et1 et2
   | Record es1, Record es2 =>
     (fix equal_elements xs ys :=    (* Gallina requires this nesting :-\ *)
       match xs, ys with
       | (n1, t1) :: xs', (n2, t2) :: ys' => 
-          n1 = n2 /\ equal t1 t2 /\ equal_elements xs' ys'
+          n1 = n2 /\ Equal t1 t2 /\ equal_elements xs' ys'
       | [], [] => True
       | _, _ => False
       end
     ) es1 es2
   | Procedure ps1 rt1, Procedure ps2 rt2 =>
-    equal rt1 rt2 /\
+    Equal rt1 rt2 /\
     (fix equal_parameters xs ys :=
       match xs, ys with
       | (_, p1, t1) :: xs', (_, p2, t2) :: ys' => 
-           p1 = p2 /\ equal t1 t2 /\ equal_parameters xs' ys'
+           p1 = p2 /\ Equal t1 t2 /\ equal_parameters xs' ys'
       | [], [] => True
       | _, _ => False
       end
@@ -87,6 +92,26 @@ Fixpoint equal (t1: type_t) (t2: type_t) : Prop :=
   | Statement, Statement => True
   | _, _ => False 
   end.
+
+(*
+Theorem Equal_reflexitivity : forall (t: type_t), Equal t t. 
+Proof.
+  intros.
+  induction t; simpl.
+  - apply I.
+  - apply I.
+  - apply I.
+  - apply I.
+  - apply I.
+  - apply IHt. (* Reference *)
+  - apply I.
+  - split. (* Array *)
+    + reflexivity.
+    + apply IHt.
+  - apply IHt. (* OpenArray *)
+  - ???
+*)
+
 
 
 (* -------------------------------------------------------------------------- *)
@@ -246,7 +271,7 @@ Definition assignment_compatible (dst: type_t) (src: type_t) : Prop :=
   | NilReference, _            => False
   | OpenArray _,  _            => False
   | _,            OpenArray _  => False
-  | t1,           t2           => equal t1 t2
+  | t1,           t2           => Equal t1 t2
   end.
 
 
@@ -260,8 +285,8 @@ Definition assignment_compatible (dst: type_t) (src: type_t) : Prop :=
 
 Definition var_parameter_compatible (dst: type_t) (src: type_t) : Prop :=
   match dst, src with
-  | OpenArray et1,  Array _ et2  => equal et1 et2
-  | t1,             t2           => equal t1 t2
+  | OpenArray et1,  Array _ et2  => Equal et1 et2
+  | t1,             t2           => Equal t1 t2
   end.
 
 
@@ -274,8 +299,8 @@ Definition var_parameter_compatible (dst: type_t) (src: type_t) : Prop :=
 
 Definition value_parameter_compatible (dst: type_t) (src: type_t) : Prop :=
   match dst, src with
-  | OpenArray et1,  Array _ et2    => equal et1 et2
-  | OpenArray et1,  OpenArray et2  => equal et1 et2
+  | OpenArray et1,  Array _ et2    => Equal et1 et2
+  | OpenArray et1,  OpenArray et2  => Equal et1 et2
   | t1,             t2             => assignment_compatible t1 t2
   end.
 
@@ -284,7 +309,7 @@ Definition value_parameter_compatible (dst: type_t) (src: type_t) : Prop :=
 (* Procedure Call Validity *)
 (* -------------------------------------------------------------------------- *)
 
-(** [procedure_call_valid] is True if: there are the same number of supplied 
+(** [ValidProcedureCall] is true if: there are the same number of supplied 
     call parameters as procedure parameters; pass-by-reference parameters are 
     supplied designators, not values; and the types of each pair of procedure 
     parameter and supplied parameter are compatible. *)
@@ -294,16 +319,38 @@ Inductive call_parameter_t : Type :=
   | SuppliedDesignator (designator: type_t).
 
 
-Fixpoint procedure_call_valid
-    (parameters: list (name_t * passing_t * type_t))
-    (supplied: list call_parameter_t) : Prop :=
-  match parameters, supplied with
-  | [], [] => True
-  | (_, ByValue, pt) :: ps, SuppliedValue st :: ss => 
-      value_parameter_compatible pt st /\ procedure_call_valid ps ss 
-  | (_, ByValue, pt) :: ps, SuppliedDesignator st :: ss => 
-      value_parameter_compatible pt st /\ procedure_call_valid ps ss
-  | (_, ByReference, pt) :: ps, SuppliedDesignator st :: ss => 
-      var_parameter_compatible pt st /\ procedure_call_valid ps ss
-  | _,  _ => False
+Definition CompatibleParameter (ps: parameter_t * call_parameter_t) : Prop :=
+  match ps with
+  | ((_, ByValue, pt), SuppliedValue st) => value_parameter_compatible pt st 
+  | ((_, ByValue, pt), SuppliedDesignator st) =>  value_parameter_compatible pt st
+  | ((_, ByReference, pt), SuppliedDesignator st) => var_parameter_compatible pt st
+  | (_,  _) => False
   end.
+
+Definition ValidProcedureCall
+    (parameters: list parameter_t)
+    (supplied: list call_parameter_t) : Prop :=
+  length parameters = length supplied /\ 
+  Forall CompatibleParameter (combine parameters supplied). 
+
+(* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
+
+Theorem ValidProcedureCall_no_parameters : ValidProcedureCall [] [].
+Proof.
+  unfold ValidProcedureCall. simpl. 
+  split.
+  - reflexivity.
+  - apply Forall_nil.
+Qed.
+
+Lemma ValidProcedureCall_wrong_number_of_parameters : 
+  forall (pp: list parameter_t) (sp: list call_parameter_t),
+  length sp <> length pp -> ~ValidProcedureCall pp sp.
+Proof.
+  intros pp ss Length.
+  intros Valid. apply Length. (* contrapositive *)
+  unfold ValidProcedureCall in Valid.
+  destruct Valid as [ValidLength _]. 
+  rewrite ValidLength.
+  reflexivity.
+Qed.
