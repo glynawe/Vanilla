@@ -1,203 +1,197 @@
 (* The Vanilla type rules in OCaml. *)
 
 
-(* Identifiers. (Note: this is a dummy, Name.type_t and Name.equal will be defined elsewhere.) *)
+(* ------------------------------------------------------------------------- *)
+(* Names *)
+(* ------------------------------------------------------------------------- *)
+
+
 module Name = struct
-  type type_t = string
+  type t = string
   let equal = String.equal
-  let rec all_different : type_t list -> bool =
-    function
-    | [] -> true
-    | n :: ns -> not (List.exists (equal n) ns) && all_different ns
 end
 
 
-(* ------------------------------------------------------------------------------- *)
-(* Types *)
-(* ------------------------------------------------------------------------------- *)
+module GlobalName = struct
+  type t = 
+    | Imported of Name.t * Name.t
+    | Included of Name.t
+  (* Two names are equivalent if they are equal or if they have been declared 
+    equivalent by a functor. *)
+  let equivalent (a: t) (b: t) : bool = true  (* dummy *)
+end
 
+
+let rec all_different : Name.t list -> bool =
+  function
+  | [] -> true
+  | n :: ns -> not (List.exists (Name.equal n) ns) && all_different ns
+
+
+(* ------------------------------------------------------------------------- *)
+(* Types *)
+(* ------------------------------------------------------------------------- *)
 
 type type_t =
-  (* Atomic types. *)
+  | Statement                     
   | Integer
   | Byte
   | Word
   | Real
   | Boolean
   | Ref of type_t
-  | Nil       (* compatible with any reference *)
-
-  (* Structured types. *)
+  | NamedRef of GlobalName.t  (* refers to a record or abstract type *)
+  | Nil                       (* compatible with any reference *)
   | Array of int * type_t
-  | OpenArray of type_t               (* Array whose length is only known at runtime.*)
-  | Record of (Name.type_t * type_t) list
+  | OpenArray of type_t       (* Array whose length is only known at runtime.*)
+  | Record of element_t list
+  | Abstract of GlobalName.t
   | Procedure of parameter_t list * type_t
 
-  (* The "type" of statements. Like C's void. *)
-  | Statement                     
+and parameter_t = Name.t * passing_method_t * type_t
 
-and parameter_t =
-  |  VarParameter of Name.type_t * type_t
-  |  ValueParameter of Name.type_t * type_t
+and passing_method_t = ByReference | ByValue
+
+and element_t = Name.t * type_t
+
+let atomic_type t = 
+  match t with
+  | Integer | Byte | Word | Real | Boolean
+  | Ref _ | NamedRef _ -> true
+  | _ -> false
+
+let structured_type t = 
+  match t with
+  | Array _ | OpenArray _ | Record _ | Procedure (_, _) -> true
+  | Abstract _ -> true
+  | _ -> false 
+
+let value_type t = atomic_type t || t = Nil   
+
+let return_type t = atomic_type t || t = Statement
+
+let reference_type t = 
+  match t with
+  | Nil | Ref _ | NamedRef _ -> true
+  | _ -> false
+
+let referenceable_type t = atomic_type t || structured_type t
+
+let sized_type t =  (* can be stored in variables and assigned *) 
+  match t with
+  | Array _  | Record _ -> true
+  | _ -> atomic_type t 
 
 
-type procedure_call_t =
-  Call of call_parameter_t list
-
-and call_parameter_t =
-  | SuppliedValue of type_t
-  | SuppliedDesignator of type_t
-
-
-let parameter_type (p: parameter_t): type_t =
-  match p with
-  | VarParameter (_, pt) -> pt
-  | ValueParameter (_, pt) -> pt
-
-
-(* ------------------------------------------------------------------------------- *)
+(* -------------------------------------------------------------------------- *)
 (* Type Equality *)
-(* ------------------------------------------------------------------------------- *)
+(* -------------------------------------------------------------------------- *)
 
+(** [equal a b] is true if types [a] and [b] are equal.  
 
-(** [equal a b] is true if types [a] and [b] are equal by structural equivalence. *)
+    Abstract types have names, records can have names. Two named types are 
+    equal if they are the same name or if they have been declared 
+    equivalent by a functor. Named types are always considered to be 
+    structured types. *)
 
 let rec equal (a: type_t) (b: type_t): bool =
   match a, b with
-  | Integer, Integer
-  | Byte, Byte
-  | Word, Word
-  | Real, Real
-  | Boolean, Boolean
-  | Nil, Nil -> true
   | Ref t1, Ref t2 -> equal t1 t2
+  | NamedRef n1, NamedRef n2 -> GlobalName.equivalent n1 n2 
   | Array (len1, t1), Array (len2, t2) -> len1 = len2 && equal t1 t2
-  | Procedure (p1, t1), Procedure (p2, t2) -> equal_parameters p1 p2 && equal t1 t2
   | OpenArray t1, OpenArray t2 -> equal t1 t2
   | Record e1, Record e2 -> equal_elements e1 e2
-  | Statement, Statement -> true
-  | _ -> false
+  | Abstract n1, Abstract n2 -> GlobalName.equivalent n1 n2
+  | Procedure (p1, t1), Procedure (p2, t2) -> equal_parameters p1 p2 && equal t1 t2
+  | _ -> true
 
 
-(* Lists of procedure parameters are equal if the parameters from each list can be
-   paired, and each pair of parameters has an equal passing method (var or val) and type.
-   (Parameter names are ignored, they are just placeholders.) *)
+(* Lists of procedure parameters are equal if the parameters from each list 
+   can be paired, and each pair of parameters has an equal passing method and 
+   type. (Parameter names are ignored, they are just placeholders.) *)
 
-and equal_parameters (p1: parameter_t list) (p2: parameter_t list): bool =
-  match p1, p2 with
-  | VarParameter (_, t1) :: p1', VarParameter (_, t2) :: p2' ->
-      equal t1 t2 && equal_parameters p1' p2'
-  | ValueParameter (_, t1) :: p1', ValueParameter (_, t2) :: p2' ->
-      equal t1 t2 && equal_parameters p1' p2'
-  | [], [] -> true
-  | _ -> false
-
-(*  *)
-
-and equal_elements (e1: (Name.type_t * type_t) list) (e2 : (Name.type_t * type_t) list) : bool =
-  match e1, e2 with
-  | (n1, t1) :: e1', (n2, t2) :: e2' -> Name.equal n1 n2 && equal t1 t2 && equal_elements e1' e2'
-  | [], [] -> true
-  | _ -> false
+and equal_parameters (ps1: parameter_t list) (ps2: parameter_t list): bool =
+  let equal_parameter (_, pm1, t1) (_, pm2, t2) = equal t1 t2 && pm1 = pm2 in
+  List.length ps1 = List.length ps2 &&
+  List.for_all2 equal_parameter ps1 ps2
 
 
-(* ------------------------------------------------------------------------------- *)
+(* Lists of record elements are equal if the elements from each list can be
+   paired, and each pair of element has an equal name and type. *)
+
+and equal_elements (es1: element_t list) (es2 : element_t list) : bool =
+  let equal_element (n1, t1) (n2, t2) = Name.equal n1 n2 && equal t1 t2 in
+  List.length es1 = List.length es2 &&
+  List.for_all2 equal_element es1 es2
+
+
+(* ------------------------------------------------------------------------- *)
 (* Type Validity *)
-(* ------------------------------------------------------------------------------- *)
+(* ------------------------------------------------------------------------- *)
+
+let rec valid_type t =
+  match t with
+  | Ref rt -> valid_type rt && referenceable_type t
+  | Array (len, et) -> len > 0 && valid_type et && sized_type et 
+  | OpenArray et -> sized_type et && valid_type et
+  | Record es -> valid_elements es
+  | Procedure (ps, rt) -> valid_parameters ps && return_type rt && valid_type rt
+  | _ -> true
+
+and valid_elements es =
+  let ns, ts = List.split es in
+  all_different ns && 
+  List.for_all (fun t -> sized_type t && valid_type t) ts
+
+and valid_parameters ps =
+  let valid_parameter = function
+  | (_, ByReference, t) -> valid_type t && referenceable_type t 
+  | (_, ByValue, t) -> valid_type t && (value_type t || referenceable_type t)
+  in 
+  List.for_all valid_parameter ps
 
 
-(** [valid_value a] is true if type [a] is an acceptable expression value. 
-    (Vanilla expressions have atomic types.) *)
-
-let rec valid_value (a: type_t) : bool =
-  match a with
-  | Integer | Byte | Word | Real | Boolean -> true
-  | Ref b -> valid_reference b
-  | Nil -> true
-  | _ -> false
-
-
-(** [valid_parameter a] is true if type [a] can be used as a value procedure parameter. 
-    (Structured types are allowed. They are passed by reference, but are made immutuable.) *)
-
-and valid_parameter (a: type_t) : bool =
-  match a with
-  | OpenArray a -> valid_variable a
-  | Procedure (ps, rt) -> List.for_all valid_reference (List.map parameter_type ps) && valid_return rt
-  | a -> valid_value a
-
-
-(** [valid_reference a] is true if type [a] can be used as a reference type target
-    or a pass-by-reference procedure parameter. *)
-
-and valid_reference (a: type_t) : bool =
-  match a with
-  | OpenArray a -> valid_variable a
-  | Procedure (ps, rt) -> List.for_all valid_reference (List.map parameter_type ps) && valid_return rt
-  | a -> valid_variable a
-
-
-(** [valid_variable a] is true if type [a] can be stored in a variable, or is assignable.  
-    (Vanilla's assignment operator works on equally-typed records and arrays. *)
-
-and valid_variable a =
-  match a with
-  | Array (d, e) -> d > 0 && valid_variable e
-  | Record es ->
-      let ns, ts = List.split es in
-      List.length es > 0 && Name.all_different ns && List.for_all valid_variable ts
-  | a -> valid_value a
-
-(** [valid_return a] is true if type [a] can be returned by a procedure. *)
-
-and valid_return (a: type_t) : bool =
-  match a with
-  | Statement -> true   (* i.e. returns nothing *)
-  | a -> valid_value a
-
-
-(* ------------------------------------------------------------------------------- *)
+(* -------------------------------------------------------------------------- *)
 (* Assignment Compatibilities *)
-(* ------------------------------------------------------------------------------- *)
+(* -------------------------------------------------------------------------- *)
 
 
 (** [assignment_compatible dst src] is true if a variable of type [dst] can be
     assigned a value of type [src].
 
-    Two types are usually assignment compatible if they have equal types.
-    The exceptions are that any reference can be assigned [nil] and a reference
-    to a procedure can be assigned a procedure of the correct type.
-    But otherwise open arrays, procedures and statements cannot be assigned. *)
+    Two types are assignment compatible if they are sized and have equal types.
+    In addition, any reference can be assigned [nil] and a reference
+    to a procedure can be assigned a procedure of the correct type. *)
 
 let assignment_compatible (dst: type_t) (src: type_t) : bool =
+  sized_type dst && sized_type src && src = dst ||
+  reference_type dst && src = Nil ||
   match dst, src with
-  | Ref _, Nil -> true
-  | Ref (Procedure (_, _) as a), (Procedure (_, _) as b) -> equal a b
-  | (Nil | OpenArray _ | Statement | Procedure (_,_)), _ -> false
-  | _, (Nil | OpenArray _ | Statement | Procedure (_,_)) -> false
-  | t1, t2 -> equal t1 t2
+  | Ref (Procedure (dp, dr)), Procedure (sp, sr) -> 
+      equal_parameters dp sp && equal dr sr
+  | _ -> false 
 
 
-(** [var_parameter_compatible dst src] is true if a designator of type
-    [src] can by supplied to a procedure parameter of type [dst].
+(** [reference_parameter_compatible dst src] is true if a designator of type
+    [src] can by passed by reference to a procedure parameter of type [dst].
 
-    A supplied parameter is type compatible with a [var] formal parameter if
-    their types are equal. The exception is that arrays are compatible
-    with open arrays if their element types are equal. *)
+    The supplied parameter an procedure parameter must have equal types. 
+    The exception is that arrays are compatible with open arrays if their 
+    element types are equal. *)
 
-let var_parameter_compatible (dst: type_t) (src: type_t) : bool =
+let reference_parameter_compatible (dst: type_t) (src: type_t) : bool =
   match dst, src with
   | OpenArray t1, Array (_, t2) -> equal t1 t2
   | OpenArray t1, OpenArray t2 -> equal t1 t2
   | t1, t2 -> equal t1 t2
 
 
-(** [value_parameter_type_compatible dst src] is true if a value of type
-    [src] can by supplied to a value parameter of type [dst].
+(** [value_parameter_compatible dst src] is true if a designator of type
+    [src] can by passed by value to a procedure parameter of type [dst].
 
-    An supplied parameter is type compatible with a value formal parameter if
-    their types are equal. The exception is that arrays are compatible
-    with open arrays if their element types are equal. *)
+    The supplied parameter must be assignment compatiable with the procedure 
+    parameter. The exception is that arrays are compatible with open arrays 
+    if their element types are equal. *)
 
 let value_parameter_compatible (dst: type_t) (src: type_t) : bool =
   match dst, src with
@@ -206,24 +200,34 @@ let value_parameter_compatible (dst: type_t) (src: type_t) : bool =
   | t1, t2 -> assignment_compatible t1 t2
 
 
-(* ------------------------------------------------------------------------------- *)
+(* -------------------------------------------------------------------------- *)
 (* Procedure Call Validity *)
-(* ------------------------------------------------------------------------------- *)
+(* -------------------------------------------------------------------------- *)
 
-(** [procedure_call_valid procedure_type call_parameters] is true if there are the
-    same number of supplied call parameters as procedure parameters, [var] parameters
-    are supplied designators, not values, and the types of each pair of procedure
-    parameter and supplied parameter are compatible. *)
+
+type procedure_call_t =
+  supplied_parameter_t list
+
+and supplied_parameter_t =
+  | SuppliedValue      of type_t
+  | SuppliedDesignator of type_t
+
+
+let parameter_compatible p s =
+  match p, s with
+  | (_, ByValue, pt), SuppliedValue st -> value_parameter_compatible pt st
+  | (_, ByValue, pt), SuppliedDesignator st -> value_parameter_compatible pt st
+  | (_, ByReference, pt), SuppliedDesignator st -> reference_parameter_compatible pt st
+  | (_, ByReference, _), SuppliedValue _ -> false
+
+
+(** [procedure_call_valid] is true if there are 
+    the same number of supplied call parameters as procedure parameters, 
+    by-reference parameters are supplied designators, and the types of each 
+    pair of procedure parameter and supplied parameter are compatible. *)
 
 let procedure_call_valid
     (procedure_parameters: parameter_t list)
-    (call_parameters: call_parameter_t list) : bool =
-  let parameter_compatible (p, s) =
-    match p, s with
-    | ValueParameter (_, pt), SuppliedValue      st -> value_parameter_compatible pt st
-    | ValueParameter (_, pt), SuppliedDesignator st -> value_parameter_compatible pt st
-    | VarParameter (_, _),   SuppliedValue _        -> false
-    | VarParameter (_, pt),   SuppliedDesignator st -> var_parameter_compatible pt st
-  in
-  List.length procedure_parameters = List.length call_parameters &&
-  List.for_all parameter_compatible (List.combine procedure_parameters call_parameters)
+    (supplied_parameters: supplied_parameter_t list) : bool =
+  List.length procedure_parameters = List.length supplied_parameters &&
+  List.for_all2 parameter_compatible procedure_parameters supplied_parameters
