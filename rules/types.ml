@@ -1,5 +1,11 @@
 (* The Vanilla type rules in OCaml. *)
 
+(* ------------------------------------------------------------------------- *)
+(* Utilities *)
+(* ------------------------------------------------------------------------- *)
+
+(* Some functions that will be useful in here. *)
+
 module Utility =
 struct
   let rec duplicates (equal: 't -> 't -> bool) (xs: 't list) : bool =
@@ -8,7 +14,6 @@ struct
     | x :: xs' -> List.exists (equal x) xs' || duplicates equal xs'
 
   module OptionMonad = struct
-    let (>>=) = Option.bind  
     let (let*) = Option.bind
     let return = Option.some 
 
@@ -66,6 +71,7 @@ module type TYPE =
 sig
   type name_t
   type globalname_t
+
   type t =
       Statement
     | Integer
@@ -81,14 +87,19 @@ sig
     | Record of element_t list
     | Abstract of globalname_t
     | Procedure of parameter_t list * t
-  and parameter_t = name_t * (passing_method_t * t)
-  and passing_method_t = ByReference | ByValue
-  and element_t = name_t * t
-  type procedure_call_t = supplied_parameter_t list
+  and parameter_t = 
+    name_t * (passing_method_t * t)
+  and passing_method_t = 
+      ByReference 
+    | ByValue
+  and element_t = 
+    name_t * t
+
+  type procedure_call_t = 
+    supplied_parameter_t list
   and supplied_parameter_t =
     | SuppliedValue of t
     | SuppliedDesignator of t
-
 end
 
 
@@ -298,7 +309,20 @@ end (* module TypeRules *)
 (* Type Definitions *)
 (* ------------------------------------------------------------------------- *)
 
-module TypeDefinitions
+(* "TypeDefinition.t" is for types reported by the compiler. They are not quite
+  the same. These include types defined by name which aren't records or abstract
+  types, e.g "type char = byte". These have to be expanded to produce the
+  "Type.t" types described above. "TypeDefinitions.expand" does this, and also
+  checks the type definitions for validity, return None for invalid definitions.
+
+  I will need to check this in Coq:
+
+    Theorem TypeDefinition_expansion_returns_valid_types : 
+      forall (d: TypeDefinition_t) (t: Type_t), 
+      TypeDefinition_expand d = (Some t) -> Rules_valid t.
+*)
+
+module TypeDefinition
   (Name: NAME) 
   (GlobalName: NAME) 
   (Type: TYPE with type name_t = Name.t and type globalname_t = GlobalName.t)
@@ -314,6 +338,7 @@ type t =
   | Real
   | Boolean
   | Ref of t
+  | Nil 
   | Array of int * t
   | OpenArray of t
   | Record of element_t list
@@ -335,6 +360,7 @@ let rec expand (m: Module.t) (d : t) : Type.t option =
   | Real -> return Type.Real
   | Boolean -> return Type.Boolean
   | Ref d -> expand_ref m d
+  | Nil -> return Type.Nil
   | Array (i, d) -> expand_array m i d
   | OpenArray d -> let* t = expand m d in return (Type.OpenArray t)
   | Record es -> expand_record m es
@@ -351,7 +377,8 @@ and expand_ref m d =
   match d with
   | Named n -> 
       let* t = Module.get_type m n in
-      return (match t with
+      (* DON'T follow refs to records or abstracts *)
+      return (match t with      
       | Type.Record _ -> Type.NamedRef n
       | Type.Abstract _ -> Type.NamedRef n
       | t -> Ref t )
@@ -360,7 +387,9 @@ and expand_ref m d =
       return (Type.Ref t)
 
 and expand_record m es =
-  if Utility.duplicates (Name.equal) (fst (List.split es)) || List.length es <= 0 then
+  if Utility.duplicates (Name.equal) (fst (List.split es)) then 
+    None
+  else if List.length es <= 0 then
     None
   else 
     let expand_element (n, d) = (let* t = expand m d in return (n, t)) in

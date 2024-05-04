@@ -1,10 +1,6 @@
 (library
  (name vanilla)
- (preprocess
-  (pps ppx_sexp_conv ppx_compare))
- (libraries base)
  (modules
    types
    types_subset
-   scratch
  ))

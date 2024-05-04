@@ -2,6 +2,20 @@ Require Import Coq.Lists.List.
 Import ListNotations.
 Require Coq.Strings.String.
 
+(* XXX I don't like how I had to define Record and Procedure here. They are like
+  that because I cannot work out how to define induction principle
+  "type_ind_strong" otherwise.
+
+  "Record (elements: list (name_t * type_t))" is clearly better than "Record
+  (names: list name_t) (types: type_t list)", but it introduces two levels of
+  recursive nesting (one for the list, one of the tuple and I don't know how to
+  handle that.
+
+  I've been give two possible answers in
+  https://proofassistants.stackexchange.com/questions/3953/how-do-i-define-an-induction-principle-for-a-type-with-a-nested-list-of-tuples/3956
+  but I don't see how to do a proof if Equal with the inductive principles
+  given. The code cab be found in "scratch5.v" and "scratch6.v".
+   *)
 
 (*---------------------------------------------------------------------------*)
 (* Types *)

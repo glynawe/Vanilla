@@ -1,0 +1,80 @@
+
+// Vanilla in a C-like syntaxs
+
+interface ADT {
+    type Repr;
+    type T = ref Repr;
+    fun same (a: T, b: T) : bool; 
+}
+
+interface COMPARABLE {
+    include ADT;
+    fn equal (a: T, b: T) : bool;
+}
+
+interface HASHABLE {
+    include COMPARABLE;
+    fn hash (a: T) : int;
+}
+
+interface HASHMAP {
+    include ADT;
+    type KeyT;
+    type ValueT;
+    fn create (sizelimit: int): T;
+    fn set (m: T, k: KeyT, v: ValueT);
+    fn get (m: T, k: KeyT, ref v: ValueT): bool;
+}
+
+module HashMap (Key: HASHABLE, Value: ADT) : HASHMAP {
+
+    equivalent KeyT = Key::T;
+    equivalent ValueT = Value::T;
+
+    type Repr = struct {
+        size: int;
+        count: int;
+        table: ref [] Value;
+    }
+
+    fn create (sizelimit: int): T {
+        var m = new Repr;
+        m.size = sizelimit;
+        m.count = 0;
+        m.table = new ValueT [size];
+        for i = 0 : TableSize { 
+            m.table = nil;
+        }
+        return m;
+    }
+
+    fn place (m: T, k: KeyT, v: ValueT): int {
+        expect(m.count < m.size);
+        var i = Key::hash(k) % m.size;
+        while m.table[i] != nil {
+            if Key::equal(m.table[i], k) {
+                m.table[i] = v;
+                return i;
+            }
+            i = (i + 1) % m.size;
+        }
+        return i;
+    }
+
+    fn set (m: T, k: KeyT, v: ValueT) {
+        val i = place(m, k, v);
+        if m.table[i] == nil { ++m.count; }
+        m.table[i] = v;
+    }
+
+    fn get (m: T, k: KeyT, ref v: ValueT) : bool {
+        val i = place(m, k, v);
+        if m.table[i] == nil { 
+            return false;
+        } else {
+            v = m.table[i];
+            return true;
+        }
+    }
+}.
+
