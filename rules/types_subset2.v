@@ -8,7 +8,8 @@
  
 Require Import Coq.Lists.List.
 Import ListNotations.
-Open Scope bool_scope.
+Require Coq.Strings.String.
+Definition name_t := Coq.Strings.String.string.
 
 Inductive type_t : Type :=
   | Integer
@@ -62,8 +63,8 @@ Proof.
   induction H; auto.
 Qed.
 
-(*
-Theorem Equal_refl : forall (t: type_t), Equal t t.
+
+Theorem Equal_refl' : forall (t: type_t), Equal t t.
 Proof.
   intros.
   induction t using type_ind_strong; simpl.
@@ -76,4 +77,4 @@ Proof.
       * apply H.
       * apply IHForall.
 Qed.
-*)  
+

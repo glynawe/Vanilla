@@ -36,7 +36,7 @@ Inductive type_t : Type :=
   | Procedure (parameters: list (name_t * passing_t * type_t)) 
               (return_type: type_t)
   
-(* The "type" of proper procedures and statements. *)
+  (* The "type" of proper procedures and statements. *)
   | Statement.
   
 Definition parameter_t : Type := name_t * passing_t * type_t.
@@ -44,6 +44,33 @@ Definition parameter_t : Type := name_t * passing_t * type_t.
 Definition procedure_t : Type := list parameter_t * type_t.
 
 Definition element_t : Type := name_t * type_t.
+
+
+(* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  *)
+
+Section type_ind_strong.
+  Variable P : type_t -> Prop.
+  Hypothesis Integer_case : P Integer.
+  Hypothesis Ref_case : forall (t: type_t), P t -> P (Reference t).
+  Hypothesis Array_case : forall (l : nat) (t: type_t), Prop -> P t -> P (Array l t).
+  Hypothesis Record_case : forall (ts: list type_t), Forall P ts -> P (Tuple ts).
+
+  Fixpoint type_ind_strong (t : type_t) : P t :=
+    match t with
+    | Integer => Integer_case
+    | Reference t => Ref_case t (type_ind_strong t)
+    | Array l t => Array_case l t (l > 0) (type_ind_strong t)
+    | Tuple ts =>
+      Tuple_case ts 
+        ( ( fix tuple_list_ind (ts : list type_t) : Forall P ts :=
+            match ts with
+            | [] => Forall_nil _
+            | t :: ts' => Forall_cons t (type_ind_strong t) (tuple_list_ind ts')
+            end ) 
+          ts )
+    end.
+End type_ind_strong.
+
 
 (* -------------------------------------------------------------------------- *)
 (* Type Equality *)

@@ -578,7 +578,7 @@ The bit shift operators will shift in the opposite direction if *n* is negative.
 | `new (T; d: integer) : ref array of T` | allocate an array of `d` elements |
 | `free (r : ref T)`                     | free data                         |
 
-`new` and `free` may not be used in constant expressions.
+`new` and `free` may not be used in constant expressions. The type `T` may not be an abstract type or open array (its size must be known).
 
 #### Garbage Collection Option
 

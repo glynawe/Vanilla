@@ -71,7 +71,7 @@ Fixpoint Equal (t1: type_t) (t2: type_t) : Prop :=
   | OpenArray et1, OpenArray et2 => Equal et1 et2
   | Record ns1 ts1, Record ns2 ts2 =>
     ns1 = ns2 /\
-    (fix equal_elements xs ys :=   (* this must be done instead *)
+    (fix equal_elements xs ys :=
       match xs, ys with
       | t1 :: xs', 
         t2 :: ys' => Equal t1 t2 /\ equal_elements xs' ys'
@@ -82,7 +82,7 @@ Fixpoint Equal (t1: type_t) (t2: type_t) : Prop :=
   | Procedure ns1 ps1 ts1, Procedure ns2 ps2 ts2 =>
     ns1 = ns2 /\
     ps1 = ps2 /\
-    (fix equal_elements xs ys :=   (* this must be done instead *)
+    (fix equal_elements xs ys :=
       match xs, ys with
       | t1 :: xs', 
         t2 :: ys' => Equal t1 t2 /\ equal_elements xs' ys'
