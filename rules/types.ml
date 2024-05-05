@@ -8,10 +8,10 @@
 
 module Utility =
 struct
-  let rec duplicates (equal: 't -> 't -> bool) (xs: 't list) : bool =
+  let rec distinct (equal: 't -> 't -> bool) (xs: 't list) : bool =
     match xs with
     | [] -> true
-    | x :: xs' -> List.exists (equal x) xs' || duplicates equal xs'
+    | x :: xs' -> not (List.exists (equal x) xs') && distinct equal xs'
 
   module OptionMonad = struct
     let (let*) = Option.bind
@@ -116,7 +116,7 @@ module TypeRules
 struct
 
 (* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
-(* Type Catagories *)
+(* Type Categories *)
 (* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
 
 let atomic_type (t: Type.t) : bool = 
@@ -125,7 +125,7 @@ let atomic_type (t: Type.t) : bool =
   | Ref _ | NamedRef _ -> true
   | _ -> false
 
-let structured_type (t: Type.t) : bool = 
+let structured_type (t: Type.t) : bool =  
   match t with
   | Array _ | OpenArray _ | Record _ | Procedure (_, _) -> true
   | Abstract _ -> true
@@ -142,7 +142,8 @@ let reference_type (t: Type.t) : bool =
 
 let referenceable_type t = atomic_type t || structured_type t
 
-let sized_type (t: Type.t) : bool =  (* can be stored in variables and assigned *) 
+let sized_type (t: Type.t) : bool =  
+  (* can be stored in variables and assigned *) 
   match t with
   | Array _  | Record _ -> true
   | _ -> atomic_type t 
@@ -163,7 +164,7 @@ let rec valid_type (t: Type.t) : bool =
 
 and valid_elements (es: Type.element_t list) : bool =
   let ns, ts = List.split es in
-  not (Utility.duplicates Name.equal ns) && 
+  not (Utility.distinct Name.equal ns) && 
   List.for_all (fun t -> sized_type t && valid_type t) ts
 
 and valid_parameters (ps: Type.parameter_t list) : bool =
@@ -172,7 +173,7 @@ and valid_parameters (ps: Type.parameter_t list) : bool =
   | (Type.ByValue, t) -> valid_type t && (value_type t || referenceable_type t)
   in 
   let ns, ts = List.split ps in
-  not (Utility.duplicates Name.equal ns) && 
+  not (Utility.distinct Name.equal ns) && 
   List.for_all valid_parameter ts
 
 
@@ -330,6 +331,8 @@ module TypeDefinition
   = 
 struct
 
+  module Rule = TypeRules(Name)(GlobalName)(Type)(Module)
+
 type t =
   | Named of GlobalName.t                     
   | Integer
@@ -377,39 +380,37 @@ and expand_ref m d =
   match d with
   | Named n -> 
       let* t = Module.get_type m n in
-      (* DON'T follow refs to records or abstracts *)
-      return (match t with      
-      | Type.Record _ -> Type.NamedRef n
-      | Type.Abstract _ -> Type.NamedRef n
-      | t -> Ref t )
+      if Rule.structured_type t 
+      then return (Type.NamedRef n)
+      else return (Type.Ref t)       
   | d ->
       let* t = expand m d in 
       return (Type.Ref t)
 
 and expand_record m es =
-  if Utility.duplicates (Name.equal) (fst (List.split es)) then 
-    None
-  else if List.length es <= 0 then
-    None
-  else 
+  if Utility.distinct (Name.equal) (fst (List.split es)) &&  
+     List.length es > 0
+  then
     let expand_element (n, d) = (let* t = expand m d in return (n, t)) in
     let* es' = map_option es expand_element in 
     return (Type.Record es')
+  else
+    None
     
 and expand_procedure m ps d =
-  if Utility.duplicates (Name.equal) (fst (List.split ps)) then 
-    None
-  else
+  if Utility.distinct (Name.equal) (fst (List.split ps)) 
+  then 
     let expand_parameter (n, (p, d)) = 
       let* t = expand m d in 
       return (n, (p, t))
     in
     let* ps' = map_option ps expand_parameter in
-    match d with
-    | None -> 
-        return (Type.Procedure (ps', Statement))
+    match d with  (* Does it have a return type? *)
+    | None -> return (Type.Procedure (ps', Statement))
     | Some rd ->
         let* t = expand m rd in
         return (Type.Procedure (ps', t))
+  else 
+    None
 
 end  (* module TypeDefinitions *)
