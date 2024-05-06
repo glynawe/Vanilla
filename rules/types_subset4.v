@@ -2,13 +2,15 @@ Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
 Import ListNotations.
 
-Section type_t.
+Definition name_t := string.
 
-  Unset Elimination Schemes.
+Section type_t.
 
   Inductive passing_method_t :=
     | ByReference
     | ByValue.
+
+  Unset Elimination Schemes.
 
   Inductive type_t : Type :=
     | Statement : type_t
@@ -17,7 +19,7 @@ Section type_t.
     | Reference : type_t -> type_t
     | OpenArray : type_t -> type_t
     | Array     : nat -> type_t -> type_t
-    | Record    : list (string * type_t) -> type_t
+    | Record    : list (name_t * type_t) -> type_t
     | Procedure : list (passing_method_t * type_t) -> type_t -> type_t. 
 
   Set Elimination Schemes.
@@ -150,10 +152,6 @@ Section type_t.
 
   Definition type_t_rec (P : _ -> Prop) := type_t_rect P.
 
-
-  Variable string_equal : string -> string -> Prop.
-  Variable passing_equal : passing_method_t -> passing_method_t -> Prop.
-
   Inductive TypeEqual : type_t -> type_t -> Prop :=
     | TypeEqual_Statement : 
         TypeEqual Statement Statement
@@ -169,12 +167,12 @@ Section type_t.
         TypeEqual (Array len t) (Array len t)
 
     | TypeEqual_Record elements1 elements2 : 
-        Forall2 string_equal (map fst elements1) (map fst elements2) -> 
+        Forall2 eq (map fst elements1) (map fst elements2) -> 
         Forall2 TypeEqual (map snd elements1) (map snd elements2) -> 
         TypeEqual (Record elements1) (Record elements2)
     
     | TypeEqual_Procedure args1 rettype1 args2 rettype2 : 
-        Forall2 passing_equal (map fst args1) (map fst args2) ->  
+        Forall2 eq (map fst args1) (map fst args2) ->  
         Forall2 TypeEqual (map snd args1) (map snd args2) -> 
         TypeEqual rettype1 rettype2 ->
         TypeEqual (Procedure args1 rettype1) (Procedure args2 rettype2)
@@ -187,17 +185,15 @@ Section type_t.
     induction 1; auto.
   Qed.
 
-  Hypothesis string_equal_refl : forall x : string, string_equal x x.
-  Hypothesis passing_equal_refl : forall x : passing_method_t, passing_equal x x.
 
   Fact TypeEqual_refl (t: type_t) : TypeEqual t t.
   Proof.
     induction t; constructor; try apply Forall2_refl.
-    + intros. apply string_equal_refl.                    (* Record names *)
-    + intros ? ((name, type) & <- & ?)%in_map_iff. eauto. (* Record types *)
-    + intros. apply passing_equal_refl.                   (* Procedure passing *)
-    + intros ? ((name, type) & <- & ?)%in_map_iff. eauto. (* Procedure types *)
-    + apply IHt.                                          (* Procedure return. *)
+    + intros. reflexivity.                                 (* Record names *)
+    + intros ? ((name, type) & <- & HI)%in_map_iff. eauto.    (* Record types *)
+    + intros. reflexivity.                                 (* Procedure passing *)
+    + intros ? ((pass, type) & <- & HI)%in_map_iff. eauto.    (* Procedure args. *)
+    + apply IHt.                                           (* Procedure return. *)
   Qed.
 
 End type_t.
