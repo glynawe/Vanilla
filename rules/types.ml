@@ -88,7 +88,7 @@ sig
     | Abstract of globalname_t
     | Procedure of parameter_t list * t
   and parameter_t = 
-    name_t * (passing_method_t * t)
+    passing_method_t * t
   and passing_method_t = 
       ByReference 
     | ByValue
@@ -172,9 +172,7 @@ and valid_parameters (ps: Type.parameter_t list) : bool =
   | (Type.ByReference, t) -> valid_type t && referenceable_type t 
   | (Type.ByValue, t) -> valid_type t && (value_type t || referenceable_type t)
   in 
-  let ns, ts = List.split ps in
-  not (Utility.distinct Name.equal ns) && 
-  List.for_all valid_parameter ts
+  List.for_all valid_parameter ps
 
 
 (* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
@@ -203,13 +201,13 @@ let rec equal (m: Module.t) (a: Type.t) (b: Type.t): bool =
 
 (* Lists of procedure parameters are equal if the parameters from each list 
    can be paired, and each pair of parameters has an equal passing method and 
-   type. (Parameter names are ignored, they are just placeholders.) *)
+   type. *)
 
 and equal_parameters 
     (m: Module.t) 
     (ps1: Type.parameter_t list) 
     (ps2: Type.parameter_t list) : bool =
-  let equal_parameter (_, (pm1, t1)) (_, (pm2, t2)) = equal m t1 t2 && pm1 = pm2 in
+  let equal_parameter (pm1, t1) (pm2, t2) = equal m t1 t2 && pm1 = pm2 in
   List.length ps1 = List.length ps2 &&
   List.for_all2 equal_parameter ps1 ps2
 
@@ -291,13 +289,13 @@ let procedure_call_valid
     (supplied_parameters: Type.supplied_parameter_t list) : bool =
   let parameter_compatible p s =
     match p, s with
-    | (_, (Type.ByValue, pt)), Type.SuppliedValue st -> 
+    | (Type.ByValue, pt), Type.SuppliedValue st -> 
         value_parameter_compatible m pt st
-    | (_, (Type.ByValue, pt)), Type.SuppliedDesignator st -> 
+    | (Type.ByValue, pt), Type.SuppliedDesignator st -> 
         value_parameter_compatible m pt st
-    | (_, (Type.ByReference, pt)), Type.SuppliedDesignator st -> 
+    | (Type.ByReference, pt), Type.SuppliedDesignator st -> 
         reference_parameter_compatible m pt st
-    | (_, (Type.ByReference, _)), Type.SuppliedValue _ -> 
+    | (Type.ByReference, _), Type.SuppliedValue _ -> 
         false
   in
   List.length procedure_parameters = List.length supplied_parameters &&
@@ -350,7 +348,7 @@ type t =
 and element_t = Name.t * t
 
 and parameter_t = 
-  Name.t * (Type.passing_method_t * t)
+  Type.passing_method_t * t
 
 open Utility.OptionMonad
 
@@ -398,19 +396,12 @@ and expand_record m es =
     None
     
 and expand_procedure m ps d =
-  if Utility.distinct (Name.equal) (fst (List.split ps)) 
-  then 
-    let expand_parameter (n, (p, d)) = 
-      let* t = expand m d in 
-      return (n, (p, t))
-    in
-    let* ps' = map_option ps expand_parameter in
-    match d with  (* Does it have a return type? *)
-    | None -> return (Type.Procedure (ps', Statement))
-    | Some rd ->
-        let* t = expand m rd in
-        return (Type.Procedure (ps', t))
-  else 
-    None
+  let expand_parameter (p, d) =  (let* t = expand m d in return (p, t)) in
+  let* ps' = map_option ps expand_parameter in
+  match d with  (* Does it have a return type? *)
+  | None -> return (Type.Procedure (ps', Statement))
+  | Some rd ->
+      let* t = expand m rd in
+      return (Type.Procedure (ps', t))
 
 end  (* module TypeDefinitions *)

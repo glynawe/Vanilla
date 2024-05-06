@@ -32,7 +32,7 @@ Inductive type_t : Type :=
   | Array (length: nat) (element: type_t)
   | OpenArray (element: type_t)
   | Record (names: list name_t) (types: list type_t)
-  | Procedure (names: list name_t) (methods: list passing_t) (types: list type_t).
+  | Procedure (methods: list passing_t) (types: list type_t).
 
 Section type_ind_strong.
   Variable P : type_t -> Prop.
@@ -44,8 +44,8 @@ Section type_ind_strong.
     forall (ns: list name_t) (ts: list type_t), 
     Forall P ts -> P (Record ns ts).
   Hypothesis Procedure_case : 
-    forall (ns: list name_t) (ps: list passing_t) (ts: list type_t), 
-    Forall P ts -> P (Procedure ns ps ts).
+    forall (ps: list passing_t) (ts: list type_t), 
+    Forall P ts -> P (Procedure ps ts).
 
   Fixpoint type_ind_strong (t : type_t) : P t :=
     match t with
@@ -61,8 +61,8 @@ Section type_ind_strong.
             | [] => Forall_nil _
             end )
           ts )
-    | Procedure ns ps ts =>
-      Procedure_case ns ps ts
+    | Procedure ps ts =>
+      Procedure_case ps ts
         ( ( fix type_list_ind (ts : list type_t) : Forall P ts :=
             match ts with
             | t :: ts' => Forall_cons t (type_ind_strong t) (type_list_ind ts')
@@ -93,8 +93,7 @@ Fixpoint Equal (t1: type_t) (t2: type_t) : Prop :=
       | _, _ => False
       end
     ) ts1 ts2
-  | Procedure ns1 ps1 ts1, Procedure ns2 ps2 ts2 =>
-    ns1 = ns2 /\
+  | Procedure ps1 ts1, Procedure ps2 ts2 =>
     ps1 = ps2 /\
     (fix equal_elements xs ys :=
       match xs, ys with
@@ -113,8 +112,9 @@ Proof.
   - induction H; simpl; auto; split; auto. (* Record *)
     destruct IHForall; auto.
   - induction H; simpl; auto. (* Procedure *)
-    destruct IHForall as [H1 H2]. destruct H2. split; auto.
+    destruct IHForall as [H1 H2]. split; auto.
 Qed.
+
 
 
 (*---------------------------------------------------------------------------*)
@@ -133,8 +133,7 @@ Fixpoint Valid (t: type_t)  : Prop :=
         | [] => True
         | t :: ts' => Valid t /\  valid_types ts' 
         end) ts
-  | Procedure ns ps ts => 
-      length ns = length ts /\
+  | Procedure ps ts => 
       length ps = length ts /\
       (fix valid_types ts :=
         match ts with
