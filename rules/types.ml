@@ -38,11 +38,20 @@ sig
   val equal : t -> t -> bool
 end
 
+(* Abstract types and some record types need to be tested for equality by 
+   name rather than their structure. That means the type system needs 
+   a "Module.get_type" function to look up modules for type definitions.
+   
+   Functors can declare that two names refer to the same type by
+   type equivalence. The "Module.equivalent" function is aware of this.
+   See https://github.com/glynawe/Vanilla/blob/master/vanilla.md#modules-and-interfaces *) 
+
 module type MODULE = 
 sig
   type t
   type type_t
   type globalname_t
+
   val equivalent : t -> globalname_t -> globalname_t -> bool
   val get_type : t -> globalname_t -> type_t option
 end

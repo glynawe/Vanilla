@@ -132,7 +132,7 @@ Section type_t.
 
     Theorem type_t_rect type : P type.
     Proof.
-      induction type as [ [ | | | dtype | dtype | len etype | elts | args rtype ] IH ] 
+      induction type as [ [ | | | dtype | etype | len etype | elts | args rtype ] IH ] 
           using (well_founded_induction_type wf_sub_type).
       + apply HStatement.
       + apply HNil.
@@ -190,9 +190,9 @@ Section type_t.
   Proof.
     induction t; constructor; try apply Forall2_refl.
     + intros. reflexivity.                                 (* Record names *)
-    + intros ? ((name, type) & <- & HI)%in_map_iff. eauto.    (* Record types *)
+    + intros ? ((name, type) & <- & HI)%in_map_iff. eauto. (* Record types *)
     + intros. reflexivity.                                 (* Procedure passing *)
-    + intros ? ((pass, type) & <- & HI)%in_map_iff. eauto.    (* Procedure args. *)
+    + intros ? ((pass, type) & <- & HI)%in_map_iff. eauto. (* Procedure args. *)
     + apply IHt.                                           (* Procedure return. *)
   Qed.
 
