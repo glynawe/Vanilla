@@ -15,6 +15,8 @@ Section type_t.
     | Nil       : type_t
     | Integer   : type_t
     | Reference : type_t -> type_t
+    | OpenArray : type_t -> type_t
+    | Array     : nat -> type_t -> type_t
     | Record    : list (string * type_t) -> type_t
     | Procedure : list (passing_method_t * type_t) -> type_t -> type_t. 
 
@@ -31,25 +33,30 @@ Section type_t.
       (HInteger : 
         P Integer)
       (HReference : 
-        forall targettype, P targettype -> P (Reference targettype))
+        forall dtype, P dtype -> P (Reference dtype))
+      (HOpenArray : 
+        forall etype, P etype -> P (OpenArray etype))
+      (HArray : 
+        forall len etype, P etype -> P (Array len etype))
       (HRecord : 
         forall elements, 
         (forall name type, In (name, type) elements -> P type) -> 
         P (Record elements))
       (HProcedure : 
-        forall args returntype, 
+        forall args rtype, 
         (forall pass type, In (pass, type) args -> P type) -> 
-        P returntype -> 
-        P (Procedure args returntype)).
+        P rtype -> 
+        P (Procedure args rtype)).
 
     Fixpoint type_t_ind type : P type.
     Proof.
-      destruct type as [ | | | | elements | args returntype ].
+      destruct type as [ | | | dtype | etype | len etype | elements | args rtype ].
       + apply HStatement.
       + apply HNil.
       + apply HInteger.
-      + apply HReference. 
-        apply type_t_ind.
+      + apply HReference. apply type_t_ind.
+      + apply HOpenArray. apply type_t_ind.
+      + apply HArray. apply type_t_ind.
       + apply HRecord.
         induction elements as [ | elt elements IH ].
         * intros _ _ [].
@@ -74,7 +81,9 @@ Section type_t.
     | Statement => False
     | Nil => False
     | Integer => False
-    | Reference r => r = s
+    | Reference dtype => dtype = s
+    | OpenArray etype => etype = s
+    | Array _ etype => etype = s
     | Record elements => exists name, In (name, s) elements
     | Procedure args rtype => exists pass, In (pass, s) args \/ s = rtype
     end.
@@ -83,11 +92,13 @@ Section type_t.
   Proof. 
     intros t.
     induction t; constructor; intros ? [].
-    - intuition.    (* Reference *)
-    - eauto.        (* Record *)
-    - destruct H0.  (* Procedure *)
-      + apply H with (pass := x)(type := y). apply H0. (* args *)
-      + subst. apply IHt.                              (* return type *)
+    - apply IHt.
+    - apply IHt.
+    - apply IHt.
+    - apply H with (name := x)(type := y). apply H0.  (* Record *) 
+    - destruct H0.                                    (* Procedure *)
+      + apply H with (pass := x)(type := y). apply H0.  (* args *)
+      + rewrite <- H0 in IHt. apply IHt.                (* rtype *)
   Qed.
 
 
@@ -102,25 +113,31 @@ Section type_t.
       (HInteger : 
         P Integer)
       (HReference : 
-        forall targettype, P targettype -> P (Reference targettype))
+        forall dtype, P dtype -> P (Reference dtype))
+      (HOpenArray : 
+        forall etype, P etype -> P (OpenArray etype))
+      (HArray : 
+        forall len etype, P etype -> P (Array len etype))
       (HRecord : 
         forall elements, 
         (forall name type, In (name, type) elements -> P type) -> 
         P (Record elements))
       (HProcedure : 
-        forall args returntype, 
+        forall args rtype, 
         (forall pass type, In (pass, type) args -> P type) -> 
-        P returntype -> 
-        P (Procedure args returntype)).
+        P rtype -> 
+        P (Procedure args rtype)).
 
     Theorem type_t_rect type : P type.
     Proof.
-      induction type as [ [ | | | r | l | l r] IH ] 
+      induction type as [ [ | | | dtype | dtype | len etype | elts | args rtype ] IH ] 
           using (well_founded_induction_type wf_sub_type).
       + apply HStatement.
       + apply HNil.
       + apply HInteger.
       + apply HReference. apply IH. constructor.
+      + apply HOpenArray. apply IH. constructor.
+      + apply HArray. apply IH. constructor.
       + apply HRecord.
         intros name ? ?. apply IH. now exists name.
       + apply HProcedure.
@@ -146,10 +163,16 @@ Section type_t.
         TypeEqual Integer Integer
     | TypeEqual_Reference t  :  
         TypeEqual (Reference t) (Reference t)
+    | TypeEqual_OpenArray t  :  
+        TypeEqual (OpenArray t) (OpenArray t)
+    | TypeEqual_Array len t :  
+        TypeEqual (Array len t) (Array len t)
+
     | TypeEqual_Record elements1 elements2 : 
         Forall2 string_equal (map fst elements1) (map fst elements2) -> 
         Forall2 TypeEqual (map snd elements1) (map snd elements2) -> 
         TypeEqual (Record elements1) (Record elements2)
+    
     | TypeEqual_Procedure args1 rettype1 args2 rettype2 : 
         Forall2 passing_equal (map fst args1) (map fst args2) ->  
         Forall2 TypeEqual (map snd args1) (map snd args2) -> 
@@ -169,14 +192,12 @@ Section type_t.
 
   Fact TypeEqual_refl (t: type_t) : TypeEqual t t.
   Proof.
-    induction t; constructor; try apply Forall2_refl.  
-    (* Records *)
-    + intros. apply string_equal_refl.  
-    + intros ? ((name, type) & <- & ?)%in_map_iff. eauto.
-    (* Procedures. *)
-    + intros. apply passing_equal_refl.
-    + intros ? ((pass, type) & <- & ?)%in_map_iff. eauto.
-    + apply IHt.
+    induction t; constructor; try apply Forall2_refl.
+    + intros. apply string_equal_refl.                    (* Record names *)
+    + intros ? ((name, type) & <- & ?)%in_map_iff. eauto. (* Record types *)
+    + intros. apply passing_equal_refl.                   (* Procedure passing *)
+    + intros ? ((name, type) & <- & ?)%in_map_iff. eauto. (* Procedure types *)
+    + apply IHt.                                          (* Procedure return. *)
   Qed.
 
 End type_t.
