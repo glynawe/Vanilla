@@ -6,9 +6,9 @@ Section type_t.
 
   Unset Elimination Schemes.
 
-  Inductive passing_t :=
-    | ByRef
-    | ByVal.
+  Inductive passing_method_t :=
+    | ByReference
+    | ByValue.
 
   Inductive type_t : Type :=
     | Statement : type_t
@@ -16,7 +16,7 @@ Section type_t.
     | Integer   : type_t
     | Reference : type_t -> type_t
     | Record    : list (string * type_t) -> type_t
-    | Procedure : list (passing_t * type_t) -> type_t -> type_t. 
+    | Procedure : list (passing_method_t * type_t) -> type_t -> type_t. 
 
   Set Elimination Schemes.
 
@@ -51,42 +51,43 @@ Section type_t.
       + apply HReference. 
         apply type_t_ind.
       + apply HRecord.
-        induction elements as [ | e es IHl ].
+        induction elements as [ | elt elements IH ].
         * intros _ _ [].
         * intros name type [ E | H ].
-          - specialize (type_t_ind (snd e)); now subst.
-          - apply IHl with (1 := H).
+          - specialize (type_t_ind (snd elt)); now subst.
+          - apply IH with (1 := H).
       + apply HProcedure.
-        induction args as [ | arg args IHl ].
+        induction args as [ | arg args IH ].
         * intros _ _  [].
         * intros pass type [ E | H ].
           - specialize (type_t_ind (snd arg)); now subst.
-          - apply IHl with (1 := H).
+          - apply IH with (1 := H).
         * apply type_t_ind.
     Qed.
 
   End type_t_ind.
 
+
   Let sub_type_t s t :=
-    (* Is type s a component of structured type t? *)
+    (* True if type "s" a component of structured type "t" *)
     match t with
     | Statement => False
     | Nil => False
     | Integer => False
     | Reference r => r = s
-    | Record l => exists x, In (x,s) l
-    | Procedure l u => exists p, In (p,s) l \/ s = u
+    | Record elements => exists name, In (name, s) elements
+    | Procedure args rtype => exists pass, In (pass, s) args \/ s = rtype
     end.
 
   Local Fact wf_sub_type : well_founded sub_type_t.
   Proof. 
     intros t.
     induction t; constructor; intros ? [].
-    - intuition. (* Reference *)
-    - eauto.     (* Record *)
+    - intuition.    (* Reference *)
+    - eauto.        (* Record *)
     - destruct H0.  (* Procedure *)
       + apply H with (pass := x)(type := y). apply H0. (* args *)
-      + subst. apply IHt.  (* return type *)
+      + subst. apply IHt.                              (* return type *)
   Qed.
 
 
@@ -124,7 +125,7 @@ Section type_t.
         intros name ? ?. apply IH. now exists name.
       + apply HProcedure.
         - intros pass ? ?. apply IH. exists pass. left. apply H.
-        - apply IH. exists ByVal. right. reflexivity.
+        - apply IH. exists ByValue. right. reflexivity.
     Qed.
 
   End type_t_rect.
@@ -132,8 +133,9 @@ Section type_t.
 
   Definition type_t_rec (P : _ -> Prop) := type_t_rect P.
 
+
   Variable string_equal : string -> string -> Prop.
-  Variable passing_equal : passing_t -> passing_t -> Prop.
+  Variable passing_equal : passing_method_t -> passing_method_t -> Prop.
 
   Inductive TypeEqual : type_t -> type_t -> Prop :=
     | TypeEqual_Statement : 
@@ -163,19 +165,17 @@ Section type_t.
   Qed.
 
   Hypothesis string_equal_refl : forall x : string, string_equal x x.
-  Hypothesis passing_equal_refl : forall x : passing_t, passing_equal x x.
+  Hypothesis passing_equal_refl : forall x : passing_method_t, passing_equal x x.
 
   Fact TypeEqual_refl (t: type_t) : TypeEqual t t.
   Proof.
-    induction t; constructor.  
+    induction t; constructor; try apply Forall2_refl.  
     (* Records *)
-    + apply Forall2_refl; intros; apply string_equal_refl.  
-    + apply Forall2_refl.
-      intros ? ((name, type) & <- & ?)%in_map_iff. simpl. eauto.
+    + intros. apply string_equal_refl.  
+    + intros ? ((name, type) & <- & ?)%in_map_iff. eauto.
     (* Procedures. *)
-    + apply Forall2_refl. intros. apply passing_equal_refl.
-    + apply Forall2_refl.
-      intros ? ((pass, type) & <- & ?)%in_map_iff. simpl. eauto.
+    + intros. apply passing_equal_refl.
+    + intros ? ((pass, type) & <- & ?)%in_map_iff. eauto.
     + apply IHt.
   Qed.
 
