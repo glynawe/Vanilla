@@ -1,5 +1,7 @@
 (* The Vanilla type rules in Gallina. *)
 
+(* This is outdated, but contains some reusable propositions. *)
+
 (* Not dealt with: anonymous types, which are allowed in interfaces. *)
 (* Not dealt with: recursive reference-to-record types. XXX *)
 
