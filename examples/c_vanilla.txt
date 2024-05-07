@@ -1,0 +1,90 @@
+// A possible "curly-bracket language" syntax for Vanilla: 
+
+interface ADT 
+{
+    type repr;
+    type t = ref repr;
+}
+
+interface COMPARABLE
+{
+    include ADT;
+    fn equal (a: t, b: t) : bool;
+}
+
+interface STRING
+{
+    include COMPARABLE;
+
+    type repr;
+    type t = ref repr;
+
+    fn create (text: byte[]): t;
+}
+
+module String : STRING 
+{
+    fn equal (a: t, b: t) : bool {
+        return a == b || len(a) == len(b) && a^ == b^;
+    }
+
+    fn create (text: array of byte): t {
+        var s = new byte [len(text)]; 
+        s^ = text; return s;
+    }
+}
+
+interface SET 
+{
+    include ADT;
+    type element_t;
+
+    val empty: t;
+
+    fn add (set: t; element: element_t) : t;
+    fn includes (set: t; element: element_t) : bool;
+}
+
+module Set (Element: COMPARABLE) : SET 
+{
+    equivalence element_t = Element::t;
+
+    type repr = struct { 
+        value: element_t; 
+        next: t; 
+    }
+
+    val empty: t = nil;
+
+    fn add (set: t; element: element_t) : t {
+        var list = new(t); 
+        list.head = head; 
+        list.tail = tail;
+        return list;
+    }
+
+    fn includes (set: t; element: element_t) : bool {
+        while (set != nil) 
+            if (element::equal(set.head, element))  
+                return true; 
+            else 
+                set = set.tail; 
+        return false;
+    }
+}
+
+module Program 
+{
+    import Print;  
+
+    import String;
+    import StringSet = Set(String);
+
+    fn main () {
+        val s = String::create("Hello World!");
+        var set = StringSet::empty;
+        set = StringSet::add(set, s);
+        if StringSet::contains(set, s)
+            Print::print_string("Success!");
+    } 
+}
