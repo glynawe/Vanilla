@@ -406,21 +406,21 @@ Inductive valid_type : module_t -> type_t -> Prop :=
       sized_type t -> 
       valid_type m t -> 
       valid_type m (Reference t)
-  | valid_type_OpenArray t : 
+  | valid_type_OpenArray m t : 
       valid_type m t -> 
       sized_type t -> 
       valid_type m (OpenArray t)
-  | valid_type_Array len t : 
+  | valid_type_Array m len t : 
       len > 0 -> 
       valid_type m t -> 
       sized_type t -> 
-      valid_type (Array len t)
+      valid_type m (Array len t)
   | valid_type_Record m elements :
       NoDup (map fst elements) ->
       Forall sized_type (map snd elements) -> 
       Forall (valid_type m) (map snd elements) -> 
-      valid_type (Record elements) 
-  | valid_type_Procedure args rtype : 
+      valid_type m (Record elements) 
+  | valid_type_Procedure m args rtype : 
       valid_type m rtype -> 
       return_type rtype ->
       Forall (valid_type m) (map snd args) -> 
@@ -429,7 +429,7 @@ Inductive valid_type : module_t -> type_t -> Prop :=
       valid_type m (Procedure args rtype)
   | valid_type_NamedRef m name : 
       valid_type m (NamedRef name)    (* XXX *) 
-  | valid_type_Abstract name : 
+  | valid_type_Abstract m name : 
       valid_type m (Abstract name).   (* XXX *)
 
 
