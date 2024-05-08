@@ -4,6 +4,14 @@ Require Import Lia.
 Require Import Coq.Logic.Decidable.
 Import ListNotations.
 
+Lemma Forall2_refl X R l : 
+  (forall x : X, In x l -> R x x) -> Forall2 R l l.
+Proof.
+  rewrite <- Forall_forall.
+  induction 1; auto.
+Qed.
+
+
 Definition name_t := string.
 
 Definition globalname_t := string.
@@ -195,8 +203,10 @@ End type_t.
 
 Module rules.
   Variable module_t : Type.
-  Variable module_equivalent : module_t -> type_t -> type_t -> Prop.
-
+  Variable module_get_type : module_t -> globalname_t -> type_t -> Prop.
+  Variable module_equivalent : module_t -> globalname_t -> globalname_t -> Prop.
+  Hypothesis module_equivalent_refl : forall m n, module_equivalent m n n.
+  
   Definition atomic_type (t: type_t) : Prop := 
   match t with
   | Boolean   => True
@@ -334,45 +344,93 @@ Module rules.
 
 
 (* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
+(* Type Equivalence *)
+(* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
+
+  Inductive eq_types : module_t -> type_t -> type_t -> Prop :=
+    | eq_types_Statement m : eq_types m Statement Statement
+    | eq_types_Nil m :       eq_types m Nil Nil
+    | eq_types_Boolean m :   eq_types m Boolean Boolean
+    | eq_types_Integer m :   eq_types m Integer Integer
+    | eq_types_Byte m :      eq_types m Byte Byte
+    | eq_types_Word m :      eq_types m Word Word
+    | eq_types_Real m :      eq_types m Real Real
+    | eq_types_Reference m t u :
+        eq_types m t u ->  
+        eq_types m (Reference t) (Reference t)
+    | eq_types_OpenArray m t :  
+        eq_types m (OpenArray t) (OpenArray t)
+    | eq_types_Array len m t :  
+        eq_types m (Array len t) (Array len t)
+    | eq_types_Record m elements1 elements2 : 
+        Forall2 eq (map fst elements1) (map fst elements2) -> 
+        Forall2 (eq_types m) (map snd elements1) (map snd elements2) -> 
+        eq_types m (Record elements1) (Record elements2)
+    | eq_types_Procedure m args1 rtype1 args2 rtype2 : 
+        Forall2 eq (map fst args1) (map fst args2) ->  
+        Forall2 (eq_types m) (map snd args1) (map snd args2) -> 
+        eq_types m rtype1 rtype2 ->
+        eq_types m (Procedure args1 rtype1) (Procedure args2 rtype2)
+    | eq_types_NamedRef m n1 n2 :
+        module_equivalent m n1 n2 -> eq_types m (NamedRef n1) (NamedRef n2)
+    | eq_types_Abstract m n1 n2 :
+        module_equivalent m n1 n2 -> eq_types m (Abstract n1) (Abstract n2).
+
+  Fact eq_types_refl (m: module_t) (t: type_t) : eq_types m t t.
+  Proof.
+    induction t; try constructor.
+    + apply (eq_types_Reference m t t). apply IHt.
+    + apply Forall2_refl. intros. reflexivity.
+    + apply Forall2_refl. intros ? ((name, type) & <- & ?)%in_map_iff. eauto.
+    + apply Forall2_refl. intros. reflexivity.
+    + apply Forall2_refl. intros ? ((name, type) & <- & ?)%in_map_iff. eauto.
+    + apply IHt.
+    + apply module_equivalent_refl.
+    + apply module_equivalent_refl.
+  Qed.
+
+
+(* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
 (* Type Validity *)
 (* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
 
-Inductive valid_type : type_t -> Prop :=
-  | valid_type_Statement : valid_type Statement
-  | valid_type_Nil :       valid_type Nil
-  | valid_type_Boolean :   valid_type Boolean
-  | valid_type_Integer :   valid_type Integer
-  | valid_type_Byte :      valid_type Byte
-  | valid_type_Word :      valid_type Word
-  | valid_type_Real :      valid_type Real
-  | valid_type_Reference t : 
+Inductive valid_type : module_t -> type_t -> Prop :=
+  | valid_type_Statement m : valid_type m Statement
+  | valid_type_Nil m :       valid_type m Nil
+  | valid_type_Boolean m :   valid_type m Boolean
+  | valid_type_Integer m :   valid_type m Integer
+  | valid_type_Byte m :      valid_type m Byte
+  | valid_type_Word m :      valid_type m Word
+  | valid_type_Real m :      valid_type m Real
+  | valid_type_Reference m t : 
       sized_type t -> 
-      valid_type t -> 
-      valid_type (Reference t)
+      valid_type m t -> 
+      valid_type m (Reference t)
   | valid_type_OpenArray t : 
-      valid_type t -> 
+      valid_type m t -> 
       sized_type t -> 
-      valid_type (OpenArray t)
+      valid_type m (OpenArray t)
   | valid_type_Array len t : 
       len > 0 -> 
-      valid_type t -> 
+      valid_type m t -> 
       sized_type t -> 
       valid_type (Array len t)
-  | valid_type_Record elements :
+  | valid_type_Record m elements :
       NoDup (map fst elements) ->
       Forall sized_type (map snd elements) -> 
-      Forall valid_type (map snd elements) -> 
+      Forall (valid_type m) (map snd elements) -> 
       valid_type (Record elements) 
-  | valid_type_Procedure args rettype : 
-      valid_type rettype -> 
-      return_type rettype ->
-      Forall valid_type (map snd args) -> 
+  | valid_type_Procedure args rtype : 
+      valid_type m rtype -> 
+      return_type rtype ->
+      Forall (valid_type m) (map snd args) -> 
       Forall (fun a => fst a = ByValue -> value_parameter_type (snd a)) args ->
       Forall (fun a => fst a = ByReference -> reference_type (snd a)) args ->
-      valid_type (Procedure args rettype)
-  | valid_type_NamedRef name : 
-      valid_type (NamedRef name)    (* XXX *) 
+      valid_type m (Procedure args rtype)
+  | valid_type_NamedRef m name : 
+      valid_type m (NamedRef name)    (* XXX *) 
   | valid_type_Abstract name : 
-      valid_type (Abstract name).   (* XXX *)
+      valid_type m (Abstract name).   (* XXX *)
+
 
 End rules.
