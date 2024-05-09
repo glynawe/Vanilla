@@ -162,24 +162,26 @@ let sized_type (t: Type.t) : bool =
 (* Type Validity *)
 (* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
 
-let rec valid_type (t: Type.t) : bool =
+let rec valid_type (m:Module.t) (t: Type.t) : bool =
   match t with
-  | Ref rt -> valid_type rt && referenceable_type t
-  | Array (len, et) -> len > 0 && valid_type et && sized_type et 
-  | OpenArray et -> sized_type et && valid_type et
-  | Record es -> valid_elements es
-  | Procedure (ps, rt) -> valid_parameters ps && return_type rt && valid_type rt
+  | Ref rt -> valid_type m rt && referenceable_type t
+  | Array (len, et) -> len > 0 && valid_type m et && sized_type et 
+  | OpenArray et -> sized_type et && valid_type m et
+  | Record es -> valid_elements m es
+  | Procedure (ps, rt) -> valid_parameters m ps && return_type rt && valid_type m rt
+  | NamedRef n -> Option.is_some (Module.get_type m n)  
+  | Abstract n -> Option.is_some (Module.get_type m n)  
   | _ -> true
 
-and valid_elements (es: Type.element_t list) : bool =
+and valid_elements m (es: Type.element_t list) : bool =
   let ns, ts = List.split es in
   not (Utility.distinct Name.equal ns) && 
-  List.for_all (fun t -> sized_type t && valid_type t) ts
+  List.for_all (fun t -> sized_type t && valid_type m t) ts
 
-and valid_parameters (ps: Type.parameter_t list) : bool =
+and valid_parameters m (ps: Type.parameter_t list) : bool =
   let valid_parameter = function
-  | (Type.ByReference, t) -> valid_type t && referenceable_type t 
-  | (Type.ByValue, t) -> valid_type t && (value_type t || referenceable_type t)
+  | (Type.ByReference, t) -> valid_type m t && referenceable_type t 
+  | (Type.ByValue, t) -> valid_type m t && (value_type t || referenceable_type t)
   in 
   List.for_all valid_parameter ps
 

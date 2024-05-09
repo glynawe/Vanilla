@@ -248,7 +248,8 @@ Module rules.
   match t with
   | OpenArray _ => True 
   | Abstract _ => True
-  | t => special_type t
+  | Statement => True
+  | _ => False
   end.
 
   Definition value_type (t: type_t) : Prop := atomic_type t \/ t = Nil.
@@ -260,14 +261,18 @@ Module rules.
   Definition value_parameter_type (t: type_t) : Prop := 
     referenceable_type t \/ value_type t.
 
+  Definition procedure_type (t: type_t) : Prop :=
+    match t with Procedure _ _ => True | _ => False end. 
 
   (* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
 
   Theorem atomic_and_structured_are_distinct : forall (t: type_t),
     ~ (atomic_type t /\ structured_type t).
   Proof.
-    intros. unfold not. intros. destruct H as [Ha Hs].
-    destruct t; simpl in *; try destruct Ha; try destruct Hs. 
+    intros. unfold not. 
+    apply not_and_iff. 
+    intros.
+    destruct t; try destruct H; try destruct H0. 
   Qed.
 
   Theorem special_and_structured_are_distinct : forall (t: type_t),
@@ -314,11 +319,10 @@ Module rules.
   (* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
 
   Theorem sized_and_unsized_are_distinct : forall (t: type_t),
-    ~ (sized_type t /\ unsized_type t).
+    sized_type t -> ~(unsized_type t).
   Proof.
     intros. unfold not. intros.
-    destruct H as [Hs Hu].
-    inversion t; simpl in *; try destruct Hs; try destruct Hu. 
+    induction t; try inversion H; try inversion H0.
   Qed.
 
   Theorem sized_arrays_have_sized_elements : forall (n: nat) (t: type_t),
@@ -431,6 +435,94 @@ Inductive valid_type : module_t -> type_t -> Prop :=
       valid_type m (NamedRef name)    (* XXX *) 
   | valid_type_Abstract m name : 
       valid_type m (Abstract name).   (* XXX *)
+
+
+(* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
+(* Assignment Compatibility *)
+(* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
+
+
+(** [assignment_compatible m dst src] is true if a variable of type [dst] can be
+    assigned a value of type [src].
+
+    Two types are assignment compatible if they are sized and have equal types.
+    In addition, any reference can be assigned [nil] and a reference
+    to a procedure can be assigned a procedure of the correct type. *)
+
+Definition equal_parameters (m: module_t) (a b: passing_method_t * type_t) : Prop :=
+  fst a = fst b /\ eq_types m (snd a) (snd b).
+
+Definition equal_procedures (m: module_t) (a b: passing_method_t * type_t) : Prop :=
+  fst a = fst b /\ eq_types m (snd a) (snd b).
+
+Definition assignment_compatible (m: module_t) (dst src: type_t) : Prop :=
+  (sized_type dst /\ sized_type src) \/ 
+  (reference_type dst /\ src = Nil) \/
+  match dst, src with
+  | Reference (Procedure dp dr), Procedure sp sr =>
+      Forall2 (equal_parameters m) dp sp /\ eq_types m dr sr  
+  | _, _ => False
+  end.
+
+(* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
+
+Theorem nil_is_assignment_compatible : forall (m: module_t) (t: type_t),
+  reference_type t -> assignment_compatible m t Nil.
+Proof.
+  intros. induction t; unfold assignment_compatible; auto.
+Qed.
+
+Theorem sized_are_assignment_compatible : forall (m: module_t) (t: type_t),
+  sized_type t -> assignment_compatible m t t.
+Proof.
+  intros. induction t; unfold assignment_compatible; auto.
+Qed.
+
+Theorem procedures_are_assignment_compatible_with_refs : 
+  forall (m: module_t) (args: list (passing_method_t * type_t)) (rtype: type_t),
+  assignment_compatible m (Reference (Procedure args rtype)) (Procedure args rtype).
+Proof.
+  intros.
+  unfold assignment_compatible. right. right.
+  split.
+  + apply Forall2_refl. unfold equal_parameters. intuition. apply eq_types_refl.
+  + apply eq_types_refl.
+Qed.
+
+(*
+Theorem unsized_cannot_be_assigned : forall (m: module_t) (t u: type_t),
+  unsized_type u -> ~(assignment_compatible m t u).
+*)
+
+(* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
+(* Procedure Parameter Compatibility *)
+(* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
+
+
+(** [reference_parameter_compatible m dst src] is true if a designator of type
+    [src] can by passed by reference to a procedure parameter of type [dst].
+
+    The supplied parameter an procedure parameter must have equal types. 
+    The exception is that arrays are compatible with open arrays if their 
+    element types are equal. *)
+
+Definition reference_parameter_compatible (m: module_t) (dst src: type_t) : Prop :=
+  match dst, src with
+  | OpenArray t1, Array _ t2 => eq_types m t1 t2
+  | OpenArray t1, OpenArray t2 => eq_types m t1 t2
+  | t1, t2 => eq_types m t1 t2
+  end.
+
+(** [value_parameter_compatible m dst src] is true if a designator of type
+    [src] can by passed by value to a procedure parameter of type [dst].
+
+    The supplied parameter must be assignment compatible with the procedure 
+    parameter. The exception is that arrays are compatible with open arrays 
+    if their element types are equal m. *)
+
+Definition value_parameter_compatible (m: module_t) (dst src: type_t) : Prop :=
+  reference_parameter_compatible m dst src \/
+  assignment_compatible m dst src.
 
 
 End rules.
