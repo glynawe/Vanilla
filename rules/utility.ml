@@ -14,8 +14,6 @@ module OptionMonad = struct
         let* y = f x in
         let* ys = map_option xs' f in 
         return (y :: ys)
-;;
-List.fold_left;;
 
   let rec fold_option  (f: 'u -> 't -> 'u option) (acc: 'u) (xs: 't list) : 'u option =
     match xs with
