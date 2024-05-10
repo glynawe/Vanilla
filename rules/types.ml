@@ -1,34 +1,6 @@
 (* The Vanilla type rules in OCaml. *)
 
 (* ------------------------------------------------------------------------- *)
-(* Utilities *)
-(* ------------------------------------------------------------------------- *)
-
-(* Some functions that will be useful in here. *)
-
-module Utility =
-struct
-  let rec distinct (equal: 't -> 't -> bool) (xs: 't list) : bool =
-    match xs with
-    | [] -> true
-    | x :: xs' -> not (List.exists (equal x) xs') && distinct equal xs'
-
-  module OptionMonad = struct
-    let (let*) = Option.bind
-    let return = Option.some 
-
-    let rec map_option (xs: 't list) (f: 't -> 'u option) : 'u list option =
-      match xs with
-      | [] -> return []
-      | x :: xs' -> 
-          let* y = f x in
-          let* ys = map_option xs' f in 
-          return (y :: ys) 
-  end
-end (* module Utility *)
-
-
-(* ------------------------------------------------------------------------- *)
 (* Names and Modules *)
 (* ------------------------------------------------------------------------- *)
 

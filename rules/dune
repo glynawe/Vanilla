@@ -1,6 +1,7 @@
 (library
  (name vanilla)
  (modules
+   utility
    types
    modules_subset
  ))
