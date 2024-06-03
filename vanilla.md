@@ -31,13 +31,13 @@ A Vanilla program may contain any number of interfaces, modules and functors sep
                 "end".
 
     Functor   = "module" ModuleName "(" ModuleParameter ";"... ")" 
-                [PublicInterface] 
-                ["where" TypeEquivalence ","...] "=" 
+                [PublicInterface] [TypeConstraints] "=" 
                 {DeclarationOrDefinition ";"} 
                 "end".
 
-    PublicInterface  = ":" InterfaceName.
+    PublicInterface  = ":" InterfaceName].
     ModuleParameter  = ModuleName ":" InterfaceName.
+    TypeConstraints  = "where" TypeEquivalence ","... 
     TypeEquivalence  = TypeName "=" TypeName.
     TypeName         = ModuleName "_" NAME.
 
@@ -47,9 +47,9 @@ A Vanilla program may contain any number of interfaces, modules and functors sep
 
 An *interface* contains a set of definitions. A *module* contains a set of definitions and declarations. The primary purpose of modules is group together collections of types and procedures to define abstract data types.
 
-If a module is declared with a *public interface* then only the definitions in that interface will be available when the module is imported. The module must contain declarations for all the definitions in its public interface.
+If a module is declared with a *public interface* then only the definitions in that interface will be available when the module is imported. The module must contain declarations for all the definitions in its public interface. 
 
- A *functor* is a module parametrized with a list of interfaces for modules that it can import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each module parameter has an interface that specifies a minimum set of definitions that the actual module must provide. A `where` clause specifies types from different parameter modules that are to be equivalent (this is important when defining generic types). 
+ A *functor* is a module parametrized with a list of interfaces for modules that it can import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each module parameter has an interface that specifies a minimum set of definitions that the actual module must provide. A functor *type constraint* specifies types from different parameter modules that are to be equivalent (this is important when defining generic types). 
 
 All interfaces and modules implicitly contain a set of *standard declarations* supplied by the Vanilla language. For example, the type `integer` is a standard declaration.
 
@@ -66,18 +66,20 @@ All interfaces and modules implicitly contain a set of *standard declarations* s
 ### Inclusion
 
     Inclusion     = Include | Import | FunctorImport.
-    Include       = "include" ModuleName ["for" NAME ","...].
+    Include       = "include" ModuleName [TypeConstraints] ["for" NAME ","...].
     Import        = "import" ModuleName.
     FunctorImport = "import" ModuleName ":=" FunctorName "(" ModuleName ","... ")".
 
     ImportedName = ModuleName "_" NAME.
     GlobalName   = NAME | ImportedName. 
 
-`include` includes content from other modules or interfaces. The contents of an interface are its definitions, the contents of a module are its declarations. If an `include` has a `for` clause then only a selection of its contents are included. 
+`include` includes content from other modules or interfaces. The contents of an interface are its definitions, the contents of a module are its declarations. If an `include` has a `for` clause then only a selection of its contents are included. A module can be included into another module with a set of type constraints, this allows the included module to add a set of *trait* procedures to those types. 
 
 `import` includes content from other interfaces and modules, but each definition is given an *imported name*, which is the definition's name prefixed with the name of the interface. A *functor import* imports a new module created from a functor and a list of modules.
 
 A module or interface's *global names* are the names of all its definitions.
+
+A module without an explicit public interface has a default interface that excludes its imported names.
 
 ### Example
 
@@ -209,8 +211,8 @@ The above rule is also used to initialize local variables within procedure bodie
 
 # Types
 
-    TypeDefinition = "type" NAME "=" Type | AbstractType.
-    AbstractType    = "type" NAME.
+    TypeDefinition = "type" NAME "=" Type | OpaqueType.
+    OpaqueType     = "type" NAME.
 
     Type = GlobalName
          | "array" [DimensionList] "of" Type
@@ -224,7 +226,7 @@ Arrays begin at element 0. An array with more than one length in its dimension l
 
 A procedure type may only be used as the type of a parameter or as the target of a reference type.
 
-An *abstract type* must be defined before it can be used in a module, either by a type definition or a functor type equivalence.
+An *opaque type* is a type whose definition is not yet given. An opaque type can be used in an interface to denote an abstract type or generic type parameter, or in a module to allow a record type to contain references to itself. An opaque type must be defined before it can be used in a module, either by a full type definition or a functor type constraint.
 
 # Procedures
 
@@ -242,6 +244,8 @@ A procedure with a return type is a *function procedure*. A procedure without a 
 Assigning to a `var` parameter assigns to the parameter supplied by the procedure call, i.e. `var` parameters are passed by reference. Parameters without `var` are *value parameters*. Value parameters are immutable. *The compiler may pass record and array value parameters by reference.*
 
 An array of any length may be passed to an *open array* parameter if their element types are the same. 
+
+A procedure definition can be used in a module to define it early. This allows sets of mutually recursive procedures to be defined. (This like providing a *function prototype* in C or a *forward procedure* in Pascal.) 
 
 *A value parameter does not come with a guarantee that the parameter will retain the same value all though the execution of its procedure. "Aliasing" is possible. If a global variable is given as a parameter then assigning to that variable from within the procedure also changes the parameter's value.*
 
@@ -578,7 +582,7 @@ The bit shift operators will shift in the opposite direction if *n* is negative.
 | `new (T; d: integer) : ref array of T` | allocate an array of `d` elements |
 | `free (r : ref T)`                     | free data                         |
 
-`new` and `free` may not be used in constant expressions. The type `T` may not be an abstract type or open array (its size must be known).
+`new` and `free` may not be used in constant expressions. The type `T` may not be an opaque type or open array (its size must be known).
 
 #### Garbage Collection Option
 
