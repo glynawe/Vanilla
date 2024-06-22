@@ -121,7 +121,7 @@ This very simplified program defines strings and generic sets as abstract data t
         type R = record value: Element; next: T end;
         val Empty: T := nil;
         procedure Add (set: T; element: ET) : T =
-            var list := new(T); list.head := head; list.tail := tail;
+            var list := new(R); list.head := head; list.tail := tail;
             return list
         end;
         procedure Includes (set: T; element: ET) : boolean =
@@ -284,7 +284,7 @@ Records of the same type and arrays of the same type and length may by assigned 
 
 The designator part of a procedure call statement must designate a proper procedure. 
 
-The list of expressions in a procedure call are passed to the designated procedure as parameters. A `var` parameter must be passed a designator of the same type. A `val` parameter may be passed any expression, following the same rules as assignment.
+The list of expressions in a procedure call are passed to the designated procedure as parameters. A `var` parameter must be passed a designator of the same type. A value parameter may be passed any expression, following the same rules as assignment.
 
 ### "Method calls"
 
@@ -355,7 +355,7 @@ If `to` is used in a `for` clause then the loop ends when the limiting expressio
 
 Case expressions and range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a branch's ranges then that branch's Body is executed. If the value does not match a branch and there is an `else` clause then its body is executed; if there is no `else` clause then nothing is done.
 
-*The highest label constant must be less than 256 higher that the lowest constant. Case statements are most useful when implemented using jump tables, and there must be some limit to the size of those tables.*
+*The highest range constant must be less than 256 higher that the lowest constant. Case statements are most useful when implemented using jump tables, and there must be some limit to the size of those tables.*
 
 ## Empty statement
 
@@ -430,7 +430,7 @@ The expressions following `then` and `else` must have the same type.
 
 Reference values are automatically dereferenced when they are the designator of a call, selection or subscript.
 
-The list of expressions in a call are supplied to the designated procedure as parameters. A `var` parameter must be supplied with a designator. A supplied parameter must match its parameter's type, with one exception: a `byte` value will be accepted as an `integer` value parameter. 
+The list of expressions in a call are supplied to the designated procedure as parameters. A `var` parameter must be supplied with a designator. A supplied parameter must match its parameter's type. 
 
 
 ## Literals
@@ -482,9 +482,9 @@ The underscore is reserved for prefixing imported names with module names.
 ## Keywords
 
     Keywords = 
-        "and" | "array" | "by" | "byte" | "case" | "const" | "do" | "else" | "elsif" |
+        "and" | "array" | "by" | "case" | "const" | "do" | "else" | "elsif" |
         "end" | "exit" | "for" | "if" | "import" | "include" | "interface" | "loop" |
-        "mod" | "module" | "not" | "of" | "or" | "procedure" | "real" | "record" |
+        "mod" | "module" | "not" | "of" | "or" | "procedure" |  "record" |
         "ref" | "return" | "then" | "to" | "type" | "until" | "val" | "var" | where" | 
         "while".
 

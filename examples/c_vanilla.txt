@@ -15,11 +15,7 @@ interface COMPARABLE
 interface STRING
 {
     include COMPARABLE;
-
-    type repr;
-    type t = ref repr;
-
-    fn create (text: byte[]): t;
+    fn create (text: []byte): t;
 }
 
 module String : STRING 
@@ -29,8 +25,9 @@ module String : STRING
     }
 
     fn create (text: array of byte): t {
-        var s = new byte [len(text)]; 
-        s^ = text; return s;
+        var s = new(byte, len(text)); 
+        s^ = text; 
+        return s;
     }
 }
 
@@ -45,10 +42,8 @@ interface SET
     fn includes (set: t, element: element_t) : bool;
 }
 
-module Set (Element: COMPARABLE) : SET 
+module Set <Element: COMPARABLE> : SET where  element_t = Element::t
 {
-    equivalence element_t = Element::t;
-
     type repr = struct { 
         head: element_t; 
         tail: t; 
@@ -78,13 +73,13 @@ module Program
     import Print;  
 
     import String;
-    import StringSet = Set(String);
+    import StringSet = Set<String>;
 
     fn main () {
         val s = String::create("Hello World!");
         var set = StringSet::empty;
         set = set.add(set, s);
-        if (set.contains(s))
+        if (set.includes(s))
             Print::print_string("Success!");
     } 
 }
