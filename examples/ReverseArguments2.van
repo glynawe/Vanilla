@@ -58,7 +58,7 @@ module List (Element: COMPARABLE): LIST where List_element = Element_t =
     val empty: t := nil;
     
     procedure equal (a, b: list) : boolean =
-        while a != nil and b != nil and Element_equal(a.head, b.head) do
+        while a != nil and b != nil and a.head.equal(b.head) do
             a := a.tail;
             b := b.tail;
         end;
@@ -83,20 +83,19 @@ module List (Element: COMPARABLE): LIST where List_element = Element_t =
     end;
 end.
 
-module ReverseArguments =
+module ReverseArguments =               // method call syntax used a bit here
     import System;
     import String;
     import StringList := List(String);
-    
+
     procedure main() =
         var list := StringList_empty;
         for i := 1 until System_argc do
-            list := StringList_prepend(list, String_make(System_argv[i]))
+            list := list.prepend(String_make(System_argv[i]))
         end;
-        StringList_reverse();
         var head: String;
-        while StringList_takeHead(list, head) do
-            String_print(head)
+        while list.takeHead(head) do
+            head.print()
         end
     end;
 end.

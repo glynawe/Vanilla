@@ -286,6 +286,18 @@ The designator part of a procedure call statement must designate a proper proced
 
 The list of expressions in a procedure call are passed to the designated procedure as parameters. A `var` parameter must be passed a designator of the same type. A `val` parameter may be passed any expression, following the same rules as assignment.
 
+### "Method calls"
+
+If the start of a designator refers to a variable *v* of type *M_t*, and the last name in the designator refers to a procedure *M_p*, then `M_p(v, ...)` may be written as `v.p(...)`. (This is similar to the shorthand that Python uses for method calls.)
+
+**Example**
+
+If `list.head` has type `Set_t` and there is a procedure `Set_add(s: Set_t; v: Val_t)` then these two procedure calls mean the same thing:
+
+```
+StringSet_add(list.head, value)
+list.head.add(value)
+```
 
 ## If Statements
 
