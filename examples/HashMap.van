@@ -22,13 +22,11 @@ interface HASHMAP =
     procedure get (m: t; k: kt; var v: vt) : boolean;
 end.
 
-module HashMap (Key: HASHABLE; Value: ADT) : HASHMAP 
-    where HashMap_kt = Key_t, 
-          HashMap_vt = Value_t  =
+module HashMap (Key: HASHABLE; Value: ADT) : HASHMAP where kt := Key_t, vt := Value_t =
 
     type r = record
         size, count: integer;
-        table: ref array of ref Value_t;
+        table: ref array of ref Value_t
     end;
 
     procedure create (sizelimit: integer): t =

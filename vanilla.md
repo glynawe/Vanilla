@@ -38,12 +38,12 @@ A Vanilla program may contain any number of interfaces, modules and functors sep
     PublicInterface  = ":" InterfaceName].
     ModuleParameter  = ModuleName ":" InterfaceName.
     TypeConstraints  = "where" TypeEquivalence ","... 
-    TypeEquivalence  = TypeName "=" TypeName.
-    TypeName         = ModuleName "_" NAME.
+    TypeEquivalence  = TypeName ":=" ModuleName "_" TypeName.
 
     InterfaceName = NAME.
     ModuleName    = NAME.
     FunctorName   = NAME.
+    TypeName      = NAME.
 
 An *interface* contains a set of definitions. A *module* contains a set of definitions and declarations. The primary purpose of modules is group together collections of types and procedures to define abstract data types.
 
@@ -55,7 +55,7 @@ All interfaces and modules implicitly contain a set of *standard declarations* s
 
 **Example**
 
-    module Map (Key: Comparable; Value: ADT) where Map_KeyType = Key_Type, Map_ValueType = Value_Type =
+    module Map (Key: Comparable; Value: ADT) where Map_KeyType := Key_Type, Map_ValueType := Value_Type =
         type MapType;
         type ValueType;
         type KeyType;
@@ -116,7 +116,7 @@ This very simplified program defines strings and generic sets as abstract data t
         procedure Includes (set: T; element: ET) : boolean;
     end.
 
-    module Set (Element: COMPARABLE): SET where Set_ET = Element_T =
+    module Set (Element: COMPARABLE): SET where Set_ET := Element_T =
         type ET;
         type R = record value: Element; next: T end;
         val Empty: T := nil;
@@ -124,7 +124,7 @@ This very simplified program defines strings and generic sets as abstract data t
             var list := new(R); list.head := head; list.tail := tail;
             return list
         end;
-        procedure Includes (set: T; element: ET) : boolean =
+        procedure Contains (set: T; element: ET) : boolean =
             while set != nil do
                 if Element_Equal(set.head, element) then return true
                 else set := set.tail 
@@ -292,10 +292,10 @@ If the start of a designator refers to a variable *v* of type *M_t*, and the las
 
 **Example**
 
-If `list.head` has type `Set_t` and there is a procedure `Set_add(s: Set_t; v: Val_t)` then these two procedure calls mean the same thing:
+If `list.head` has type `Set_t` and there is a procedure `Set_add(s: Set_t; v: vt)` then these two procedure calls mean the same thing:
 
 ```
-StringSet_add(list.head, value)
+Set_add(list.head, value)
 list.head.add(value)
 ```
 
@@ -464,7 +464,7 @@ BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer l
     BINDIGIT = "0" | "1".
     OCTDIGIT = "0"..."7".
     HEXDIGIT = "0"..."9" | "A"..."F".
-    ESCAPE    = "\a" | "\b" | "\e" | "\f" | "\n" | "\t" | "\v" | "\0" | "\\"
+    ESCAPE    = "\a" | "\b" | "\e" | "\f" | "\n" | "\t" | "\v" | "\0" | "\\" |
                 "\x" HEXDIGIT HEXDIGIT.
     STRCHAR   = " "..."~" except for "\", "'" and '"'.
 

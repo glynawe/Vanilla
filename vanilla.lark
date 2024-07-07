@@ -6,15 +6,15 @@
 
 file: (module | interface | functor) ("." (module | interface| functor))* ["."]
 
-module    : "module" NAME [interfaceequivalence] "=" declarationlist "end"
-functor   : "module" NAME moduleparameters [interfaceequivalence] [typeequivalences] "=" declarationlist "end"
+module    : "module" NAME [publicinterface] "=" declarationlist "end"
+functor   : "module" NAME moduleparameters [publicinterface] [typeequivalences] "=" declarationlist "end"
 interface : "interface" NAME "=" definitionlist "end"
 
 moduleparameters : "(" moduleparameter (";" moduleparameter)* ")"
 typeequivalences : "where" typeequivalence ("," typeequivalence)*
 moduleparameter : NAME ":" NAME
-typeequivalence : importedname "=" importedname
-interfaceequivalence : ":" NAME
+typeequivalence : NAME ":=" importedname
+publicinterface : ":" NAME
 
 definitionlist: (definition ";")*
 declarationlist: (declarationordefinition ";")*
@@ -25,7 +25,7 @@ declarationlist: (declarationordefinition ";")*
 
 inclusion : include | import
 import : "import" NAME [":=" parameterizedmodule]
-include : "include" NAME ("for" NAME ("," NAME)*)?
+include : "include" NAME [typeequivalences] ("for" NAME ("," NAME)*)?
 
 parameterizedmodule : NAME "(" NAME ("," NAME)* ")"
 

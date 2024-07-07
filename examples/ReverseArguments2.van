@@ -51,7 +51,7 @@ interface LIST =
     procedure takeHead (var list: t; var head: element) : boolean;
 end.
 
-module List (Element: COMPARABLE): LIST where List_element = Element_t =
+module List (Element: COMPARABLE): LIST where element := Element_t =
     type element;
     type t = ref record value: element; next: t end;
 
