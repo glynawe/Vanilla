@@ -53,13 +53,13 @@ module HashMap <Key: HASHABLE, Value: ADT> : HASHMAP where kt = Key::t, vt = Val
     }
 
     fn set (m: t; k: kt; v: vt) {
-        val i = place(m, k, v);
+        val i = m.place(k, v);
         if (m.table[i] == null) ++m.count;
         m.table[i] = v
     }
 
     fn get (m: t; k: kt; var v: vt) : bool {
-        val i = place(m, k, v);
+        val i = m.place(k, v);
         if (m.table[i] == null) 
             return false;
         else {
