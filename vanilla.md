@@ -99,7 +99,7 @@ This very simplified program defines strings and generic sets as abstract data t
 
     module String : STRING =
         type R = array of byte;
-        procedure Equal (a, b: T) : boolean =
+        procedure Equals (a, b: T) : boolean =
             return a = b or len(a) = len(b) and a^ = b^;
         end;
         procedure Create (text: array of byte): T =
@@ -126,7 +126,7 @@ This very simplified program defines strings and generic sets as abstract data t
         end;
         procedure Contains (set: T; element: ET) : boolean =
             while set != nil do
-                if Element_Equal(set.head, element) then return true
+                if set.head.Equals(element) then return true
                 else set := set.tail 
                 end
             end;
@@ -141,8 +141,8 @@ This very simplified program defines strings and generic sets as abstract data t
         procedure main () =
             val s := String_Create("Hello World!");
             var set := StringSet_Empty;
-            set := StringSet_Add(set, s);
-            if StringSet_Contains(set, s) then
+            set := set.Add(s);
+            if set.Contains(s) then
                 Print_String("Success!")
             end
         end; 
