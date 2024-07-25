@@ -1,8 +1,9 @@
 Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
-Require Import Lia.
 Require Import Coq.Logic.Decidable.
+Require Import Coq.Structures.Equalities.
 Import ListNotations.
+
 
 Lemma Forall2_refl X R l : 
   (forall x : X, In x l -> R x x) -> Forall2 R l l.
@@ -11,10 +12,19 @@ Proof.
   induction 1; auto.
 Qed.
 
+Lemma same_either_way : forall {T: Type} (c: bool) (a: T),
+  (if c then a else a) = a.
+Proof.
+  intros. destruct c; reflexivity.
+Qed.
 
-Definition name_t := string.
 
-Definition globalname_t := string.
+
+Module type (Name : Eq) (Globalname: Eq).
+
+Definition name_t := Name.t.
+
+Definition globalname_t := Globalname.t.
 
 Section type_t.
 
@@ -38,7 +48,7 @@ Section type_t.
     | Record    : list (name_t * type_t) -> type_t
     | Procedure : list (passing_method_t * type_t) -> type_t -> type_t
     | NamedRef  : globalname_t -> type_t 
-    | Abstract  : globalname_t -> type_t.
+    | Opaque  : globalname_t -> type_t.
 
   Set Elimination Schemes.
 
@@ -70,8 +80,8 @@ Section type_t.
         P (Procedure args rtype))
       (HNamedRef : 
         forall name, P (NamedRef name))
-      (HAbstract :
-        forall name, P (Abstract name)).
+      (HOpaque :
+        forall name, P (Opaque name)).
 
     Fixpoint type_t_ind type : P type.
     Proof.
@@ -101,7 +111,7 @@ Section type_t.
           - apply IH with (1 := H).
         * apply type_t_ind.
       + apply HNamedRef.
-      + apply HAbstract.
+      + apply HOpaque.
     Qed.
 
   End type_t_ind.
@@ -123,7 +133,7 @@ Section type_t.
     | Record elements => exists name, In (name, s) elements
     | Procedure args rtype => exists pass, In (pass, s) args \/ s = rtype
     | NamedRef _ => False
-    | Abstract _ => False
+    | Opaque _ => False
     end.
 
   Local Fact wf_sub_type : well_founded sub_type_t.
@@ -167,8 +177,8 @@ Section type_t.
         P (Procedure args rtype))
       (HNamedRef : 
         forall name, P (NamedRef name))
-      (HAbstract :
-        forall name, P (Abstract name)).
+      (HOpaque :
+        forall name, P (Opaque name)).
 
     Theorem type_t_rect type : P type.
     Proof.
@@ -191,7 +201,7 @@ Section type_t.
         - intros pass ? ?. apply IH. exists pass. left. apply H.
         - apply IH. exists ByValue. right. reflexivity.
       + apply HNamedRef.
-      + apply HAbstract.
+      + apply HOpaque.
     Qed.
 
   End type_t_rect.
@@ -225,7 +235,7 @@ Module rules.
   | Array _ _ => True
   | Record _ => True
   | Procedure _ _ => True
-  | Abstract _ => True
+  | Opaque _ => True
   | _ => False
   end.
 
@@ -247,7 +257,7 @@ Module rules.
   Definition unsized_type (t: type_t) : Prop :=  
   match t with
   | OpenArray _ => True 
-  | Abstract _ => True
+  | Opaque _ => True
   | Statement => True
   | _ => False
   end.
@@ -377,8 +387,8 @@ Module rules.
         eq_types m (Procedure args1 rtype1) (Procedure args2 rtype2)
     | eq_types_NamedRef m n1 n2 :
         module_equivalent m n1 n2 -> eq_types m (NamedRef n1) (NamedRef n2)
-    | eq_types_Abstract m n1 n2 :
-        module_equivalent m n1 n2 -> eq_types m (Abstract n1) (Abstract n2).
+    | eq_types_Opaque m n1 n2 :
+        module_equivalent m n1 n2 -> eq_types m (Opaque n1) (Opaque n2).
 
   Fact eq_types_refl (m: module_t) (t: type_t) : eq_types m t t.
   Proof.
@@ -433,8 +443,8 @@ Inductive valid_type : module_t -> type_t -> Prop :=
       valid_type m (Procedure args rtype)
   | valid_type_NamedRef m name : 
       valid_type m (NamedRef name)    (* XXX *) 
-  | valid_type_Abstract m name : 
-      valid_type m (Abstract name).   (* XXX *)
+  | valid_type_Opaque m name : 
+      valid_type m (Opaque name).   (* XXX *)
 
 
 (* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - *)
@@ -502,7 +512,7 @@ Theorem unsized_cannot_be_assigned : forall (m: module_t) (t u: type_t),
 (** [reference_parameter_compatible m dst src] is true if a designator of type
     [src] can by passed by reference to a procedure parameter of type [dst].
 
-    The supplied parameter an procedure parameter must have equal types. 
+    The supplied parameter and procedure parameter must have equal types. 
     The exception is that arrays are compatible with open arrays if their 
     element types are equal. *)
 
@@ -526,3 +536,5 @@ Definition value_parameter_compatible (m: module_t) (dst src: type_t) : Prop :=
 
 
 End rules.
+
+End type.

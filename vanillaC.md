@@ -275,7 +275,7 @@ A function definition can be used in a module to define it early. This allows se
     Body = "{" {Statement} "}".
 
     Statement = LocalDefinition
-              | Assignment | FunctionCall | If | Leave | Return | Case | Empty.
+              | Assignment | FunctionCall | If | Leave | Return | Case.
 
 Statements appear in the bodies of functions and within other statements.
 
@@ -305,7 +305,7 @@ Records of the same type and arrays of the same type and length may by assigned 
 
 ## Function Calls
 
-    FunctionCall = Designator "(" [Expression ","...] ")" ";"
+    FunctionCall = Designator ["loop"] "(" [Expression ","...] ")" ";"
 
 The designator part of a function call statement must designate a procedure function. 
 
@@ -383,11 +383,6 @@ Vanilla switch cases do not "fall through" like C switch cases, there is no need
 
 *The highest range constant must be less than 256 higher that the lowest constant. Switch statements are most useful when implemented using jump tables, and there must be some limit to the size of those tables.*
 
-## Empty statement
-
-    Empty = ";".
-
-
 # Expressions
 
     Expression = Conjunction {"or" Conjunction}. 
@@ -448,13 +443,15 @@ The expressions following `?` and `:` must have the same type.
     Selection   = "." NAME.
     Subscript   = "[" Expression ","... "]".
     Dereference = "^".
-    Call        = "(" [Expression ","...] ")"
+    Call        = ["loop"] "(" [Expression ","...] ")"
 
 Pointer values are automatically dereferenced when they are the designator of a call, selection or subscript. `^` will not need to be used often, but is useful when comparing or assigning to the targets of pointers.
 
 The list of expressions in a call are supplied to the designated function as arguments. A `ref` argument must be supplied with a designator. A supplied argument must match its argument's type. 
 
 The "method call" syntax for procedure function calls may be used for expression function calls too. 
+
+If the `loop` clause is used then the procedure call must be tail-call optimizable (i.e. optimizable into a loop).
 
 
 ## Literals

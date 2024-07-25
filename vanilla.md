@@ -280,11 +280,13 @@ Records of the same type and arrays of the same type and length may by assigned 
 
 ## Procedure Calls
 
-    ProcedureCall = Designator "(" [Expression ","...] ")"
+    ProcedureCall = Designator ["loop"] "(" [Expression ","...] ")"
 
 The designator part of a procedure call statement must designate a proper procedure. 
 
 The list of expressions in a procedure call are passed to the designated procedure as parameters. A `var` parameter must be passed a designator of the same type. A value parameter may be passed any expression, following the same rules as assignment.
+
+If the `loop` clause is used then the procedure call must be tail-call optimizable (i.e. optimizable into a loop).
 
 ### "Method calls"
 
@@ -426,12 +428,13 @@ The expressions following `then` and `else` must have the same type.
     Selection   = "." NAME.
     Subscript   = "[" Expression ","... "]".
     Dereference = "^".
-    Call        = "(" [Expression ","...] ")"
+    Call        = ["loop"] "(" [Expression ","...] ")"
 
 Reference values are automatically dereferenced when they are the designator of a call, selection or subscript.
 
 The list of expressions in a call are supplied to the designated procedure as parameters. A `var` parameter must be supplied with a designator. A supplied parameter must match its parameter's type. 
 
+If the `loop` clause is used then the procedure call must be tail-call optimizable (i.e. optimizable into a loop).
 
 ## Literals
 
