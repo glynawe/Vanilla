@@ -18,8 +18,8 @@ interface HASHMAP {
     type kt;
     type vt;
     fn create (sizelimit: int): t;
-    fn set (m: t; k: kt; v: vt);
-    fn get (m: t; k: kt; var v: vt) : bool;
+    fn set (m: t, k: kt, v: vt);
+    fn get (m: t, k: kt, var v: vt) : bool;
 }
 
 module HashMap <Key: HASHABLE, Value: ADT> : HASHMAP where kt = Key::t, vt = Value::t
@@ -39,9 +39,9 @@ module HashMap <Key: HASHABLE, Value: ADT> : HASHMAP where kt = Key::t, vt = Val
         return m;
     }
 
-    fn place (m: t; k: kt; v: vt): int {
+    fn place (m: t, k: kt, v: vt): int {
         expect(m.count < m.size);
-        var i = Key::hash(k) % m.size;
+        var i = k.hash() % m.size;
         while (m.table[i] != null) {
             if (m.table[i].equal(k)) {
                 m.table[i] = v;
@@ -52,14 +52,14 @@ module HashMap <Key: HASHABLE, Value: ADT> : HASHMAP where kt = Key::t, vt = Val
         return i;
     }
 
-    fn set (m: t; k: kt; v: vt) {
-        val i = m.place(k, v);
+    fn set (m: t, k: kt, v: vt) {
+        let i = m.place(k, v);
         if (m.table[i] == null) ++m.count;
-        m.table[i] = v
+        m.table[i] = v;
     }
 
-    fn get (m: t; k: kt; var v: vt) : bool {
-        val i = m.place(k, v);
+    fn get (m: t, k: kt, var v: vt) : bool {
+        let i = m.place(k, v);
         if (m.table[i] == null) 
             return false;
         else {

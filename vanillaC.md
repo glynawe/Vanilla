@@ -4,18 +4,26 @@ Vanilla is a language in the Algol family, the starting point of its design was 
 
 **A quick comparison to C.** 
 
-- There is a true module system for defining ADTs. 
-- There is a method-call syntax for ADT objects. 
+- There is a true module system for defining abstract data types. 
 - There is no macro system, but constants and constant expressions are part of the language. 
 - Pointers cannot point to arbitrary locations, just to allocated objects. 
-- Pointers are not used to implement arrays. 
-- The pointer dereference operator is postfix. 
+- Pointers are not used to implement arrays. Arrays are a type. 
 - Array argument lengths are always known. 
+- The pointer dereference operator is postfix.
+- Types are inferred when declaring new variables. 
 - There is a smaller selection of numeric types. 
 - There is no automatic casting between types. 
 - The `for` statement is less intricate. 
 - There is a smaller number of operators, less common operations are builtin functions. 
 - Functions that access hardware and circumvent the type system must be imported from the `SYSTEM` module. 
+
+**A quick comparison to C++ and Java.**
+
+- The units of encapsulation are modules, typically containing types and functions for ADTs.
+- Nevertheless, ADT function calls resemble method calls. 
+- Parameterized modules (functors) take the place of C++ templates and Java generic classes.
+- Unlike generic classes, functors can supply whole groups of interrelated types.
+- There is no inheritance of implementation, but inclusion of trait functions is possible.
 
 # Program Structure
 
@@ -54,7 +62,7 @@ A Vanilla program may contain any number of interfaces, modules and functors. On
     ModuleParameter  = ModuleName ":" InterfaceName.
     TypeConstraints  = "where" TypeEquivalence ","... 
     TypeEquivalence  = NAME "=" TypeName.
-    TypeName           = ModuleName "::" NAME.
+    TypeName         = ModuleName "::" NAME.
 
     InterfaceName = NAME.
     ModuleName    = NAME.
@@ -109,37 +117,37 @@ This very simplified program defines strings and generic sets as abstract data t
 
     interface STRING {
         include COMPARABLE;
-        type R;
-        type T = ^R;
+        type Repr;
+        type T = ref Repr;
         fn Create (text: []byte): T;
     }
 
     module String : STRING {
-        type R = []byte;
+        type Repr = []byte;
         fn equals (a: T, b: T) : bool {
             return a == b || len(a) == len(b) && a^ == b^;
         }
-        fn Create (text: []byte): T {
+        fn New (text: []byte): T {
             var s = new(byte, len(text)); s^ = text; return s;
         }
     }
 
     interface SET {
-        type R;
-        type T = ^R;
+        type Repr;
+        type T = ref Repr;
         type ET;
-        val empty: T;
+        let empty: T;
         fn Add (set: T, element: ET) : T;
         fn Includes (set: T, element: ET) : bool;
     }
 
     module Set <Element: COMPARABLE> : SET where ET = Element::T {
         type ET;
-        type R = struct { 
+        type Repr = struct { 
             value: Element; 
             next: T; 
         };
-        val empty: T = null;
+        let empty: T = null;
         fn add (set: T, element: ET) : T {
             var list = new(R); list.head = head; list.tail = tail;
             return list;
@@ -160,7 +168,7 @@ This very simplified program defines strings and generic sets as abstract data t
         import String;
         import StringSet = Set<String>;
         fn main () {
-            val s = String::Create("Hello World!");
+            let s = String::New("Hello World!");
             var set = StringSet::Empty;
             set = set.add(s);
             if (set.contains(set, s))
@@ -181,8 +189,8 @@ A ConstDefinition names a constant. A named constant may be described more than 
 
 # Variables
 
-    VarDefinition = ("var" | "val") VariableList.
-    VarDeclaration = VarDefinition ["=" StructuredConstant] ";".
+    VarDefinition = ("var" | "let") VariableList ";".
+    VarDeclaration = ("var" | "let") VariableList ["=" StructuredConstant] ";".
 
     VariableList = IdentList ":" Type.
     IdentList     = NAME ","... .
@@ -191,7 +199,7 @@ A list of distinct variable definitions will be made if a list of names is given
 
 All of the variables named in the variable list of a VarDeclaration are initialized to the values in the VarDeclaration's structured constant. 
 
-`val` declares a *immutable variable*, a variable that can only be assigned once when it is declared. *The compiler may arrange for immutable global variables to be stored in ROM.*
+`let` declares a *immutable variable*, a variable that can only be assigned once when it is declared. *The compiler may arrange for immutable global variables to be stored in ROM.*
 
 A variable definition has an implicit declaration if one is not given in a program's modules. E.g. the definition `var i: int;` will be provided the declaration `var i: int = 0;`.
 
@@ -200,7 +208,7 @@ A variable definition has an implicit declaration if one is not given in a progr
 A structured constant can be used to initialize global variables of any type, especially arrays and records. The value of a structured constant will become object code for the executable program.
 
     StructuredConstant = Constant | StructureList.
-    StructureList      = "[" StructureItems ","... "]".
+    StructureList      = "{" StructureItems ","... "}".
     StructureItems     = StructuredConstant ["for" Constant].
 
 A structure list can be assigned to a record or array variable. Each item from a structure list is assigned to
@@ -213,11 +221,11 @@ A string literal can be used to declare a byte array. If it is shorter than the 
 
 **Example** This array contains a one, three sevens and a six:
 
-    var sevens: [5]int = [1, 7 for 3, 6];
+    var sevens: [5]int = {1, 7 for 3, 6};
 
-**Example** This array contains the bytes [64, 90, 64, 90, 0, 0, 0, 0]:
+**Example** This array contains the bytes {64, 90, 64, 90, 0, 0, 0, 0}:
 
-    val string: [8]byte = "AZAZ";
+    let string: [8]byte = "AZAZ";
 
 
 ## Implicit Variable Declarations
@@ -238,7 +246,7 @@ The above rule is also used to initialize local variables within function bodies
          | "[" Constant "]" Type
          | "[" "]" Type
          | "struct" "{" {VariableList ";"} "}"
-         | "^" Type
+         | "ref" Type
          | "fn" FnType.
 
     DimensionList = Constant ","... .
@@ -247,46 +255,47 @@ Arrays begin at element 0. An array with no specified dimension is an *open arra
 
 A function type may only be used as the type of a argument or as the target of a pointer type.
 
-An *opaque type* is a type whose definition is not yet given. An opaque type can be used in an interface to denote an abstract type or generic type argument, or in a module to allow a record type to contain pointers to itself. An opaque type must be defined before it can be used in a module, either by a full type definition or a functor type constraint.
+An *opaque type* is a type whose definition is not yet given. An opaque type can be used in an interface to denote an abstract type, or in a module to allow a record type to contain pointers to itself. An opaque type must be defined before it can be used in a module, either by a full type definition or a functor type constraint.
 
 # Functions
 
     FunctionDefinition = "fn" NAME FnType ";".
-    FnDeclaration = fn" NAME FnType (";" | Body).
+    FnDeclaration = ["loop"] "fn" NAME FnType (";" | Block).
 
     FnType     = "(" [Parameters ","...] ")" [ReturnType]
-    Parameters = ["ref"] VariableList.
+    Parameters = ["var"] VariableList.
     ReturnType = ":" Type
 
 The argument names in function definitions are placeholders for describing each argument. They are not examined when determining type equivalence. However, arguments names are significant in function declarations.
 
 A function with a return type is an *expression function*. A function without a return type is a *procedure function*. A expression function may only be used in an expression. A procedure function may only be used as a statement.
 
-Assigning to a `ref` argument assigns to the argument supplied by the function call, i.e. `ref` arguments are passed by reference. Parameters without `ref` are *value arguments*. Value arguments are immutable. *The compiler may pass record and array value arguments by reference.*
+Assigning to a `var` argument assigns to the argument supplied by the function call, i.e. `var` arguments are passed by reference. Parameters without `var` are *value arguments*. Value arguments are immutable. *The compiler may pass record and array value arguments by reference.*
 
 An array of any length may be passed to an *open array* argument if their element types are the same. 
 
 A function definition can be used in a module to define it early. This allows sets of mutually recursive functions to be defined. (This like providing a *function prototype* in C.) 
 
+A `loop` procedure must be tail-call optimizable. I.e. if the procedure calls itself recursively then that call must be optimizable into a loop. The compiler will reject the program if it cannot perform the optimisation. 
+
 *A value argument does not come with a guarantee that the argument will retain the same value all though the execution of its function. "Aliasing" is possible. If a global variable is given as a argument then assigning to that variable from within the function also changes the argument's value.*
 
 # Statements
 
-    Body = "{" {Statement} "}".
+    Block = "{" {Statement} "}".
 
-    Statement = LocalDefinition
+    Statement = LocalDefinition | Block
               | Assignment | FunctionCall | If | Leave | Return | Case.
-
-Statements appear in the bodies of functions and within other statements.
 
 ## Local Declarations
 
-    LocalDefinition = LocalVarDeclaration | ConstDefinition. 
-    LocalVarDeclaration = ("var" | "val") IdentList (":" Type ["=" Expression] | "=" Expression).
+    LocalDefinition = LocalVarDeclaration | LocalLetDeclaration | ConstDefinition. 
+    LocalVarDeclaration = "var" IdentList (":" Type ["=" Expression] | "=" Expression).
+    LocalLetDeclaration = "let" IdentList [":" Type] "=" Expression.
 
 Variables and constants defined in a statement body are only valid within that body, i.e. bodies are scopes. Variables and constants are only visible to the statements that come after their declaration statements. 
 
-If a local variable declaration has an initializer expression then the expression is evaluated first and then all the variables named in its list are assigned that value, otherwise it is initialized to a default value by the same rules used to initialize global variables. If a local declaration has an initializer expression but no type then it takes on the type of its initializer. `val` declares a *immutable variable*, a variable that can only be assigned once when it is declared.  
+If a local variable declaration has an initializer expression then the expression is evaluated first and then all the variables named in its list are assigned that value, otherwise it is initialized to a default value by the same rules used to initialize global variables. If a local declaration has an initializer expression but no type then it takes on the type of its initializer. `let` declares a *immutable variable*, a variable that can only be assigned once when it is declared.  
 
 A local definition may not have the same name as any definition in the same body or any surrounding body, including the function's argument names. I.e. local names may not be shadowed. 
 
@@ -305,7 +314,7 @@ Records of the same type and arrays of the same type and length may by assigned 
 
 ## Function Calls
 
-    FunctionCall = Designator ["loop"] "(" [Expression ","...] ")" ";"
+    FunctionCall = Designator "(" [Expression ","...] ")" ";"
 
 The designator part of a function call statement must designate a procedure function. 
 
@@ -328,25 +337,27 @@ list.head.add(value)
 
     If = "if" "(" Expression ")" Statement ["else" Statement].
 
-## Loop Statements
+## Looping Statements
 
-    Loop = [NAME ":"] (For | While) Statement.
+    Loop  = For | While | Loop.
+    For   = "for"   [NAME] "(" NAME "=" Expression  (":" | "..") Expression ")" Statement.
+    While = "while" [NAME] "(" Expression ")" Statement.
+    Loop  = "loop"  [NAME] Statement.
 
-    For = "for" "(" NAME "=" Expression  (":" | "..") Expression ")".
+    Leave = "leave" [NAME] ";".
 
-    While = ["while" "(" Expression ")"].
+A looping statement may be labelled with a name to be used by `leave` statements. `leave` exits any looping statement. Either the loop that is named, or the innermost loop if no name is given. An leave statement can only appear inside a looping statement. A named leave statement can only appear inside a looping statement with the same name.
 
-A loop statement may be labelled with a name to be used by `leave` statements.
+A `loop` statement continues looping until an applicable `leave` statement is executed.
 
-A `for` loop's control variable name is an integer immutable variable in the statement's body. If there is a `while` clause then that variable may be used in that clause's expression. The limiting expressions of a `for` clause are evaluated only once.
-
-If the limits of a `for` statement are separated by `:` then the loop ends when the limiting expression is reached. If `..` is used then the loop ends when the limiting expression is exceeded. `for (i = 0 : 4) print(i);` would print `0 1 2 3` but `for (i = 0 .. 4) print(i);` would print `0 1 2 3 4`
+A `for` loop's control variable name is an immutable integer variable in the statement's body. The limiting expressions of a `for` loop are evaluated only once. If the limits of a `for` statement are separated by `:` then the loop ends when the limiting expression is reached. If `..` is used then the loop ends when the limiting expression is exceeded. `for (i = 0 : 4) print(i);` would print `0 1 2 3` but `for (i = 0 .. 4) print(i);` would print `0 1 2 3 4`. 
 
 [For loops are most often used for stepping through arrays. `for (i = 0:n)` expresses that better than `for (int i = 0; i < n; ++n)` and is harder to get wrong.]
 
+
 **Example**
 
-    fn uppercase (ref string: []byte) {
+    fn uppercase (var string: []byte) {
         for (i = 0 : len(string)) {
             if (string[i] == '\0') 
                 leave;
@@ -356,10 +367,6 @@ If the limits of a `for` statement are separated by `:` then the loop ends when 
     }
 
 ## Leave Statements
-
-    Leave = "leave" [NAME] ";".
-
-`leave` exits a loop statement. Either the loop that is named, or the innermost loop if no name is given. An leave statement can only appear inside a loop statement. A named leave statement can only appear inside a loop statement with the same name. 
 
 [I've chosen `leave` rather than `break` as the keyword to exit loops so that it cannot be accidentally misused in `switch` statements.]
 
@@ -373,11 +380,12 @@ If the limits of a `for` statement are separated by `:` then the loop ends when 
 
 ## Switch statements
 
-    Switch = "switch" "(" Expression ")" "{" {Case} ["default" ":" ] "}".
-    Case   = "case" Range ":" {"case" Range ":"} Statement.
-    Range  = Constant [".." Constant].
+    Switch  = "switch" "(" Expression ")" "{" {Case}  "}".
+    Case    = "case" Range ":" {"case" Range ":"} Statement {Statement}.
+    Default = "default" ":" Statement {Statement}.
+    Range   = Constant [".." Constant].
 
-Switch expressions and switch range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a case's ranges then that case's statement is executed. If the value does not match a case and there is an `default` clause then its body is executed; if there is no `default` clause then nothing is done. 
+Switch expressions and switch range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a case's ranges then that case's statements are executed. If the value does not match a case and there is an `default` clause then its body is executed; if there is no `default` clause then nothing is done. 
 
 Vanilla switch cases do not "fall through" like C switch cases, there is no need for `break`. 
 
@@ -443,22 +451,20 @@ The expressions following `?` and `:` must have the same type.
     Selection   = "." NAME.
     Subscript   = "[" Expression ","... "]".
     Dereference = "^".
-    Call        = ["loop"] "(" [Expression ","...] ")"
+    Call        = "(" [Expression ","...] ")"
 
-Pointer values are automatically dereferenced when they are the designator of a call, selection or subscript. `^` will not need to be used often, but is useful when comparing or assigning to the targets of pointers.
+Pointer values are automatically dereferenced when they are the designator of a call, selection or subscript. The dereferencing operator `^` will not need to be used often, but is useful when comparing or assigning the targets of pointers.
 
-The list of expressions in a call are supplied to the designated function as arguments. A `ref` argument must be supplied with a designator. A supplied argument must match its argument's type. 
+The list of expressions in a call are supplied to the designated function as arguments. A by-reference argument must be supplied with a designator. A supplied argument must match its argument's type. 
 
 The "method call" syntax for procedure function calls may be used for expression function calls too. 
-
-If the `loop` clause is used then the procedure call must be tail-call optimizable (i.e. optimizable into a loop).
 
 
 ## Literals
 
     Literal = INTEGER | FLOAT | CHARACTER | STRING.
 
-INTEGER literals have the type `int`. WORD literals has type `word`. BYTE literals have the type `byte`. FLOAT literals have the type `float`. STRING literals  are anonymous immutable variables of type `[]byte`. A string literal's array has an additional element at the end containing `'\0'`. 
+INTEGER literals have the type `int`. WORD literals have type `word`. BYTE literals have the type `byte`. FLOAT literals have the type `float`. STRING literals  are anonymous immutable variables of type `[]byte`. A string literal's array has an additional element at the end containing `'\0'`. 
 
 BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer literals with the suffix `X` or character literals in single quotes. The range of BYTE literals is 0X to 255X. The range of WORD literals is 0 to `maxword`. WORD literals are integer literals with the suffix `L`. 
 
@@ -498,15 +504,13 @@ BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer l
     ImportedName = ModuleName "::" NAME.
     ModuleName   = NAME.
 
-The underscore is reserved for prefixing imported names with module names.
-
 ## Keywords
 
     Keywords = 
         "case" | "const" | "default" | "else" | 
         "leave" | "for" | "if" | "import" | "include" | "interface" |
         "module" | "fn" | "struct" |
-        "ref" | "return" | "type" | "val" | "var" | where" | 
+        "ref" | "return" | "type" | "let" | "var" | where" | 
         "while".
 
     StandardDefinitionIds =
@@ -605,9 +609,9 @@ The bit shift operators will shift in the opposite direction if *n* is negative.
 
 | Definition                             | Function                          |
 |----------------------------------------|-----------------------------------|
-| `new (T) : ^T`                      | allocate data                     |
-| `new (T, d: int) : ^[] T`           | allocate an array of `d` elements |
-| `free (r : ^T)`                     | free data                         |
+| `new (T) : ref T`                      | allocate data                     |
+| `new (T, d: int) : ref [] T`           | allocate an array of `d` elements |
+| `free (r : ref T)`                     | free data                         |
 
 `new` and `free` may not be used in constant expressions. The type `T` may not be an opaque type or open array (its size must be known).
 
@@ -658,12 +662,12 @@ In the following table *RAM* refers the computer's random access memory, address
 
 |  Definition                          | Function                                     |
 |--------------------------------------|----------------------------------------------|
-| `ADDRESS (ref v: AnyType) : word`    | address of variable `v`                      |
+| `ADDRESS (var v: AnyType) : word`    | address of variable `v`                      |
 | `MOVE (a, b, n: int)`                | move `n` bytes from `RAM[a]` to `RAM[b]`     |
-| `GET (a: word, ref v: AnyType)`      | fill `v` with the bytes starting at `RAM[a]` |
+| `GET (a: word, var v: AnyType)`      | fill `v` with the bytes starting at `RAM[a]` |
 | `PUT (a: word, v: AnyType)`          | move the bytes of `v` to `RAM[a]`            |
 | `SIZE (v : AnyType) : int`           | number of bytes in variable `v`              |
-| `LOC (ref v: AnyType) : ref AnyType` | make a pointer to a variable or function   |
+| `LOC (var v: AnyType) : ref AnyType` | make a pointer to a variable or function   |
 | `TYPESIZE (T)  : word`               | number of bytes required by type `T`         |
 | `TYPE (x: AnyType, T) : T`           | give `x` the type `T`                        |
 
@@ -679,7 +683,7 @@ In the following table *RAM* refers the computer's random access memory, address
         include SYSTEM;
         fn EndianReversal (x: int) : int {
             const w = SIZE(x);
-            val a = TYPE(x, [w]byte);
+            let a = TYPE(x, [w]byte);
             var b: [w]byte;
             for (i = 0 : w)
                 b[i] = a[w - i - 1];

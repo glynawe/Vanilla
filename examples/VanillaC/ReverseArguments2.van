@@ -1,0 +1,104 @@
+interface ADT {
+    type t;
+}
+
+interface COMPARABLE {
+    include ADT;
+    fn equal (a, b: t) : bool;
+}
+
+interface PRINTABLE {
+    include ADT;
+    fn print (a: t);
+}
+
+interface STRING {
+    include COMPARABLE;
+    include PRINTABLE;
+    type t;
+    fn make (text: []byte): t;
+}
+
+module String: STRING {
+    type t = ref []byte;
+    
+    fn make (text: []byte): t {
+        var s = new(byte, len(text));
+        s^ = text;
+        return s;
+    }
+    
+    fn equal (a, b: t) : bool {
+        return a == b || len(a) == len(b) && a^ == b^;
+    }
+    
+    import System;
+
+    fn print (a: t) {
+        for (i = 0 : len(a)) { 
+            if (a[i] != '\0')
+                System::putchar(a[i]);
+            else {
+                System::putchar('\n');
+                leave;
+            }
+        }
+    }
+}
+
+interface LIST {
+    include COMPARABLE;
+    type t;
+    type element;
+    let empty: t;
+    fn make () : t;
+    fn prepend (head: element, tail: t) : t;
+    fn takeHead (var list: t, var head: element) : bool;
+}
+
+module List <Element: COMPARABLE>: LIST where element = Element::t {
+    type element;
+    type t = ref struct { value: element; next: t; };
+
+    let empty: t = nil;
+    
+    fn equal (a, b: list) : bool {
+        while (a != nil && b != nil && a.head.equal(b.head)) {
+            a = a.tail;
+            b = b.tail;
+        }
+        return a == b;
+    }
+    
+    fn prepend (head: element, tail: t) : t {
+        let list = new(t);
+        list.head = head; 
+        list.tail = tail;
+        return list;
+    }
+    
+    fn takeHead (var list: t, var head: element) : bool {
+        if (list == nil) 
+            return false;
+        else {
+            head = list.head;
+            list = list.tail;
+            return true;
+        }
+    }
+}
+
+module ReverseArguments {
+    import System;
+    import String;
+    import StringList = List<String>;
+
+    fn main() {
+        var list = StringList::empty;
+        for (i = 1 : System::argc)
+            list = list.prepend(String::make(System::argv[i]));
+        var head: String;
+        while (list.takeHead(head))
+            head.print();
+    }
+}
