@@ -44,7 +44,7 @@ structure: "[" structureitems ("," structureitems)* "]"
 structureitems: structuredconstant ["for" constant]
 
 procdefinition: "procedure" NAME proctype
-procdeclaration: procdefinition [procbody]
+procdeclaration: ["loop"] procdefinition [procbody]
 proctype:        "(" parameterlist ")" [":" type]
 procbody:        "=" body "end"
 parameterlist:   (parameters (";" parameters)*)?
