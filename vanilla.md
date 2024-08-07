@@ -204,7 +204,7 @@ A string literal can be used to declare a byte array. If it is shorter than the 
 
 A variable definition has an implicit declaration if one is not given in a program's modules. 
 
-An implicit variable declaration has a default value. Numeric variables are initialized to zero. Reference values are initialized to `nil`. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero or nil.
+An implicit variable declaration has a default value. Numeric variables are initialized to zero. Reference variables are initialized to `nil`. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero or nil.
 
 The above rule is also used to initialize local variables within procedure bodies.
 

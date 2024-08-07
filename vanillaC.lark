@@ -71,15 +71,15 @@ if:        "if" "(" expression ")" statement ["else" statement]
 loop     : for | while | forever
 for      : "for"   [NAME] "(" NAME "=" expression (loopto | loopuntil) expression ")" statement
 while    : "while" [NAME] "(" expression ")" statement
-forever  : "loop"  [NAME] statement
+forever  : "loop"  [NAME] block
 leave    : "leave" [NAME] ";"
 loopto: ".." 
 loopuntil: ":"
 
 switch :   "switch" "(" expression ")" "{" case* [default] "}"
-case:      range+ statement*
-range:     "case" constant [".." constant] ":"
-default:   "default" ":" statement*
+case:      "case" range ("," range)* block
+range:     constant (".." constant)?
+default:   "default" block
 
 call: designator "(" (expression ("," expression)*)? ")" ";"
 

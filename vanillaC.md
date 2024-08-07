@@ -234,7 +234,7 @@ A variable definition has an implicit declaration if one is not given in a progr
 
 An implicit variable declaration has a default value. Numeric variables are initialized to zero. Pointer values are initialized to `null`. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero or null.
 
-The above rule is also used to initialize local variables within function bodies.
+The above rule is also used to initialize local variables within blocks.
 
 
 # Types
@@ -285,7 +285,7 @@ A `loop` procedure must be tail-call optimizable. I.e. if the procedure calls it
     Block = "{" {Statement} "}".
 
     Statement = LocalDefinition | Block
-              | Assignment | FunctionCall | If | Leave | Return | Case.
+              | Assignment | FunctionCall | If | Break | Return | Case.
 
 ## Local Declarations
 
@@ -293,11 +293,11 @@ A `loop` procedure must be tail-call optimizable. I.e. if the procedure calls it
     LocalVarDeclaration = "var" IdentList (":" Type ["=" Expression] | "=" Expression).
     LocalLetDeclaration = "let" IdentList [":" Type] "=" Expression.
 
-Variables and constants defined in a statement body are only valid within that body, i.e. bodies are scopes. Variables and constants are only visible to the statements that come after their declaration statements. 
+Variables and constants defined in a block are only valid within that block, i.e. blocks are scopes. Variables and constants are only visible to the statements that come after their declaration statements. 
 
 If a local variable declaration has an initializer expression then the expression is evaluated first and then all the variables named in its list are assigned that value, otherwise it is initialized to a default value by the same rules used to initialize global variables. If a local declaration has an initializer expression but no type then it takes on the type of its initializer. `let` declares a *immutable variable*, a variable that can only be assigned once when it is declared.  
 
-A local definition may not have the same name as any definition in the same body or any surrounding body, including the function's argument names. I.e. local names may not be shadowed. 
+A local definition may not have the same name as any definition in the same block or any surrounding block, including the function's argument names. I.e. local names may not be shadowed. 
 
 ## Assignments
 
@@ -342,33 +342,29 @@ list.head.add(value)
     Loop  = For | While | Loop.
     For   = "for"   [NAME] "(" NAME "=" Expression  (":" | "..") Expression ")" Statement.
     While = "while" [NAME] "(" Expression ")" Statement.
-    Loop  = "loop"  [NAME] Statement.
+    Loop  = "loop"  [NAME] Block.
 
-    Leave = "leave" [NAME] ";".
+    Break = "break" [NAME] ";".
 
-A looping statement may be labelled with a name to be used by `leave` statements. `leave` exits any looping statement. Either the loop that is named, or the innermost loop if no name is given. An leave statement can only appear inside a looping statement. A named leave statement can only appear inside a looping statement with the same name.
+A looping statement may be labelled with a name to be used by `break` statements. `break` exits any looping statement. Either the loop that is named, or the innermost loop if no name is given. An break statement can only appear inside a looping statement. A named break statement can only appear inside a looping statement with the same name.
 
-A `loop` statement continues looping until an applicable `leave` statement is executed.
+A `loop` statement continues looping until an applicable `break` statement is executed.
 
-A `for` loop's control variable name is an immutable integer variable in the statement's body. The limiting expressions of a `for` loop are evaluated only once. If the limits of a `for` statement are separated by `:` then the loop ends when the limiting expression is reached. If `..` is used then the loop ends when the limiting expression is exceeded. `for (i = 0 : 4) print(i);` would print `0 1 2 3` but `for (i = 0 .. 4) print(i);` would print `0 1 2 3 4`. 
+A `for` loop's control variable name is an immutable integer variable in the looped statement. The limiting expressions of a `for` loop are evaluated only once. If the limits of a `for` statement are separated by `:` then the loop ends when the limiting expression is reached. If `..` is used then the loop ends when the limiting expression is exceeded. `for (i = 0 : 4) print(i);` would print `0 1 2 3` but `for (i = 0 .. 4) print(i);` would print `0 1 2 3 4`. 
 
 [For loops are most often used for stepping through arrays. `for (i = 0:n)` expresses that better than `for (int i = 0; i < n; ++n)` and is harder to get wrong.]
-
+****
 
 **Example**
 
     fn uppercase (var string: []byte) {
         for (i = 0 : len(string)) {
             if (string[i] == '\0') 
-                leave;
+                break;
             else if (string[i] >= 'A' && string[i] <= 'Z')
                 string[i] += 'A' - 'a';
         }
     }
-
-## Leave Statements
-
-[I've chosen `leave` rather than `break` as the keyword to exit loops so that it cannot be accidentally misused in `switch` statements.]
 
 
 ## Return Statements
@@ -380,14 +376,20 @@ A `for` loop's control variable name is an immutable integer variable in the sta
 
 ## Switch statements
 
-    Switch  = "switch" "(" Expression ")" "{" {Case}  "}".
-    Case    = "case" Range ":" {"case" Range ":"} Statement {Statement}.
-    Default = "default" ":" Statement {Statement}.
+    Switch  = "switch" "(" Expression ")" "{" {Case} ["else" Block] "}".
+    Case    = "case" Range ","... Block.
     Range   = Constant [".." Constant].
 
-Switch expressions and switch range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a case's ranges then that case's statements are executed. If the value does not match a case and there is an `default` clause then its body is executed; if there is no `default` clause then nothing is done. 
+Switch expressions and switch range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a case's ranges then that case's block are executed. If the value does not match a case and there is an `else` clause then its block is executed; if there is no `else` clause then nothing is done. 
 
-Vanilla switch cases do not "fall through" like C switch cases, there is no need for `break`. 
+**Example**
+
+    switch (c) {
+        case '0'..'9' { class = DIGIT; }
+        case 'a'..'z', 'A'..'Z' { class = LETTER; }
+        case ' ', '\t', ',' { class = PUNCTUATION; }
+        else { error(); class = UNEXPECTED; }
+    }
 
 *The highest range constant must be less than 256 higher that the lowest constant. Switch statements are most useful when implemented using jump tables, and there must be some limit to the size of those tables.*
 
@@ -440,7 +442,7 @@ The `&&` and `||` operators are "shortcut operators", they are equivalent to the
 
 ## Conditional expressions
 
-    Conditional  = Expression ? Expression ":" Expression.
+    Conditional  = Expression "?" Expression ":" Expression.
 
 The expressions following `?` and `:` must have the same type.
 
@@ -508,7 +510,7 @@ BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer l
 
     Keywords = 
         "case" | "const" | "default" | "else" | 
-        "leave" | "for" | "if" | "import" | "include" | "interface" |
+        "break" | "for" | "if" | "import" | "include" | "interface" |
         "module" | "fn" | "struct" |
         "ref" | "return" | "type" | "let" | "var" | where" | 
         "while".
