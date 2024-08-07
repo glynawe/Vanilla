@@ -346,7 +346,7 @@ list.head.add(value)
 
     Break = "break" [NAME] ";".
 
-A looping statement may be labelled with a name to be used by `break` statements. `break` exits any looping statement. Either the loop that is named, or the innermost loop if no name is given. An break statement can only appear inside a looping statement. A named break statement can only appear inside a looping statement with the same name.
+looping statements may be labelled with a name to be used by `break` statements. `break` exits any looping statement. Either the loop that is named, or the innermost loop if no name is given. An break statement can only appear inside a looping statement. A named break statement can only appear inside a looping statement with the same name. A break statement within a switch statement have a name.
 
 A `loop` statement continues looping until an applicable `break` statement is executed.
 
@@ -376,20 +376,28 @@ A `for` loop's control variable name is an immutable integer variable in the loo
 
 ## Switch statements
 
-    Switch  = "switch" "(" Expression ")" "{" {Case} ["else" Block] "}".
-    Case    = "case" Range ","... Block.
-    Range   = Constant [".." Constant].
+    Switch     = "switch" "(" Expression ")" "{" {Case} ["default" ":" Statements] "}".
+    Case       = "case" Range ","... ":" Statements.
+    Range      = Constant [".." Constant].
+    Statements = Statement {Statement}
 
 Switch expressions and switch range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a case's ranges then that case's block are executed. If the value does not match a case and there is an `else` clause then its block is executed; if there is no `else` clause then nothing is done. 
 
 **Example**
 
     switch (c) {
-        case '0'..'9' { class = DIGIT; }
-        case 'a'..'z', 'A'..'Z' { class = LETTER; }
-        case ' ', '\t', ',' { class = PUNCTUATION; }
-        else { error(); class = UNEXPECTED; }
+        case '0'..'9': 
+            class = DIGIT;
+        case 'a'..'z', 'A'..'Z': 
+            class = LETTER;
+        case ' ', '\t', ',': 
+            class = PUNCTUATION;
+        default: 
+            error(); 
+            class = UNEXPECTED;
     }
+
+*Cases do not not "fall through", `break` is not necessary.*
 
 *The highest range constant must be less than 256 higher that the lowest constant. Switch statements are most useful when implemented using jump tables, and there must be some limit to the size of those tables.*
 
@@ -509,8 +517,8 @@ BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer l
 ## Keywords
 
     Keywords = 
-        "case" | "const" | "default" | "else" | 
-        "break" | "for" | "if" | "import" | "include" | "interface" |
+        "break" | "case" | "const" | "default" | "else" | 
+        "for" | "if" | "import" | "include" | "interface" |
         "module" | "fn" | "struct" |
         "ref" | "return" | "type" | "let" | "var" | where" | 
         "while".

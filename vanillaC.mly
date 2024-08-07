@@ -69,9 +69,11 @@ MARK: Keywords
 *)
 
 %token BOOL "bool"
+%token BREAK "break"
 %token BYTE "byte"
 %token CASE "case"
 %token CONST "const"
+%token DEFAULT "default"
 %token ELSE "else"
 %token FALSE "false"
 %token FLOAT "float"
@@ -82,7 +84,6 @@ MARK: Keywords
 %token IMPORT "import"
 %token INCLUDE "include"
 %token INTERFACE "interface"
-%token LEAVE "leave"
 %token LET "let"
 %token LOOP "loop"
 %token MODULE "module"
@@ -121,6 +122,7 @@ MARK: Rule Types
 %type <unit> limiter
 %type <unit> moduledecl
 %type <unit> moduleparameter
+%type <unit> name
 %type <unit> open_statement
 %type <unit> otherdefinitions
 %type <unit> parameters
@@ -130,6 +132,7 @@ MARK: Rule Types
 %type <unit> range
 %type <unit> repetition
 %type <unit> selection
+%type <unit> simple_statement
 %type <unit> statement
 %type <unit> structure
 %type <unit> structuredconstant
@@ -186,15 +189,15 @@ MARK: Declarations
 */
 
 definition : 
-| "var" ns=commas(NAME) t=typesuffix ";"
+| "var" ns=commas(name) t=typesuffix ";"
     { () }  
-| "let" commas(NAME) typesuffix ";"
+| "let" commas(name) typesuffix ";"
     { () }  
 | "fn" n=NAME pt=proctype ";"
     { () }  
 | "import" n=NAME ";"
     { () }  
-| "import" n1=NAME "=" n2=NAME "<" ns=commas(NAME) ">" ";"
+| "import" n1=NAME "=" n2=NAME "<" ns=commas(name) ">" ";"
     { () }  
 | "include" n=NAME tc=typeconstraints? ns=selection? ";"
     { () }  
@@ -202,15 +205,15 @@ definition :
     { () }
 
 declaration: 
-| "var" ns=commas(NAME) t=typesuffix sc=structuredconstant? ";"
+| "var" ns=commas(name) t=typesuffix sc=structuredconstant? ";"
     { () }  
-| "let" commas(NAME) typesuffix structuredconstant ";"
+| "let" commas(name) typesuffix structuredconstant ";"
     { () }  
 | l=boption("loop") "fn" n=NAME pt=proctype b=block
     { () }  
 | "import" n=NAME ";"
     { () }  
-| "import" n1=NAME "=" n2=NAME "<" ns=commas(NAME) ">" ";"
+| "import" n1=NAME "=" n2=NAME "<" ns=commas(name) ">" ";"
     { () }  
 | "include" n=NAME tc=typeconstraints? ns=selection? ";"
     { () }  
@@ -280,7 +283,8 @@ typedef
 | "fn" pt=proctype
     { () }
 
-proctype : l="(" ps=separated_list(",", parameters) ")" t=typesuffix?
+proctype
+: l="(" ps=separated_list(",", parameters) ")" t=typesuffix?
     { () }
 
 parameters
@@ -314,9 +318,9 @@ open_statement
     { () }
 | "if" "(" e=expression ")" s1=closed_statement "else" s2=open_statement  
     { () }
-| "for" n1=NAME? "(" n2=NAME "=" e1=expression limiter expression ")" s=open_statement  
+| "for" n1=name? "(" n2=NAME "=" e1=expression limiter expression ")" s=open_statement  
     { () }
-| "while" n1=NAME? "(" e=expression ")" s=open_statement  
+| "while" n1=name? "(" e=expression ")" s=open_statement  
     { () }
 
 closed_statement
@@ -324,25 +328,25 @@ closed_statement
     { s }
 | "if" "(" e=expression ")" s1=closed_statement "else" s2=closed_statement  
     { () }
-| "for" n1=NAME? "(" n2=NAME "=" e1=expression limiter expression ")" s=closed_statement  
+| "for" n1=name? "(" n2=NAME "=" e1=expression limiter expression ")" s=closed_statement  
     { () }
-| "while" n1=NAME? "(" e=expression ")" s=closed_statement  
+| "while" n1=name? "(" e=expression ")" s=closed_statement  
     { () }
 
 simple_statement
 : block
     { () }
-| "var" ns=commas(NAME) t=typesuffix ";"   
+| "var" ns=commas(name) t=typesuffix ";"   
     { () }
-| "var" ns=commas(NAME) t=typesuffix "=" e=expression ";"   
+| "var" ns=commas(name) t=typesuffix "=" e=expression ";"   
     { () }
-| "var" commas(NAME) "=" e=expression ";"  
+| "var" commas(name) "=" e=expression ";"  
     { () }
-| "let" commas(NAME) typesuffix "=" expression ";"  
+| "let" commas(name) typesuffix "=" expression ";"  
     { () }
-| "let" commas(NAME) "=" expression ";"  
+| "let" commas(name) "=" expression ";"  
     { () }
-| "leave" n=NAME? ";"  
+| "break" n=name? ";"  
     { () }
 | "switch" "(" e=expression ")" "{" cs=case* d=default? "}"
     { () }
@@ -358,7 +362,7 @@ simple_statement
     { () }
 | "--" d=designator ";"
     { () }
-| "loop" n=NAME? block  
+| "loop" n=name? block  
     { () }
 | "return" e=expression? ";"
     { () }
@@ -370,7 +374,7 @@ limiter
 | ":"   { () }
 
 case 
-: "case" separated_nonempty_list(",", range) b=block
+: "case" separated_nonempty_list(",", range) ":" ss=statement+
     { () }
 
 range 
@@ -380,9 +384,8 @@ range
     { () }
 
 default 
-: "else" b=block
+: "default" ":" ss=statement+
     { () }
-
 
 
 
@@ -486,12 +489,12 @@ name
     { () } 
 
 globalname 
-: n=NAME
+: n=name
     { () } 
 | n=importedname
     { () } 
 
 importedname 
-: n1=NAME "::" n2=NAME
+: n1=name "::" n2=name
     { () }
 

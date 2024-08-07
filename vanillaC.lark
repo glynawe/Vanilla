@@ -59,7 +59,7 @@ type : globalname                         -> namedtype
         | "fn" proctype                   -> fntype
 
 statement: localvar | locallet | constdefinition | block
-         | assignment | call | if | loop | leave | return | switch | empty
+         | assignment | call | if | loop | break | return | switch | empty
 
 block: "{" statement* "}"
 
@@ -72,14 +72,15 @@ loop     : for | while | forever
 for      : "for"   [NAME] "(" NAME "=" expression (loopto | loopuntil) expression ")" statement
 while    : "while" [NAME] "(" expression ")" statement
 forever  : "loop"  [NAME] block
-leave    : "leave" [NAME] ";"
+break    : "break" [NAME] ";"
 loopto: ".." 
 loopuntil: ":"
 
-switch :   "switch" "(" expression ")" "{" case* [default] "}"
-case:      "case" range ("," range)* block
-range:     constant (".." constant)?
-default:   "default" block
+switch :    "switch" "(" expression ")" "{" case* [default] "}"
+case:       "case" range ("," range)* ":" block
+range:      constant (".." constant)?
+default:    "default" ":" statements
+statements: statement+
 
 call: designator "(" (expression ("," expression)*)? ")" ";"
 

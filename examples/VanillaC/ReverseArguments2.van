@@ -40,7 +40,7 @@ module String: STRING {
                 System::putchar(a[i]);
             else {
                 System::putchar('\n');
-                leave;
+                break;
             }
         }
     }
