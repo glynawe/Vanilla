@@ -339,10 +339,9 @@ list.head.add(value)
 
 ## Looping Statements
 
-    Loop  = For | While | Loop.
-    For   = "for"   [NAME] "(" NAME "=" Expression  (":" | "..") Expression ")" Statement.
-    While = "while" [NAME] "(" Expression ")" Statement.
-    Loop  = "loop"  [NAME] Block.
+    Loop  = For | While.
+    For   = [NAME ":"] "(" NAME "=" Expression  (":" | "..") Expression ")" Statement.
+    While = [NAME ":"] "while" "(" Expression ")" Statement.
 
     Break = "break" [NAME] ";".
 

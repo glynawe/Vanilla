@@ -68,13 +68,13 @@ locallet : "let" namelist [":" type] "=" expression ";"
 
 if:        "if" "(" expression ")" statement ["else" statement]
 
-loop     : for | while | forever
-for      : "for"   [NAME] "(" NAME "=" expression (loopto | loopuntil) expression ")" statement
-while    : "while" [NAME] "(" expression ")" statement
-forever  : "loop"  [NAME] block
+loop     : for | while
+for      : label? "for" "(" NAME "=" expression (loopto | loopuntil) expression ")" statement
+while    : label? "while" "(" expression ")" statement
 break    : "break" [NAME] ";"
 loopto: ".." 
 loopuntil: ":"
+label    : NAME ":"
 
 switch :    "switch" "(" expression ")" "{" case* [default] "}"
 case:       "case" range ("," range)* ":" block

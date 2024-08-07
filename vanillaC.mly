@@ -119,6 +119,7 @@ MARK: Rule Types
 %type <unit> functioncall
 %type <unit> globalname
 %type <unit> importedname
+%type <unit> label
 %type <unit> limiter
 %type <unit> moduledecl
 %type <unit> moduleparameter
@@ -318,9 +319,9 @@ open_statement
     { () }
 | "if" "(" e=expression ")" s1=closed_statement "else" s2=open_statement  
     { () }
-| "for" n1=name? "(" n2=NAME "=" e1=expression limiter expression ")" s=open_statement  
+| n1=label? "for" "(" n2=NAME "=" e1=expression limiter expression ")" s=open_statement  
     { () }
-| "while" n1=name? "(" e=expression ")" s=open_statement  
+| n=label? "while" "(" e=expression ")" s=open_statement  
     { () }
 
 closed_statement
@@ -328,10 +329,13 @@ closed_statement
     { s }
 | "if" "(" e=expression ")" s1=closed_statement "else" s2=closed_statement  
     { () }
-| "for" n1=name? "(" n2=NAME "=" e1=expression limiter expression ")" s=closed_statement  
+| n1=label? "for" "(" n2=NAME "=" e1=expression limiter expression ")" s=closed_statement  
     { () }
-| "while" n1=name? "(" e=expression ")" s=closed_statement  
+| n=label? "while" "(" e=expression ")" s=closed_statement  
     { () }
+
+label
+: n1=name ":"  { () }
 
 simple_statement
 : block
@@ -362,8 +366,6 @@ simple_statement
     { () }
 | "--" d=designator ";"
     { () }
-| "loop" n=name? block  
-    { () }
 | "return" e=expression? ";"
     { () }
 | ";"
@@ -374,7 +376,7 @@ limiter
 | ":"   { () }
 
 case 
-: "case" separated_nonempty_list(",", range) ":" ss=statement+
+: "case" commas(range) ":" ss=statement+
     { () }
 
 range 
