@@ -403,8 +403,8 @@ Switch expressions and switch range constants must be integers or bytes. All con
 *The highest range constant must be less than 256 higher that the lowest constant. Switch statements are most useful when implemented using jump tables, and there must be some limit to the size of those tables.*
 
 # Expressions
-
-    Expression = Conjunction {"or" Conjunction}. 
+    Expression = Disjuntion ["?" Disjuntion ":" Expression].
+    Disjunction = Conjunction {"or" Conjunction}. 
     Conjunction = Relation {"and" Relation}.
     Relation = Sum [RelationOp Sum].
     Sum  = Term {AddOp Term}.
@@ -442,6 +442,8 @@ Relational operators compare `int`, `word`, `byte`, `float` and pointer types. T
 
 ### Logical operators
 
+*cond* `?` *expr1* `:` *expr2* is the conditional operator. If *cond* is true, *expr1* is evaluated and returned. If *cond* is false, *expr2* is evaluated and returned. The expressions following `?` and `:` must have the same type.
+
 The `&&` and `||` operators are "shortcut operators", they are equivalent to these conditional expressions:
 
 `a || b`   ≡  `a ? true : b`
@@ -449,11 +451,6 @@ The `&&` and `||` operators are "shortcut operators", they are equivalent to the
 `a && b`  ≡  `a ? b : false`
 
 
-## Conditional expressions
-
-    Conditional  = Expression "?" Expression ":" Expression.
-
-The expressions following `?` and `:` must have the same type.
 
 ## Designators, Function Calls
 
