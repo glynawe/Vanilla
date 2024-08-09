@@ -340,12 +340,12 @@ list.head.add(value)
 ## Looping Statements
 
     Loop  = For | While.
-    For   = [NAME ":"] "(" NAME "=" Expression  (":" | "..") Expression ")" Statement.
+    For   = [NAME ":"] "for" "(" NAME "=" Expression  (":" | "..") Expression ")" Statement.
     While = [NAME ":"] "while" "(" Expression ")" Statement.
 
     Break = "break" [NAME] ";".
 
-looping statements may be labelled with a name to be used by `break` statements. `break` exits any looping statement. Either the loop that is named, or the innermost loop if no name is given. An break statement can only appear inside a looping statement. A named break statement can only appear inside a looping statement with the same name. A break statement within a switch statement have a name.
+Looping statements may be labelled with a name to be used by `break` statements. `break` exits any looping statement. Either the loop that is named, or the innermost loop if no name is given. An break statement can only appear inside a looping statement. A named break statement can only appear inside a looping statement with the same name. A break statement within a switch statement have a name.
 
 A `loop` statement continues looping until an applicable `break` statement is executed.
 
@@ -357,11 +357,12 @@ A `for` loop's control variable name is an immutable integer variable in the loo
 **Example**
 
     fn uppercase (var string: []byte) {
-        for (i = 0 : len(string)) {
-            if (string[i] == '\0') 
-                break;
-            else if (string[i] >= 'A' && string[i] <= 'Z')
-                string[i] += 'A' - 'a';
+        LOOP: for (i = 0 : len(string)) {
+            switch (string[i]) { 
+                case 'a'..'z': string[i] += 'A' - 'a';
+                case '\0': break LOOP;
+                default: ;
+            }
         }
     }
 
