@@ -339,9 +339,10 @@ list.head.add(value)
 
 ## Looping Statements
 
-    Loop  = For | While.
+    Loop  = For | While | Loop.
     For   = [NAME ":"] "for" "(" NAME "=" Expression  (":" | "..") Expression ")" Statement.
     While = [NAME ":"] "while" "(" Expression ")" Statement.
+    Loop  = [NAME ":"] "loop" Statement.
 
     Break = "break" [NAME] ";".
 
@@ -381,7 +382,7 @@ A `for` loop's control variable name is an immutable integer variable in the loo
     Range      = Constant [".." Constant].
     Statements = Statement {Statement}
 
-Switch expressions and switch range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a case's ranges then that case's block are executed. If the value does not match a case and there is an `else` clause then its block is executed; if there is no `else` clause then nothing is done. 
+Switch expressions and switch range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a case's ranges then that case's block are executed. If the value does not match a case and there is an `else` clause then its block is executed; if there is no `else` clause then nothing is done.
 
 **Example**
 
@@ -538,7 +539,7 @@ Keywords and the names of standard declarations may not be used for any other pu
     SPACER     = COMMENT | " " | CR | LF | TAB.
     COMMENT    = "//" {" "..."~" | TAB} (CR | LF).
 
-Adjacent names and keywords must be separated by whitespace. Whitespace is allowed anywhere except inside lexical elements (syntactic elements between double quotes and elements with all-uppercase names). Comments begin with `//` and end at the end of the line. Comments are allowed anywhere that whitespace is allowed.
+Adjacent names and keywords must be separated by whitespace. String and character literals may contain spaces. Whitespace is otherwise ignored. Comments begin with `//` and end at the end of the line. Comments are allowed anywhere that whitespace is allowed.
 
 ## Source files
 
