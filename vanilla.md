@@ -25,6 +25,88 @@ Vanilla is an imperative systems programming language in the Algol family. Vanil
 - Unlike generic classes, functors can supply whole groups of interrelated types.
 - There is no inheritance of implementation, but inclusion of trait functions is possible.
 
+**A quick comparison to SML and Ocaml.**
+
+- The 'core language' is imperative, and lower-level. 
+  - Variables are assignable, functions can have call-by-reference parameters.
+  - There are no closures.
+- The 'module language' is simpler. Modules cannot be nested. 
+- A functor instantiation can be included (opened) into a module.
+- A method call-like syntax makes module name prefixes less necessary. 
+
+# Example
+
+This very simplified program defines strings and generic sets as abstract data types. They are then used to create sets of strings. 
+
+    interface COMPARABLE {
+        type T;
+        fn Equals (a, b: T) : bool;
+    }
+
+    interface STRING {
+        include COMPARABLE;
+        type Repr;
+        type T = ref Repr;
+        fn Create (text: []byte): T;
+    }
+
+    module String : STRING {
+        type Repr = []byte;
+        fn Equals (a: T, b: T) : bool {
+            return a == b || len(a) == len(b) && a^ == b^;
+        }
+        fn New (text: []byte): T {
+            var s = new(byte, len(text)); 
+            s^ = text; 
+            return s;
+        }
+    }
+
+    interface SET {
+        type Repr;
+        type T = ref Repr;
+        type ElemT;
+        let Empty: T;
+        fn Add (set: T, element: ElemT) : T;
+        fn Includes (set: T, element: ElemT) : bool;
+    }
+
+    module Set <Element: COMPARABLE> : SET where ElemT = Element::T {
+        type ElemT;
+        type Repr = struct { 
+            value: Element; 
+            next: T; 
+        };
+        let Empty: T = null;
+        fn Add (set: T, element: ElemT) : T {
+            var list = new(R); list.head = head; list.tail = tail;
+            return list;
+        }
+        fn Contains (set: T, element: ElemT) : bool {
+            while (set != null) {
+                if (set.head.Equals(element)) 
+                    return true;
+                else 
+                    set = set.tail; 
+            }
+            return false;
+        }
+    }
+
+    module Program {
+        import Print;  
+        import String;
+        import StringSet = Set<String>;
+        fn main () {
+            let s = String::New("Hello World!");
+            var set = StringSet::Empty;
+            set = set.Add(s);
+            if (set.Contains(set, s))
+                Print::string("Success!");
+        }
+    }
+
+
 # Program Structure
 
 ## Definitions and Declarations
@@ -106,75 +188,6 @@ A module or interface's *global names* are the names of all its definitions.
 
 A module without an explicit public interface has a default interface that excludes its imported names.
 
-### Example
-
-This very simplified program defines strings and generic sets as abstract data types. They are then used to create sets of strings. 
-
-    interface COMPARABLE {
-        type T;
-        fn equals (a, b: T) : bool;
-    }
-
-    interface STRING {
-        include COMPARABLE;
-        type Repr;
-        type T = ref Repr;
-        fn Create (text: []byte): T;
-    }
-
-    module String : STRING {
-        type Repr = []byte;
-        fn equals (a: T, b: T) : bool {
-            return a == b || len(a) == len(b) && a^ == b^;
-        }
-        fn New (text: []byte): T {
-            var s = new(byte, len(text)); s^ = text; return s;
-        }
-    }
-
-    interface SET {
-        type Repr;
-        type T = ref Repr;
-        type ET;
-        let empty: T;
-        fn Add (set: T, element: ET) : T;
-        fn Includes (set: T, element: ET) : bool;
-    }
-
-    module Set <Element: COMPARABLE> : SET where ET = Element::T {
-        type ET;
-        type Repr = struct { 
-            value: Element; 
-            next: T; 
-        };
-        let empty: T = null;
-        fn add (set: T, element: ET) : T {
-            var list = new(R); list.head = head; list.tail = tail;
-            return list;
-        }
-        fn contains (set: T, element: ET) : bool {
-            while (set != null) {
-                if (set.head.equals(element)) 
-                    return true;
-                else 
-                    set = set.tail; 
-            }
-            return false;
-        }
-    }
-
-    module Program {
-        import Print;  
-        import String;
-        import StringSet = Set<String>;
-        fn main () {
-            let s = String::New("Hello World!");
-            var set = StringSet::Empty;
-            set = set.add(s);
-            if (set.contains(set, s))
-                Print::string("Success!");
-        }
-    }
 
 # Constants
 
@@ -276,7 +289,7 @@ An array of any length may be passed to an *open array* argument if their elemen
 
 A function definition can be used in a module to define it early. This allows sets of mutually recursive functions to be defined. (This like providing a *function prototype* in C.) 
 
-A `loop` procedure must be tail-call optimizable. I.e. if the procedure calls itself recursively then that call must be optimizable into a loop. The compiler will reject the program if it cannot perform the optimisation. 
+A `loop` function must be tail-call optimizable. I.e. if the function calls itself recursively then that call must be optimizable into a loop. The compiler will reject the program if it cannot perform the optimisation. 
 
 *A value argument does not come with a guarantee that the argument will retain the same value all though the execution of its function. "Aliasing" is possible. If a global variable is given as a argument then assigning to that variable from within the function also changes the argument's value.*
 
@@ -284,8 +297,10 @@ A `loop` procedure must be tail-call optimizable. I.e. if the procedure calls it
 
     Block = "{" {Statement} "}".
 
-    Statement = LocalDefinition | Block
-              | Assignment | FunctionCall | If | Break | Return | Case.
+    Statement = LocalDefinition | Block | For | While | Loop
+              | Assignment | FunctionCall | If | Break | Return | Switch | Empty.
+
+    Empty = ";".
 
 ## Local Declarations
 
@@ -338,40 +353,33 @@ list.head.add(value)
 
     If = "if" "(" Expression ")" Statement ["else" Statement].
 
+*The "dangling else" ambiguity is resolved in the usual way: if there are two open `if` statements then an `else` clause attaches to the innermost one.*  
+
 ## Looping Statements
 
-    Loop  = For | While.
-    For   = [NAME ":"] "(" NAME "=" Expression  (":" | "..") Expression ")" Statement.
+    For   = [NAME ":"] "for" "(" NAME "=" Expression  (":" | "..") Expression ")" Statement.
     While = [NAME ":"] "while" "(" Expression ")" Statement.
+    Loop  = [NAME ":"] "loop" Statement.
 
     Break = "break" [NAME] ";".
 
-looping statements may be labelled with a name to be used by `break` statements. `break` exits any looping statement. Either the loop that is named, or the innermost loop if no name is given. An break statement can only appear inside a looping statement. A named break statement can only appear inside a looping statement with the same name. A break statement within a switch statement have a name.
-
-A `loop` statement continues looping until an applicable `break` statement is executed.
+Looping statements may be labelled with a name to be used by `break` statements. `break` exits any looping statement; either the loop that is named, or the innermost loop if no name is given. A break statement can only appear inside a looping statement. A named break statement can only appear inside a looping statement with the same name. A break statement within a `switch` statement must have a name.
 
 A `for` loop's control variable name is an immutable integer variable in the looped statement. The limiting expressions of a `for` loop are evaluated only once. If the limits of a `for` statement are separated by `:` then the loop ends when the limiting expression is reached. If `..` is used then the loop ends when the limiting expression is exceeded. `for (i = 0 : 4) print(i);` would print `0 1 2 3` but `for (i = 0 .. 4) print(i);` would print `0 1 2 3 4`. 
 
-[For loops are most often used for stepping through arrays. `for (i = 0:n)` expresses that better than `for (int i = 0; i < n; ++n)` and is harder to get wrong.]
+A `loop` statement continues looping until an applicable `break` statement is executed.
 ****
 
 **Example**
 
     fn uppercase (var string: []byte) {
-        for (i = 0 : len(string)) {
-            if (string[i] == '\0') 
-                break;
-            else if (string[i] >= 'A' && string[i] <= 'Z')
-                string[i] += 'A' - 'a';
+        LOOP: for (i = 0 : len(string)) {
+            switch (string[i]) {
+                case 'A'..'Z': string[i] += 'A' - 'a';
+                case '\0': break LOOP;
+            }
         }
     }
-
-
-## Return Statements
-
-    Return = "return" [Expression] ";".
-
-`return` returns from a function immediately. If the function has a return type specified in its FunctionDefinition then a return value must be supplied, and the function's execution must end with a return statement in every case.
 
 
 ## Switch statements
@@ -381,25 +389,32 @@ A `for` loop's control variable name is an immutable integer variable in the loo
     Range      = Constant [".." Constant].
     Statements = Statement {Statement}
 
-Switch expressions and switch range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a case's ranges then that case's block are executed. If the value does not match a case and there is an `else` clause then its block is executed; if there is no `else` clause then nothing is done. 
+Switch expressions and switch range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a case's ranges then that case's block are executed. If the value does not match a case and there is an `default` clause then its block is executed; if there is no `default` clause then nothing is done. 
 
 **Example**
 
     switch (c) {
         case '0'..'9': 
-            class = DIGIT;
+            kind = DIGIT;
         case 'a'..'z', 'A'..'Z': 
-            class = LETTER;
+            kind = LETTER;
         case ' ', '\t', ',': 
-            class = PUNCTUATION;
+            kind = PUNCTUATION;
         default: 
             error(); 
-            class = UNEXPECTED;
+            kind = UNEXPECTED;
     }
 
 *Cases do not not "fall through", `break` is not necessary.*
 
 *The highest range constant must be less than 256 higher that the lowest constant. Switch statements are most useful when implemented using jump tables, and there must be some limit to the size of those tables.*
+
+## Return Statements
+
+    Return = "return" [Expression] ";".
+
+`return` returns from a function immediately. If the function has a return type specified in its definition then a return value must be supplied, and the function's execution must end with a return statement in every case.
+
 
 # Expressions
 
@@ -553,7 +568,7 @@ The standard declarations are implicitly included at the start of every interfac
 
 ## Standard Types
 
-| NAME     | Contents                                                   |
+| NAME     | Contents                                                    |
 |-----------|------------------------------------------------------------|
 | `bool`    | The logical values `true` or `false`.                      |
 | `int`     | Two's-complement signed integers.                          |
@@ -566,7 +581,7 @@ The floating-point number representation is implementation-dependant. `int` shou
 
 ## Standard Constants
 
-| NAME     | Value                                                            |
+| NAME     | Value                                                             |
 |----------|-------------------------------------------------------------------|
 | `minint` | the lowest possible int value                                     |
 | `maxint` | the highest possible int value                                    |
@@ -677,7 +692,7 @@ In the following table *RAM* refers the computer's random access memory, address
 | `GET (a: word, var v: AnyType)`      | fill `v` with the bytes starting at `RAM[a]` |
 | `PUT (a: word, v: AnyType)`          | move the bytes of `v` to `RAM[a]`            |
 | `SIZE (v : AnyType) : int`           | number of bytes in variable `v`              |
-| `LOC (var v: AnyType) : ref AnyType` | make a pointer to a variable or function   |
+| `LOC (var v: AnyType) : ref AnyType` | make a pointer to a variable or function     |
 | `TYPESIZE (T)  : word`               | number of bytes required by type `T`         |
 | `TYPE (x: AnyType, T) : T`           | give `x` the type `T`                        |
 

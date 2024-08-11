@@ -323,6 +323,8 @@ open_statement
     { () }
 | n=label? "while" "(" e=expression ")" s=open_statement  
     { () }
+| n=label? "loop" s=open_statement  
+    { () }
 
 closed_statement
 : s=simple_statement 
@@ -332,6 +334,8 @@ closed_statement
 | n1=label? "for" "(" n2=NAME "=" e1=expression limiter expression ")" s=closed_statement  
     { () }
 | n=label? "while" "(" e=expression ")" s=closed_statement  
+    { () }
+| n=label? "loop" s=closed_statement  
     { () }
 
 label
