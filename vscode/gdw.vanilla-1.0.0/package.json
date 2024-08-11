@@ -20,6 +20,10 @@
       "language": "vanilla",
       "scopeName": "source.vanilla",
       "path": "./syntaxes/vanilla.tmLanguage.json"
+    },{
+      "language": "vanillaC",
+      "scopeName": "source.vanillaC",
+      "path": "./syntaxes/vanilla.tmLanguage.json"
     }]
   }
 }

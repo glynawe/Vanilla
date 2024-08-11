@@ -4,25 +4,19 @@
 	"patterns": [
 		{
 			"name": "keyword.other.vanilla",
-			"match": "\\b(array|by|case|const|do|else|elsif|end|for|if|import|include|interface|loop|module|of|procedure|record|ref|return|then|to|type|until|val|var|where|while)\\b"
-		},{
-			"name": "keyword.other.vanilla",
-			"match": "\\b(and|mod|or)\\b"
+			"match": "\\b(break|case|const|default|else|fn|for|if|import|include|interface|let|loop|module|ref|return|struct|type|var|where|while)\\b"
 		},{
 			"name": "support.type.vanilla",
-			"match": "\\b(boolean|byte|integer|real|word)\\b"
+			"match": "\\b(bool|byte|int|float|word)\\b"
 		},{
 			"name": "support.function.vanilla",
-			"match": "\\b(abs|as|assert|expect|dec|exit|fits|inc|len|lnot|land|lor|lxor|shl|shr|sha|SYSTEM_ADDR|SYSTEM_GET|SYSTEM_MOVE|SYSTEM_PUT|SYSTEM_SIZE|SYSTEM_TYPE|SYSTEM_REF)\\b"
+			"match": "\\b(abs|as|assert|expect|exit|fits|len|lnot|land|lor|lxor|shl|shr|sha|SYSTEM|ADDR|GET|MOVE|PUT|SIZE|TYPE|REF)\\b"
 		},{
 			"name": "constant.language.vanilla",
-			"match": "\\b(true|false|nil|maxint|minint|lenint)\\b"
+			"match": "\\b(true|false|null|maxint|minint|lenint)\\b"
 		},{
 			"name": "variable.vanilla",
-			"match": "\\b([A-Za-z][A-Za-z0-9_]*)\\b"
-		},{
-			"name": "variable.vanilla",
-			"match": "`[!-_a-~]+`"
+			"match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\b"
 		},{
 			"name": "constant.numeric.vanilla",
 			"match": "\\b(0b[01]+)[XL]?\\b"
@@ -87,8 +81,8 @@
 		"comments": {
 			"name": "comment.block.vanilla",
 			"contentName": "comment.block.vanilla",
-			"begin": "\\(\\*",
-			"end": "\\*\\)",
+			"begin": "\\/\\*",
+			"end": "\\*\\/",
 			"patterns": [{
 				"include": "#comments",
 				"name": "comment.block.vanilla"

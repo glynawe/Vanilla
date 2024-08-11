@@ -1,79 +1,104 @@
 # Vanilla  [Draft]
 
-Vanilla is a language in the Pascal family, the starting point of its design was Oberon. Vanilla has a module system with *functors*, a feature taken from OCaml. Functors are modules that take other modules as parameters. They are a single, simple mechanism that can provide features like abstract data types, generic types, traits, dependency injection and module extension.
+Vanilla is an imperative systems programming language in the Algol family. Vanilla has a module system with *functors*, a feature taken from OCaml. Functors are modules that take other modules as arguments. They are a single, simple mechanism that can provide features like abstract data types, generic types, traits, dependency injection and module extension.
+
+**A quick comparison to C.** 
+
+- There is a true module system for defining abstract data types. 
+- There is no macro system, but constants and constant expressions are part of the language. 
+- Pointers cannot point to arbitrary locations, just to allocated objects. 
+- Pointers are not used to implement arrays. Arrays are a type. 
+- Array argument lengths are always known. 
+- The pointer dereference operator is postfix.
+- Types are inferred when declaring new variables. 
+- There is a smaller selection of numeric types. 
+- There is no automatic casting between types. 
+- The `for` statement is less intricate. 
+- There is a smaller number of operators, less common operations are builtin functions. 
+- Functions that access hardware and circumvent the type system must be imported from the `SYSTEM` module. 
+
+**A quick comparison to C++ and Java.**
+
+- The units of encapsulation are modules, typically containing types and functions for ADTs.
+- Nevertheless, ADT function calls resemble method calls. 
+- Parameterized modules (functors) take the place of C++ templates and Java generic classes.
+- Unlike generic classes, functors can supply whole groups of interrelated types.
+- There is no inheritance of implementation, but inclusion of trait functions is possible.
 
 # Program Structure
 
 ## Definitions and Declarations
 
-    Definition = VarDefinition | ProcDefinition | OtherDefinitions.
+    Definition = VarDefinition | FunctionDefinition | OtherDefinitions.
 
-    DeclarationOrDefinition  = VarDeclaration | ProcDeclaration | OtherDefinitions.
+    DeclarationOrDefinition  = VarDeclaration | FnDeclaration | OtherDefinitions.
 
     OtherDefinitions = Inclusion | ConstDefinition | TypeDefinition.
 
-A *definition* names and describes a data type, procedure, variable, module or constant. A definition may be given more than once; definitions with the same name must have the same type.
+A *definition* names and describes a data type, function, variable, module or constant. A definition may be given more than once; definitions with the same name must have the same type.
 
-A *declaration* is a definition that also defines *object code*. Object code is variable data or procedure code that will be included in an executable program. A declaration can only be made once.
+A *declaration* is a definition that also defines *object code*. Object code is variable data or function code that will be included in an executable program. A declaration can only be made once.
 
 ## Modules and Interfaces
 
-    Program = (Interface | Module| Functor) "."... ["."].
+    Program = (Interface | Module | Functor) ... .
 
-A Vanilla program may contain any number of interfaces, modules and functors separated by full stops. One module must declare a procedure called `main`, which will be the first procedure to be executed.
+A Vanilla program may contain any number of interfaces, modules and functors. One module must declare a function called `main`, which will be the first function to be executed.
 
-    Interface = "interface" InterfaceName "=" 
-                {Definition ";"} 
-                "end".
+    Interface = "interface" InterfaceName "{" 
+                {Definition} 
+                "}".
 
-    Module    = "module" ModuleName [PublicInterface] "=" 
-                {DeclarationOrDefinition ";"} 
-                "end".
+    Module    = "module" ModuleName [PublicInterface] "{" 
+                {DeclarationOrDefinition} 
+                "}".
 
-    Functor   = "module" ModuleName "(" ModuleParameter ";"... ")" 
-                [PublicInterface] [TypeConstraints] "=" 
-                {DeclarationOrDefinition ";"} 
-                "end".
+    Functor   = "module" ModuleName "<" ModuleParameter ","... ">" 
+                [PublicInterface] [TypeConstraints] "{" 
+                {DeclarationOrDefinition} 
+                "}".
 
-    PublicInterface  = ":" InterfaceName].
+    PublicInterface  = [":" InterfaceName].
     ModuleParameter  = ModuleName ":" InterfaceName.
     TypeConstraints  = "where" TypeEquivalence ","... 
-    TypeEquivalence  = TypeName ":=" ModuleName "_" TypeName.
+    TypeEquivalence  = NAME "=" TypeName.
+    TypeName         = ModuleName "::" NAME.
 
     InterfaceName = NAME.
     ModuleName    = NAME.
     FunctorName   = NAME.
-    TypeName      = NAME.
 
-An *interface* contains a set of definitions. A *module* contains a set of definitions and declarations. The primary purpose of modules is group together collections of types and procedures to define abstract data types.
+An *interface* contains a set of definitions. A *module* contains a set of definitions and declarations. The primary purpose of modules is group together collections of types and functions to define abstract data types.
 
 If a module is declared with a *public interface* then only the definitions in that interface will be available when the module is imported. The module must contain declarations for all the definitions in its public interface. 
 
- A *functor* is a module parametrized with a list of interfaces for modules that it can import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each module parameter has an interface that specifies a minimum set of definitions that the actual module must provide. A functor *type constraint* specifies types from different parameter modules that are to be equivalent (this is important when defining generic types). 
+A *functor* is a module parametrized by interfaces for modules that it may import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each interface argument has specifies a minimum set of definitions that the actual module must provide. A functor *type constraint* specifies types from different argument modules that are to be equivalent (this is important when defining generic types). 
 
-All interfaces and modules implicitly contain a set of *standard declarations* supplied by the Vanilla language. For example, the type `integer` is a standard declaration.
+All interfaces and modules implicitly contain a set of *standard declarations* supplied by the Vanilla language. For example, the type `int` is a standard declaration.
 
 **Example**
 
-    module Map (Key: Comparable; Value: ADT) where Map_KeyType := Key_Type, Map_ValueType := Value_Type =
+    module Map <Key: Comparable, Value: ADT> 
+        where KeyType = Key::Type, ValueType = Value::Type 
+    {
         type MapType;
         type ValueType;
         type KeyType;
-        procedure Set (map: MapType; key: KeyType; value: ValueType) = ... 
+        fn Set (map: MapType, key: KeyType, value: ValueType) { ... } 
         ...
-    end.
+    }
 
 ### Inclusion
 
     Inclusion     = Include | Import | FunctorImport.
-    Include       = "include" ModuleName [TypeConstraints] ["for" NAME ","...].
-    Import        = "import" ModuleName.
-    FunctorImport = "import" ModuleName ":=" FunctorName "(" ModuleName ","... ")".
+    Include       = "include" ModuleName [TypeConstraints] ["for" NAME ","...] ";".
+    Import        = "import" ModuleName ";".
+    FunctorImport = "import" ModuleName "=" FunctorName "<" ModuleName ","... ">" ";".
 
-    ImportedName = ModuleName "_" NAME.
+    ImportedName = ModuleName "::" NAME.
     GlobalName   = NAME | ImportedName. 
 
-`include` includes content from other modules or interfaces. The contents of an interface are its definitions, the contents of a module are its declarations. If an `include` has a `for` clause then only a selection of its contents are included. A module can be included into another module with a set of type constraints, this allows the included module to add a set of *trait* procedures to those types. 
+`include` includes content from other modules or interfaces. The contents of an interface are its definitions, the contents of a module are its declarations. If an `include` has a `for` clause then only a selection of its contents are included. A module can be included into another module with a set of type constraints, this allows the included module to add a set of *trait* functions to those types. 
 
 `import` includes content from other interfaces and modules, but each definition is given an *imported name*, which is the definition's name prefixed with the name of the interface. A *functor import* imports a new module created from a functor and a list of modules.
 
@@ -85,102 +110,105 @@ A module without an explicit public interface has a default interface that exclu
 
 This very simplified program defines strings and generic sets as abstract data types. They are then used to create sets of strings. 
 
-    interface COMPARABLE =
+    interface COMPARABLE {
         type T;
-        procedure Equal (a, b: T) : boolean;
-    end.
+        fn equals (a, b: T) : bool;
+    }
 
-    interface STRING =
+    interface STRING {
         include COMPARABLE;
-        type R;
-        type T = ref R;
-        procedure Create (text: array of byte): T;
-    end.
+        type Repr;
+        type T = ref Repr;
+        fn Create (text: []byte): T;
+    }
 
-    module String : STRING =
-        type R = array of byte;
-        procedure Equals (a, b: T) : boolean =
-            return a = b or len(a) = len(b) and a^ = b^;
-        end;
-        procedure Create (text: array of byte): T =
-            var s := new(byte, len(text)); s^ := text; return s;
-        end;
-    end.
+    module String : STRING {
+        type Repr = []byte;
+        fn equals (a: T, b: T) : bool {
+            return a == b || len(a) == len(b) && a^ == b^;
+        }
+        fn New (text: []byte): T {
+            var s = new(byte, len(text)); s^ = text; return s;
+        }
+    }
 
-    interface SET =
-        type R;
-        type T = ref R;
+    interface SET {
+        type Repr;
+        type T = ref Repr;
         type ET;
-        val empty: T;
-        procedure Add (set: T; element: ET) : T;
-        procedure Includes (set: T; element: ET) : boolean;
-    end.
+        let empty: T;
+        fn Add (set: T, element: ET) : T;
+        fn Includes (set: T, element: ET) : bool;
+    }
 
-    module Set (Element: COMPARABLE): SET where Set_ET := Element_T =
+    module Set <Element: COMPARABLE> : SET where ET = Element::T {
         type ET;
-        type R = record value: Element; next: T end;
-        val Empty: T := nil;
-        procedure Add (set: T; element: ET) : T =
-            var list := new(R); list.head := head; list.tail := tail;
-            return list
-        end;
-        procedure Contains (set: T; element: ET) : boolean =
-            while set != nil do
-                if set.head.Equals(element) then return true
-                else set := set.tail 
-                end
-            end;
-            return false
-        end;
-    end.
+        type Repr = struct { 
+            value: Element; 
+            next: T; 
+        };
+        let empty: T = null;
+        fn add (set: T, element: ET) : T {
+            var list = new(R); list.head = head; list.tail = tail;
+            return list;
+        }
+        fn contains (set: T, element: ET) : bool {
+            while (set != null) {
+                if (set.head.equals(element)) 
+                    return true;
+                else 
+                    set = set.tail; 
+            }
+            return false;
+        }
+    }
 
-    module Program =
+    module Program {
         import Print;  
         import String;
-        import StringSet := Set(String);
-        procedure main () =
-            val s := String_Create("Hello World!");
-            var set := StringSet_Empty;
-            set := set.Add(s);
-            if set.Contains(s) then
-                Print_String("Success!")
-            end
-        end; 
-    end.
+        import StringSet = Set<String>;
+        fn main () {
+            let s = String::New("Hello World!");
+            var set = StringSet::Empty;
+            set = set.add(s);
+            if (set.contains(set, s))
+                Print::string("Success!");
+        }
+    }
 
 # Constants
 
     Constant = Expression.
 
-    ConstDefinition = "const" NAME "=" Constant.
+    ConstDefinition = "const" NAME "=" Constant ";".
 
-A Constant is an expression that is evaluated by the compiler. The declared length of an array is example of an expression that must be constant.  The only names allowed in a constant expression are the names of other constants and calls to standard procedures.
+A Constant is an expression that is evaluated by the compiler. The declared length of an array is example of an expression that must be constant.  The only names allowed in a constant expression are the names of other constants and calls to standard functions.
 
 A ConstDefinition names a constant. A named constant may be described more than once, but the additional definitions must evaluate to the same value.
 
 
 # Variables
 
-    VarDefinition = ("var" | "val") VariableList.
-    VarDeclaration = VarDefinition [":=" StructuredConstant].
+    VarDefinition = ("var" | "let") VariableList ";".
+    VarDeclaration = ("var" | "let") VariableList ["=" StructuredConstant] ";".
 
-    VariableList = NameList ":" Type.
-    NameList     = NAME ","... .
+    VariableList = IdentList ":" Type.
+    IdentList     = NAME ","... .
 
 A list of distinct variable definitions will be made if a list of names is given. `var a, b, c: t;` is shorthand for `var a: t; var b: t; var c: t;`
 
 All of the variables named in the variable list of a VarDeclaration are initialized to the values in the VarDeclaration's structured constant. 
 
-`val` declares a *immutable variable*, a variable that can only be assigned once when it is declared. *The compiler may arrange for immutable global variables to be stored in ROM.*
+`let` declares a *immutable variable*, a variable that can only be assigned once when it is declared. *The compiler may arrange for immutable global variables to be stored in ROM.*
 
-A variable definition has an implicit declaration if one is not given in a program's modules. E.g. the definition `var i: integer;` will be provided the declaration `var i: integer := 0;`.
+A variable definition has an implicit declaration if one is not given in a program's modules. E.g. the definition `var i: int;` will be provided the declaration `var i: int = 0;`.
 
 ## Structured Constants
 
 A structured constant can be used to initialize global variables of any type, especially arrays and records. The value of a structured constant will become object code for the executable program.
 
     StructuredConstant = Constant | StructureList.
-    StructureList      = "[" StructureItems ","... "]".
+    StructureList      = "{" StructureItems ","... "}".
     StructureItems     = StructuredConstant ["for" Constant].
 
 A structure list can be assigned to a record or array variable. Each item from a structure list is assigned to
@@ -193,20 +221,20 @@ A string literal can be used to declare a byte array. If it is shorter than the 
 
 **Example** This array contains a one, three sevens and a six:
 
-    var sevens: array 5 of integer := [1, 7 for 3, 6];
+    var sevens: [5]int = {1, 7 for 3, 6};
 
-**Example** This array contains the bytes [64, 90, 64, 90, 0, 0, 0, 0]:
+**Example** This array contains the bytes {64, 90, 64, 90, 0, 0, 0, 0}:
 
-    val bytes: array 8 of byte := "AZAZ";
+    let string: [8]byte = "AZAZ";
 
 
 ## Implicit Variable Declarations
 
 A variable definition has an implicit declaration if one is not given in a program's modules. 
 
-An implicit variable declaration has a default value. Numeric variables are initialized to zero. Reference variables are initialized to `nil`. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero or nil.
+An implicit variable declaration has a default value. Numeric variables are initialized to zero. Pointer values are initialized to `null`. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero or null.
 
-The above rule is also used to initialize local variables within procedure bodies.
+The above rule is also used to initialize local variables within blocks.
 
 
 # Types
@@ -215,155 +243,163 @@ The above rule is also used to initialize local variables within procedure bodie
     OpaqueType     = "type" NAME.
 
     Type = GlobalName
-         | "array" [DimensionList] "of" Type
-         | "record" VariableList ";"... "end"
+         | "[" Constant "]" Type
+         | "[" "]" Type
+         | "struct" "{" {VariableList ";"} "}"
          | "ref" Type
-         | "procedure" ProcType.
+         | "fn" FnType.
 
     DimensionList = Constant ","... .
 
-Arrays begin at element 0. An array with more than one length in its dimension list describes an array of arrays. I.e. `array a, b, c of t` stands for `array a of array b of array c of t`. An array with no dimension list is an *open array*. An open array is one dimensional, and its length can be found using the standard procedure `len`. An open array type may only be used as the type of a parameter or as the target of a reference type.
+Arrays begin at element 0. An array with no specified dimension is an *open array* which may have any length. An open array's length can be found using the standard function `len`. An open array type may only be used as the type of a argument or as the target of a pointer type.
 
-A procedure type may only be used as the type of a parameter or as the target of a reference type.
+A function type may only be used as the type of a argument or as the target of a pointer type.
 
-An *opaque type* is a type whose definition is not yet given. An opaque type can be used in an interface to denote an abstract type or generic type parameter, or in a module to allow a record type to contain references to itself. An opaque type must be defined before it can be used in a module, either by a full type definition or a functor type constraint.
+An *opaque type* is a type whose definition is not yet given. An opaque type can be used in an interface to denote an abstract type, or in a module to allow a record type to contain pointers to itself. An opaque type must be defined before it can be used in a module, either by a full type definition or a functor type constraint.
 
-# Procedures
+# Functions
 
-    ProcDefinition = "procedure" NAME ProcType.
-    ProcDeclaration = ["loop"] ProcDefinition ["=" Body "end"].
+    FunctionDefinition = "fn" NAME FnType ";".
+    FnDeclaration = ["loop"] "fn" NAME FnType (";" | Block).
 
-    ProcType   = "(" [Parameters ";"...] ")" [ReturnType]
+    FnType     = "(" [Parameters ","...] ")" [ReturnType]
     Parameters = ["var"] VariableList.
     ReturnType = ":" Type
 
-The parameter names in procedure definitions are placeholders for describing each parameter. They are not examined when determining type equivalence. However, parameters names are significant in procedure declarations.
+The argument names in function definitions are placeholders for describing each argument. They are not examined when determining type equivalence. However, arguments names are significant in function declarations.
 
-A procedure with a return type is a *function procedure*. A procedure without a return type is a *proper procedure*. A function procedure may only be used in an expression. A proper procedure may only be used in a procedure call statement.
+A function with a return type is an *expression function*. A function without a return type is a *procedure function*. A expression function may only be used in an expression. A procedure function may only be used as a statement.
 
-Assigning to a `var` parameter assigns to the parameter supplied by the procedure call, i.e. `var` parameters are passed by reference. Parameters without `var` are *value parameters*. Value parameters are immutable. *The compiler may pass record and array value parameters by reference.*
+Assigning to a `var` argument assigns to the argument supplied by the function call, i.e. `var` arguments are passed by reference. Parameters without `var` are *value arguments*. Value arguments are immutable. *The compiler may pass record and array value arguments by reference.*
 
-An array of any length may be passed to an *open array* parameter if their element types are the same. 
+An array of any length may be passed to an *open array* argument if their element types are the same. 
 
-A procedure definition can be used in a module to define it early. This allows sets of mutually recursive procedures to be defined. (This like providing a *function prototype* in C or a *forward procedure* in Pascal.) 
+A function definition can be used in a module to define it early. This allows sets of mutually recursive functions to be defined. (This like providing a *function prototype* in C.) 
 
 A `loop` procedure must be tail-call optimizable. I.e. if the procedure calls itself recursively then that call must be optimizable into a loop. The compiler will reject the program if it cannot perform the optimisation. 
 
-*A value parameter does not come with a guarantee that the parameter will retain the same value all though the execution of its procedure. "Aliasing" is possible. If a global variable is given as a parameter then assigning to that variable from within the procedure also changes the parameter's value.*
+*A value argument does not come with a guarantee that the argument will retain the same value all though the execution of its function. "Aliasing" is possible. If a global variable is given as a argument then assigning to that variable from within the function also changes the argument's value.*
 
 # Statements
 
-    Body = Statement ";"... [";"].
+    Block = "{" {Statement} "}".
 
-    Statement = LocalDefinition
-              | Assignment | ProcedureCall | If | Exit | Return | Case | Empty.
-
-Statements appear in the bodies of procedures and within other statements.
+    Statement = LocalDefinition | Block
+              | Assignment | FunctionCall | If | Break | Return | Case.
 
 ## Local Declarations
 
-    LocalDefinition = LocalVarDeclaration | ConstDefinition. 
-    LocalVarDeclaration = ("var" | "val") NameList (":" Type [":=" Expression] | ":=" Expression).
+    LocalDefinition = LocalVarDeclaration | LocalLetDeclaration | ConstDefinition. 
+    LocalVarDeclaration = "var" IdentList (":" Type ["=" Expression] | "=" Expression).
+    LocalLetDeclaration = "let" IdentList [":" Type] "=" Expression.
 
-Variables and constants defined in a statement body are only valid within that body, i.e. bodies are scopes. Variables and constants are only visible to the statements that come after their declaration statements. 
+Variables and constants defined in a block are only valid within that block, i.e. blocks are scopes. Variables and constants are only visible to the statements that come after their declaration statements. 
 
-If a local variable declaration has an initializer expression then the expression is evaluated first and then all the variables named in its list are assigned that value, otherwise it is initialized to a default value by the same rules used to initialize global variables. If a local declaration has an initializer expression but no type then it takes on the type of its initializer. `val` declares a *immutable variable*, a variable that can only be assigned once when it is declared.  
+If a local variable declaration has an initializer expression then the expression is evaluated first and then all the variables named in its list are assigned that value, otherwise it is initialized to a default value by the same rules used to initialize global variables. If a local declaration has an initializer expression but no type then it takes on the type of its initializer. `let` declares a *immutable variable*, a variable that can only be assigned once when it is declared.  
 
-A local definition may not have the same name as any definition in the same body or any surrounding body, including the procedure's parameter names. I.e. local names may not be shadowed. 
+A local definition may not have the same name as any definition in the same block or any surrounding block, including the function's argument names. I.e. local names may not be shadowed. 
 
 ## Assignments
 
-    Assignment = Designator ","... ":=" Expression
+    Assignment = Designator "=" Expression ";"
+               | Designator MathOp "=" Expression ";"
+               | Designator "++" ";"
+               | Designator "--" ";"
 
-The expression is evaluated once then its value is assigned to each designator in the list. The designators are evaluated in order after the expression. The designators must have the same type as the expression.
+    MathOp = "+" | "-" | "*" | "/" | "%"
+
+The expression is evaluated  then its value is assigned to the designator. The designator must have the same type as the expression. The `++`, `--`, `+=` etc. operators have the same meaning as in C, but may only be used in statements.
 
 Records of the same type and arrays of the same type and length may by assigned to each other.
 
 
-## Procedure Calls
+## Function Calls
 
-    ProcedureCall = Designator "(" [Expression ","...] ")"
+    FunctionCall = Designator "(" [Expression ","...] ")" ";"
 
-The designator part of a procedure call statement must designate a proper procedure. 
+The designator part of a function call statement must designate a procedure function. 
 
-The list of expressions in a procedure call are passed to the designated procedure as parameters. A `var` parameter must be passed a designator of the same type. A value parameter may be passed any expression, following the same rules as assignment.
+The list of expressions in a function call are passed to the designated function as arguments. A reference argument must be passed a designator of the same type. A value argument may be passed any expression, following the same rules as assignment.
 
 ### "Method calls"
 
-If the start of a designator refers to a variable *v* of type *M_t*, and the last name in the designator refers to a procedure *M_p*, then `M_p(v, ...)` may be written as `v.p(...)`. (This is similar to the shorthand that Python uses for method calls.)
+If the start of a designator refers to a variable *v* of type *M::t*, and the last name in the designator refers to a function *M::p*, then `M::p(v, ...)` may be written as `v.p(...)`. (This is similar to the syntactic sugar that Python uses for method calls.)
 
 **Example**
 
-If `list.head` has type `Set_t` and there is a procedure `Set_add(s: Set_t; v: vt)` then these two procedure calls mean the same thing:
+If `list.head` has type `Set::t` and there exists a function `Set::add(s: Set::t; v: vt)` then these two function calls mean the same thing:
 
 ```
-Set_add(list.head, value)
+Set::add(list.head, value)
 list.head.add(value)
 ```
 
 ## If Statements
 
-    If = "if" Expression "then" Body
-         {"elsif" Expression "then" Body}
-         ["else" Body]
-         "end".
+    If = "if" "(" Expression ")" Statement ["else" Statement].
 
-## Loop Statements
+## Looping Statements
 
-    Loop = ["loop" NAME]
-           ["for" NAME ":=" Expression ["by" Constant] ("to" | "until") Expression]
-           ["while" Expression]
-           "do" Body
-           "end".
+    Loop  = For | While.
+    For   = [NAME ":"] "(" NAME "=" Expression  (":" | "..") Expression ")" Statement.
+    While = [NAME ":"] "while" "(" Expression ")" Statement.
 
-A loop statement may be given a name to be used by `exit` statements.
+    Break = "break" [NAME] ";".
 
-Loop statements with no `for` or `while` clauses continue until a `return` statement or an applicable `exit` statement is executed.
+looping statements may be labelled with a name to be used by `break` statements. `break` exits any looping statement. Either the loop that is named, or the innermost loop if no name is given. An break statement can only appear inside a looping statement. A named break statement can only appear inside a looping statement with the same name. A break statement within a switch statement have a name.
 
-If a loop statement has a `for` clause then its control variable name is an integer immutable variable in the statement's body. If there is a `while` clause then that variable may be used in that clause's expression. The limiting expressions of a `for` clause are evaluated only once.
+A `loop` statement continues looping until an applicable `break` statement is executed.
 
-If `to` is used in a `for` clause then the loop ends when the limiting expression is exceeded. If `until` is used in a `for` clause then the loop ends when the limiting expression is reached. `for i := 0 to 4 do print(i) end` would print `0 1 2 3 4` but `for i := 0 until 4 do print(i) end` would print `0 1 2 3`
+A `for` loop's control variable name is an immutable integer variable in the looped statement. The limiting expressions of a `for` loop are evaluated only once. If the limits of a `for` statement are separated by `:` then the loop ends when the limiting expression is reached. If `..` is used then the loop ends when the limiting expression is exceeded. `for (i = 0 : 4) print(i);` would print `0 1 2 3` but `for (i = 0 .. 4) print(i);` would print `0 1 2 3 4`. 
+
+[For loops are most often used for stepping through arrays. `for (i = 0:n)` expresses that better than `for (int i = 0; i < n; ++n)` and is harder to get wrong.]
+****
 
 **Example**
 
-    procedure uppercase (var string: array of byte) =
-        for i := 0 until len(string) while string[i] != '\0' do
-            if string[i] >= 'A' and string[i] <= 'Z' then
-                inc(string[i], 'A' - 'a')
-            end
-        end
-    end;
-
-
-## Exit Statements
-
-    Exit = "exit" [NAME]
-
-`exit` exits a loop statement. Either the loop that is named, or the innermost loop if no name is given. An exit statement can only appear inside a loop statement. A named exit statement can only appear inside a loop statement with the same name. 
+    fn uppercase (var string: []byte) {
+        for (i = 0 : len(string)) {
+            if (string[i] == '\0') 
+                break;
+            else if (string[i] >= 'A' && string[i] <= 'Z')
+                string[i] += 'A' - 'a';
+        }
+    }
 
 
 ## Return Statements
 
-    Return = "return" [Expression].
+    Return = "return" [Expression] ";".
 
-`return` returns from a procedure immediately. If the procedure has a return type specified in its ProcDefinition then a return value must be supplied, and the procedure's execution must end with a return statement in every case.
+`return` returns from a function immediately. If the function has a return type specified in its FunctionDefinition then a return value must be supplied, and the function's execution must end with a return statement in every case.
 
 
-## Case statements
+## Switch statements
 
-    Case   = "case" Expression "of" {Branch} ["else" Body] "end".
-    Branch = "|" Range ","... ":" Body.
-    Range  = Constant [".." Constant].
+    Switch     = "switch" "(" Expression ")" "{" {Case} ["default" ":" Statements] "}".
+    Case       = "case" Range ","... ":" Statements.
+    Range      = Constant [".." Constant].
+    Statements = Statement {Statement}
 
-Case expressions and range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a branch's ranges then that branch's Body is executed. If the value does not match a branch and there is an `else` clause then its body is executed; if there is no `else` clause then nothing is done.
+Switch expressions and switch range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a case's ranges then that case's block are executed. If the value does not match a case and there is an `else` clause then its block is executed; if there is no `else` clause then nothing is done. 
 
-*The highest range constant must be less than 256 higher that the lowest constant. Case statements are most useful when implemented using jump tables, and there must be some limit to the size of those tables.*
+**Example**
 
-## Empty statement
+    switch (c) {
+        case '0'..'9': 
+            class = DIGIT;
+        case 'a'..'z', 'A'..'Z': 
+            class = LETTER;
+        case ' ', '\t', ',': 
+            class = PUNCTUATION;
+        default: 
+            error(); 
+            class = UNEXPECTED;
+    }
 
-    Empty = .
+*Cases do not not "fall through", `break` is not necessary.*
 
-The main purpose of the empty statement is to allow superfluous semicolons in a body, e.g. after the final statement.
+*The highest range constant must be less than 256 higher that the lowest constant. Switch statements are most useful when implemented using jump tables, and there must be some limit to the size of those tables.*
 
 # Expressions
 
@@ -374,73 +410,71 @@ The main purpose of the empty statement is to allow superfluous semicolons in a 
     Term = Factor {MulOp Factor}.
 
     AddOp  = "+" | "-".
-    MulOp  = "*" | "/" | "mod".
-    RelationOp = "=" | "!=" | ">" | "<" | ">=" | "<=".
+    MulOp  = "*" | "/" | "%".
+    RelationOp = "==" | "!=" | ">" | "<" | ">=" | "<=".
 
     Factor = UnaryOp Factor
            | Designator
-           | FunctionCall
            | Literal
            | Conditional
            | "(" Expression ")".
 
-    FunctionCall = Designator "(" [Expression ","...] ")"
-
-    UnaryOp = "+" | "-" | "not".
-
-The list of expressions in a function call are supplied to the designated procedure as parameters. A `var` parameter must be supplied with a designator. A supplied parameter must match its parameter's type. 
+    UnaryOp = "+" | "-" | "!".
 
 ## Operators
 
-| Operators                 | Operand   | Operand   | Result    |
-|---------------------------|-----------|-----------|-----------|
-| `+` `-` `*` `/`           | *NumType* | *NumType* | *NumType* |
-| `mod`                     | *IntType* | *IntType* | *IntType* |
-| unary `-` `+`             | *NumType* |           | *NumType* |
-| `=` `!=` `<` `<=` `>` `>=`| *NumType* | *NumType* | `boolean` |
-| `=` `!=`                  | *RefType* | *RefType* | `boolean` |
-| `and` `or`                | `boolean` | `boolean` | `boolean` |
-| `not`                     | `boolean` |           | `boolean` |
+| Operators                - | Operand   | Operand   | Result    |
+|----------------------------|-----------|-----------|-----------|
+| `+` `-` `*` `/`            | *NumType* | *NumType* | *NumType* |
+| `%`                        | *IntType* | *IntType* | *IntType* |
+| unary `-` `+`              | *NumType* |           | *NumType* |
+| `==` `!=` `<` `<=` `>` `>=`| *NumType* | *NumType* | `bool`    |
+| `==` `!=`                  | *RefType* | *RefType* | `bool`    |
+| `&&` `||`                  | `bool`    | `bool`    | `bool`    |
+| `!`                        | `bool`    |           | `bool`    |
 
-*NumType* is `real`, `integer`, `word` or `byte`. *IntType* is `integer`, `word` or `byte`. *RefType* is any reference type. Operands and results must have the same type.
+*NumType* is `real`, `int`, `word` or `byte`. *IntType* is `int`, `word` or `byte`. *RefType* is any pointer type. Operands and results must have the same type.
 
-`x / y` and `x mod y` may raise an runtime error if *y* = 0. How that runtime error is handled is implementation-dependant behaviour.
+`x / y` and `x % y` may raise an runtime error if *y* = 0. How that runtime error is handled is implementation-dependant behaviour.
 
-Relational operators compare `integer`, `word`, `byte`, `real` and reference types. They return `boolean` values. References may only be compared for equality and inequality. Two references are equal if they refer to the same variable or both are `nil`.
+Relational operators compare `int`, `word`, `byte`, `float` and pointer types. They return `bool` values. Pointers may only be compared for equality and inequality. Two pointers are equal if they refer to the same variable or both are `null`.
 
 ### Logical operators
 
-The `and` and `or` operators are "shortcut operators", they are equivalent to these conditional expressions:
+The `&&` and `||` operators are "shortcut operators", they are equivalent to these conditional expressions:
 
-`a or b`   ≡  `if a then true else b end`
+`a || b`   ≡  `a ? true : b`
 
-`a and b`  ≡  `if a then b else false end`
+`a && b`  ≡  `a ? b : false`
 
 
 ## Conditional expressions
 
-    Conditional  = "if" Expression "then" Expression
-                   {"elsif" Expression "then" Expression}
-                   "else" Expression
-                   "end".
+    Conditional  = Expression "?" Expression ":" Expression.
 
-The expressions following `then` and `else` must have the same type.
+The expressions following `?` and `:` must have the same type.
 
-## Designators, Procedure Calls
+## Designators, Function Calls
 
-    Designator = GlobalName {Selection | Subscript | Dereference}.
+    Designator = GlobalName {Selection | Subscript | Dereference | Call}.
 
     Selection   = "." NAME.
     Subscript   = "[" Expression ","... "]".
     Dereference = "^".
+    Call        = "(" [Expression ","...] ")"
 
-Reference values are automatically dereferenced when they are the designator of a call, selection or subscript.
+Pointer values are automatically dereferenced when they are the designator of a call, selection or subscript. The dereferencing operator `^` will not need to be used often, but is useful when comparing or assigning the targets of pointers.
+
+The list of expressions in a call are supplied to the designated function as arguments. A by-reference argument must be supplied with a designator. A supplied argument must match its argument's type. 
+
+The "method call" syntax for procedure function calls may be used for expression function calls too. 
+
 
 ## Literals
 
-    Literal = INTEGER | REAL | CHARACTER | STRING.
+    Literal = INTEGER | FLOAT | CHARACTER | STRING.
 
-INTEGER literals have the type `integer`. WORD literals has type `word`. BYTE literals have the type `byte`. REAL literals have the type `real`. STRING literals  are anonymous immutable variables of type `array of byte`. A string literal's array has an additional element at the end containing `'\0'`. 
+INTEGER literals have the type `int`. WORD literals have type `word`. BYTE literals have the type `byte`. FLOAT literals have the type `float`. STRING literals  are anonymous immutable variables of type `[]byte`. A string literal's array has an additional element at the end containing `'\0'`. 
 
 BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer literals with the suffix `X` or character literals in single quotes. The range of BYTE literals is 0X to 255X. The range of WORD literals is 0 to `maxword`. WORD literals are integer literals with the suffix `L`. 
 
@@ -459,7 +493,7 @@ BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer l
 
     STRING    = '"' {STRCHAR | "'" | '\"' | ESCAPE} '"'.
 
-    REAL     = DIGITS "." DIGITS [EXPONENT].
+    FLOAT     = DIGITS "." DIGITS [EXPONENT].
 
     EXPONENT = ("E" | "e") ["+" | "-"] DIGITS.
     DIGITS   = DIGIT {DIGIT}.
@@ -467,36 +501,34 @@ BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer l
     BINDIGIT = "0" | "1".
     OCTDIGIT = "0"..."7".
     HEXDIGIT = "0"..."9" | "A"..."F".
-    ESCAPE    = "\a" | "\b" | "\e" | "\f" | "\n" | "\t" | "\v" | "\0" | "\\" |
+    ESCAPE    = "\a" | "\b" | "\e" | "\f" | "\n" | "\t" | "\v" | "\0" | "\\"
                 "\x" HEXDIGIT HEXDIGIT.
     STRCHAR   = " "..."~" except for "\", "'" and '"'.
 
 ## Names
 
     NAME    = LETTER {LETTER | DIGIT}.
-    LETTER  = "A"..."Z" | "a"..."z".
+    LETTER  = "A"..."Z" | "a"..."z" | "_".
     DIGIT   = "0"..."9".
 
-    ImportedName = ModuleName "_" NAME.
+    ImportedName = ModuleName "::" NAME.
     ModuleName   = NAME.
-
-The underscore is reserved for prefixing imported names with module names.
 
 ## Keywords
 
     Keywords = 
-        "and" | "array" | "by" | "case" | "const" | "do" | "else" | "elsif" |
-        "end" | "exit" | "for" | "if" | "import" | "include" | "interface" | "loop" |
-        "mod" | "module" | "not" | "of" | "or" | "procedure" |  "record" |
-        "ref" | "return" | "then" | "to" | "type" | "until" | "val" | "var" | where" | 
+        "break" | "case" | "const" | "default" | "else" | 
+        "for" | "if" | "import" | "include" | "interface" |
+        "module" | "fn" | "struct" |
+        "ref" | "return" | "type" | "let" | "var" | where" | 
         "while".
 
-    StandardDefinitionNames =
-        "abs" | "assert" | "boolean" | "byte" | "dec" | "halt" | "expect" |
-        "false" | "free" | "inc" | "integer" | "land" | "len" | 
+    StandardDefinitionIds =
+        "abs" | "assert" | "bool" | "byte" | "dec" | "exit" | "expect" |
+        "false" | "free" | "inc" | "int" | "land" | "len" | 
         "lenint" | "lnot" | "lor" |  "lxor" | "main" | "maxint" | "maxword" | "minint" |
-        "new" | "nil" | "real" | "sha" | "shl" | "shr" | "true" | "word" | "SYSTEM" |
-        "ADDRESS" | "GET" | "MOVE" | "PUT" | "REF" | "SIZE" | "TYPE" | "TYPESIZE".
+        "new" | "null" | "float" | "sha" | "shl" | "shr" | "true" | "word" | "SYSTEM" |
+        "ADDRESS" | "GET" | "MOVE" | "PUT" | "LOC" | "SIZE" | "TYPE" | "TYPESIZE".
 
 Keywords and the names of standard declarations may not be used for any other purpose. 
 
@@ -521,61 +553,55 @@ The standard declarations are implicitly included at the start of every interfac
 
 ## Standard Types
 
-| Name      | Contents                                                   |
+| NAME     | Contents                                                   |
 |-----------|------------------------------------------------------------|
-| `boolean` | The logical values `true` or `false`.                      |
-| `integer` | Two's-complement signed integers.                          |
+| `bool`    | The logical values `true` or `false`.                      |
+| `int`     | Two's-complement signed integers.                          |
 | `word`    | Unsigned integers between 0 and `maxword`.                 |
 | `byte`    | Integers between 0 and 255. Also used to store characters. |
-| `real`    | Floating-point numbers.                                    |
+| `float`   | Floating-point numbers.                                    |
 
-The floating-point number representation is implementation-dependant. `integer` should have a convenient range for arithmetic. `word` must be wide enough to contain a memory address.
+The floating-point number representation is implementation-dependant. `int` should have a convenient range for arithmetic. `word` must be wide enough to contain a memory address.
 
 
 ## Standard Constants
 
-| Name     | Value                                                             |
+| NAME     | Value                                                            |
 |----------|-------------------------------------------------------------------|
-| `minint` | the lowest possible integer value                                 |
-| `maxint` | the highest possible integer value                                |
+| `minint` | the lowest possible int value                                     |
+| `maxint` | the highest possible int value                                    |
 | `maxword`| the highest possible word value                                   |
-| `lenint` | the number of bits required to store an integer                   |
+| `lenint` | the number of bits required to store an int                       |
 | `lenword`| the number of bits required to store a word                       |
-| `nil`    | is the value of ref variables that are not pointing to variables. |
+| `null`   | is the value of pointer variables that are not pointing to variables. |
 | `true`   |                                                                   |
 | `false`  |                                                                   |
 
-The constant `nil` may be assigned to any reference variable. A variable containing `nil` must not be dereferenced.
+The constant `null` may be assigned to any pointer variable. A variable containing `null` must not be dereferenced.
 
 The values of `minint`, `maxint` and `lenint` are implementation-dependant.
 
-## Standard Procedures
+## Standard Functions
 
-The standard procedures are operators that resemble procedure calls. Some are polymorphic, some take type definitions as parameters. Standard procedures may be used within constant expressions. 
+The standard functions are operators that resemble function calls. Some are polymorphic, some take type definitions as arguments. Standard functions may be used within constant expressions. 
 
-In the following tables *IntType* is an `integer`, `word` or `byte` value, *NumType* is an integer type or `real`, `T` is a name of a type and *Array* is any array variable.
+In the following tables *IntType* is an `int`, `word` or `byte` value, *NumType* is an integer type or `float`, `T` is a name of a type and *Array* is any array variable.
 
-| Definition                            | Function                             |
-|---------------------------------------|--------------------------------------|
-| `abs (x: integer) : integer`          | absolute value of `x`                |
-| `abs (x: real) : real`                | absolute value of `x`                |
-| `dec (var v: IntType)`                | `v := v - 1`                         |
-| `dec (var v: IntType; n: IntType)`    | `v := v - n`                         |
-| `inc (var v: IntType)`                | `v := v + 1`                         |
-| `inc (var v: IntType; n: IntType)`    | `v := v + n`                         |
-| `len (a: Array; n: IntConst)`         | length of dimension `n` of array `a` |
-| `len (a: Array)`                      | equivalent to `len(v, 0)`            |
-| `as (v: NumType; T): NumType`         | convert `v` to numeric type `T`.     |
-| `fits (T; v: NumType): boolean`       | true if `v` will fit in type `T`.    |
+| Definition                         | Function                             |
+|------------------------------------|--------------------------------------|
+| `abs (x: int) : int`               | absolute value of `x`                |
+| `abs (x: float) : float`           | absolute value of `x`                |
+| `len (a: Array, n: IntConst)`      | length of dimension `n` of array `a` |
+| `len (a: Array)`                   | equivalent to `len(v, 0)`            |
+| `as (v: NumType, T): NumType`      | convert `v` to numeric type `T`.     |
+| `fits (T, v: NumType): bool`       | true if `v` will fit in type `T`.    |
 
-
-`inc` and `dec` evaluate their variable parameters only once.
 
 `len(a, 0)` is the length of the first dimension of array `a`.
 
-`as` may raise an runtime error if its parameter value are outside its return type's range. `fits` can be used to determine if that will happen. How runtime errors are handled is implementation-dependant behaviour.
+`as` may raise an runtime error if its argument value are outside its return type's range. `fits` can be used to determine if that will happen. How runtime errors are handled is implementation-dependant behaviour.
 
-### Bit Manipulation Procedures
+### Bit Manipulation Functions
 
 | Definition                                | Function                                  |
 |-------------------------------------------|-------------------------------------------|
@@ -583,46 +609,46 @@ In the following tables *IntType* is an `integer`, `word` or `byte` value, *NumT
 | `land (x, y: IntType) : IntType`          | bitwise logical AND                       |
 | `lor (x, y: IntType) : IntType`           | bitwise logical inclusive-OR              |
 | `lxor (x, y: IntType) : IntType`          | bitwise logical exclusive-OR              |
-| `shl (x: IntType; n: integer) : IntType`  | left-shift bits of `x` by `n`             |
-| `shr (x: IntType; n: integer) : IntType`  | right-shift bits of `x` by `n`            |
-| `sha (x: IntType; n: integer) : IntType`  | arithmetic right-shift bits of `x` by `n` |
+| `shl (x: IntType, n: int) : IntType`      | left-shift bits of `x` by `n`             |
+| `shr (x: IntType, n: int) : IntType`      | right-shift bits of `x` by `n`            |
+| `sha (x: IntType, n: int) : IntType`      | arithmetic right-shift bits of `x` by `n` |
 
 The bit shift operators will shift in the opposite direction if *n* is negative. Shifting by more than the width of *x* results in 0, or -1 in the case of an arithmetic right-shift. 
 
-### Memory allocation procedures
+### Memory allocation functions
 
 | Definition                             | Function                          |
 |----------------------------------------|-----------------------------------|
 | `new (T) : ref T`                      | allocate data                     |
-| `new (T; d: integer) : ref array of T` | allocate an array of `d` elements |
+| `new (T, d: int) : ref [] T`           | allocate an array of `d` elements |
 | `free (r : ref T)`                     | free data                         |
 
 `new` and `free` may not be used in constant expressions. The type `T` may not be an opaque type or open array (its size must be known).
 
 #### Garbage Collection Option
 
-The `new` procedure takes a type definition as its first parameter, finds memory space for an anonymous variable of that type, assigns a default initial value to the variable and returns a reference to it. If no memory space is available then a runtime error is raised. 
+The `new` function takes a type definition as its first argument, finds memory space for an anonymous variable of that type, assigns a default initial value to the variable and returns a pointer to it. If no memory space is available then a runtime error is raised. 
 
-The `free` procedure does nothing. 
+The `free` function does nothing. 
 
 #### Manual Allocation Option
 
-`new` and `free` exist to provide a type safe way to use low-level `ALLOCATE` and `DEALLOCATE` procedures. `ALLOCATE` and `DEALLOCATE` procedure definitions must be included in any module that calls `new` or `free`. How the procedures are implemented is up to the programmer. They will typically be included from the interface of a module that manages memory on a heap. 
+`new` and `free` exist to provide a type safe way to use low-level `ALLOCATE` and `DEALLOCATE` functions. `ALLOCATE` and `DEALLOCATE` function definitions must be included in any module that calls `new` or `free`. How the functions are implemented is up to the programmer. They will typically be included from the interface of a module that manages memory on a heap. 
 
-    procedure ALLOCATE (size: integer): word;  // returns an address
-    procedure DEALLOCATE (address: word);
+    fn ALLOCATE (size: int): word;  // returns an address
+    fn DEALLOCATE (address: word);
 
-The `new` procedure calls `ALLOCATE(SYSTEM_TYPESIZE(T))` or `ALLOCATE(SYSTEM_TYPESIZE(T) * d)` to obtain the address of memory space for an anonymous variable of  type `T`. If that address is 0 then an runtime error is raised, otherwise the anonymous variable is assigned a default initial value and a reference to it is returned.
+The `new` function calls `ALLOCATE(SYSTEM::TYPESIZE(T))` or `ALLOCATE(SYSTEM::TYPESIZE(T) * d)` to obtain the address of memory space for an anonymous variable of  type `T`. If that address is 0 then an runtime error is raised, otherwise the anonymous variable is assigned a default initial value and a pointer to it is returned.
 
-The `free(r)` procedure calls `DEALLOCATE(SYSTEM_TYPE(r, integer))` to mark the space at *r* as free for reallocation.
+The `free(r)` function calls `DEALLOCATE(SYSTEM::TYPE(r, int))` to mark the space at *r* as free for reallocation.
 
-### Halting procedures
+### Halting functions
 
 | Definition            | Function                          |
 |-----------------------|-----------------------------------|
-| `halt (n: integer)`   | halt with exit code *n*           |
-| `assert (x: boolean)` | raise runtime error if not *x*    |
-| `expect (x: boolean)` | raise runtime error if not *x*    |
+| `exit (n: int)`       | halt with exit code *n*           |
+| `assert (x: bool)`    | raise runtime error if not *x*    |
+| `expect (x: bool)`    | raise runtime error if not *x*    |
 
  `assert` is for testing if the program is correct. `expect` is for testing whether the program should continue, e.g. testing whether an operating system service is still functioning. *The execution of `assert` may optionally be turned off by the compiler.*
 
@@ -630,48 +656,47 @@ How runtime errors and exit codes are handled is implementation-dependant behavi
 
 **Example**
 
-    assert(String_length(text) > 0);    // The program created text.
-    status := Cstdio_fputs(text, file);
-    expect(status != Cstdio_EOF);       // The I/O system is working.
-    halt(0);                            // The program is finished now.
+    assert(String::length(text) > 0);    // The program created text.
+    status = Cstdio::fputs(text, file);
+    expect(status != Cstdio::EOF);       // The I/O system is working.
+    exit(0);                            // The program is finished now.
 
 
 # The SYSTEM Interface
 
-Including the interface `SYSTEM` allows a set of "unsafe" standard procedures to be used. Unsafe procedures access computer hardware or circumvent the type system. A module that includes `SYSTEM` should be considered unsafe. An unsafe module may have a safe interface.
+Including the interface `SYSTEM` allows a set of "unsafe" standard functions to be used. Unsafe functions access computer hardware or circumvent the type system. A module that includes `SYSTEM` should be considered unsafe. An unsafe module may have a safe interface.
 
-If a particular computer requires language extensions, e.g. procedures that access CPU registers, then they should be added to `SYSTEM`.
+If a particular computer requires language extensions, e.g. functions that access CPU registers, then they should be added to `SYSTEM`.
 
-In the following table *RAM* refers the computer's random access memory, addressed by byte; *AnyType* is any type; *T* is a type definition given as a parameter.
+In the following table *RAM* refers the computer's random access memory, addressed by byte; *AnyType* is any type; *T* is a type definition given as a argument.
 
-|  Definition                         | Function                                     |
+|  Definition                          | Function                                     |
 |--------------------------------------|----------------------------------------------|
 | `ADDRESS (var v: AnyType) : word`    | address of variable `v`                      |
-| `MOVE (a, b, n: integer)`            | move `n` bytes from `RAM[a]` to `RAM[b]`     |
-| `GET (a: word; var v: AnyType)`      | fill `v` with the bytes starting at `RAM[a]` |
-| `PUT (a: word; v: AnyType)`          | move the bytes of `v` to `RAM[a]`            |
-| `SIZE (v : AnyType) : integer`       | number of bytes in variable `v`              |
-| `REF (var v: AnyType) : ref AnyType` | make a reference to a variable or procedure  |
+| `MOVE (a, b, n: int)`                | move `n` bytes from `RAM[a]` to `RAM[b]`     |
+| `GET (a: word, var v: AnyType)`      | fill `v` with the bytes starting at `RAM[a]` |
+| `PUT (a: word, v: AnyType)`          | move the bytes of `v` to `RAM[a]`            |
+| `SIZE (v : AnyType) : int`           | number of bytes in variable `v`              |
+| `LOC (var v: AnyType) : ref AnyType` | make a pointer to a variable or function   |
 | `TYPESIZE (T)  : word`               | number of bytes required by type `T`         |
-| `TYPE (x: AnyType; T) : T`           | give `x` the type `T`                        |
+| `TYPE (x: AnyType, T) : T`           | give `x` the type `T`                        |
 
-`TYPE` changes the type of a value or variable without altering the underlying bits that represent it. E.g. it can be used to represent a reference as an word or a record as an array of bytes.
+`TYPE` changes the type of a value or variable without altering the underlying bits that represent it. E.g. it can be used to represent a pointer as an word or a record as an array of bytes.
 
 **Example**
 
-    interface IntegerRepresentation =
-        procedure EndianReversal (x: integer) : integer;
-    end.
+    interface IntegerRepresentation {
+        fn EndianReversal (x: int) : int;
+    }
 
-    module IntegerRepresentation =
+    module IntegerRepresentation {
         include SYSTEM;
-        procedure EndianReversal (x: integer) : integer =
+        fn EndianReversal (x: int) : int {
             const w = SIZE(x);
-            val a := TYPE(x, array w of byte);
-            var b: array w of byte;
-            for i := 0 until w do
-                b[i] := a[w - i - 1]
-            end;
-            return TYPE(b, integer)
-        end;
-    end.
+            let a = TYPE(x, [w]byte);
+            var b: [w]byte;
+            for (i = 0 : w)
+                b[i] = a[w - i - 1];
+            return TYPE(b, int);
+        }
+    }

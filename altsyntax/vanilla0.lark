@@ -1,0 +1,168 @@
+#
+# Vanilla grammar in Lark. 
+#
+# The grammar is (or can be made) LL(1), so just about any parsing method will do. 
+#
+
+file: (module | interface | functor) ("." (module | interface| functor))* ["."]
+
+module    : "module" NAME [publicinterface] "=" declarationlist "end"
+functor   : "module" NAME moduleparameters [publicinterface] [typeequivalences] "=" declarationlist "end"
+interface : "interface" NAME "=" definitionlist "end"
+
+moduleparameters : "(" moduleparameter (";" moduleparameter)* ")"
+typeequivalences : "where" typeequivalence ("," typeequivalence)*
+moduleparameter : NAME ":" NAME
+typeequivalence : NAME ":=" importedname
+publicinterface : ":" NAME
+
+definitionlist: (definition ";")*
+declarationlist: (declarationordefinition ";")*
+
+?definition : vardefinition | procdefinition | otherdefinitions
+?declarationordefinition: vardeclaration | procdeclaration | otherdefinitions
+?otherdefinitions : inclusion | constdefinition | typedefinition
+
+inclusion : include | import
+import : "import" NAME [":=" parameterizedmodule]
+include : "include" NAME [typeequivalences] ("for" NAME ("," NAME)*)?
+
+parameterizedmodule : NAME "(" NAME ("," NAME)* ")"
+
+importedname : NAME "_" NAME
+globalname : NAME | NAME "_" NAME
+
+constdefinition : "const" NAME "=" constant
+constant: expression
+
+vardefinition : ("var" | "val") varlist
+vardeclaration : vardefinition [":=" structuredconstant]
+varlist:  namelist ":" type
+namelist: NAME ("," NAME)*
+?structuredconstant : constant | structure
+structure: "[" structureitems ("," structureitems)* "]"
+structureitems: structuredconstant ["for" constant]
+
+procdefinition: "procedure" NAME proctype
+procdeclaration: ["loop"] procdefinition [procbody]
+proctype:        "(" parameterlist ")" [":" type]
+procbody:        "=" body "end"
+parameterlist:   (parameters (";" parameters)*)?
+parameters: varlist       -> constparameters
+        | "var" varlist   -> varparameters
+
+typedefinition : "type" NAME ("=" type)?
+type : globalname                         -> namedtype
+        | "array" dimensionlist "of" type -> arraytype
+        | "record" elementlist "end"      -> recordtype
+        | "array" "of" type               -> openarraytype
+        | "ref" type                      -> referencetype
+        | "byte"                          -> bytetype
+        | "integer"                       -> integertype
+        | "word"                          -> wordtype
+        | "real"                          -> realtype
+        | "boolean"                       -> booleantype
+        | "procedure" proctype            -> proceduretype
+dimensionlist: constant ("," constant)*
+elementlist: varlist (";" varlist)*
+
+body:      statement (";" statement)*
+statement: localvardeclaration | constdefinition
+         | assignment | call | if | loop | exit | return | switch | empty
+
+localvardeclaration : ("var" | "val") namelist (":" type [":=" expression] | ":=" expression)
+
+if:     "if" iflist [ifelse] "end"
+iflist: ifthen ("elsif" ifthen)*
+ifthen: expression "then" body
+ifelse: "else" body
+
+loop :     ["loop" NAME] [loopfor] ["while" expression] "do" body "end"
+loopfor:   "for" NAME ":=" expression ["by" constant] (loopto | loopuntil) expression
+loopto:    "to"
+loopuntil: "until"
+
+switch :   "case" expression "of" caselist [caseelse] "end"
+caselist:  case ("|" case)*
+case:      rangelist ":" body
+rangelist: range ("," range)*
+range:     constant [".." constant]
+caseelse:  "else" body
+
+call: designator
+
+assignment:     designatorlist ":=" expression
+designatorlist: designator ("," designator)*
+
+exit: "exit" [NAME]
+return: "return" [expression]
+
+empty:
+
+?expression: conjunction
+        | conjunction "or" expression -> logicalor
+
+?conjunction: relation
+        | relation "and" conjunction -> logicaland
+
+?relation: sum
+        | sum "=" sum  -> eq
+        | sum "!=" sum -> ne
+        | sum "<" sum  -> lt
+        | sum "<=" sum -> le
+        | sum ">" sum  -> gt
+        | sum ">=" sum -> ge
+
+?sum:   term
+        | term "+" sum  -> plus
+        | term "-" sum  -> minus
+
+?term:  factor
+        | factor "*" term   -> times
+        | factor "/" term   -> divide
+        | factor "mod" term -> mod
+
+?factor: "+" factor
+        | "-" factor   -> negate
+        | "not" factor -> not
+        | "new" "(" type ["," constant] ")"
+        | "TYPESIZE" "(" type ")" 
+        | "TYPE" "(" expression "," type ")" 
+        | designator
+        | conditional
+        | "(" expression ")"
+        | INTEGER
+        | REAL
+        | CHARACTER
+        | STRING
+        | TRUE
+        | FALSE
+        | NIL
+
+conditional: "if" condlist condelse "end"
+condlist:    condthen ("elsif" condthen)*
+condthen:    expression "then" expression
+condelse:    "else" expression
+
+?designator: globalname
+        | designator "." NAME                                -> selection
+        | designator "^"                                     -> dereference
+        | designator "(" (expression ("," expression)*)? ")" -> call
+        | designator "["  expression ("," expression)*   "]" -> subscript
+
+COMMENT: "//" /[^\n]*/
+WHITESPACE: /[ \t\n\r]+/
+%ignore COMMENT
+%ignore WHITESPACE
+
+NIL: "nil"
+TRUE: "true"
+FALSE: "false"
+NAME: /[A-Za-z][A-Za-z0-9]*/
+
+INTEGER:   /[0-9]+[XL]?/ | /0x[0-9A-Fa-f]+[XL]?/ | /0o[0-7]+[XL]?/ | /0b[01]+[XL]?/
+REAL:      /[0-9]+[.][0-9]+([Ee][+-]?[0-9]+)?/
+STRING:    "\"" (NORMAL | "'"  | "\\\"" | ESCAPE)* "\""
+CHARACTER: "'"  (NORMAL | "\"" | "\\'"  | ESCAPE) "'"
+ESCAPE:    "\\\\" | "\\n" | "\\f" | "\\t" | "\\b" | "\\a" | "\\e" | "\\v" | "\0" | "\\x" /[0-9A-Fa-f][0-9A-Fa-f]/
+NORMAL:    " " | "!" | "#".."&" | "(".."[" | "]".."~"

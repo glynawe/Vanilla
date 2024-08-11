@@ -2,7 +2,7 @@ from lark import Lark
 from pathlib import Path
 
 grammar = Path('vanilla.lark').read_text()
-parser = Lark(grammar, propagate_positions=True, maybe_placeholders=True, start='file')
+parser = Lark(grammar, propagate_positions=True, maybe_placeholders=True, start='program')
 
 for example in Path('examples').glob('*.van'):
     source = example.read_text()

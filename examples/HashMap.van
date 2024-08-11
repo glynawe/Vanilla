@@ -1,72 +1,71 @@
-interface ADT =
+interface ADT {
     type t;
-end.
+}
 
-interface COMPARABLE =
+interface COMPARABLE {
     include ADT;
-    procedure equal (a, b: t) : boolean;
-end.
+    fn equal (a, b: t) : bool;
+}
 
-interface HASHABLE =
+interface HASHABLE {
     include COMPARABLE;
-    procedure hash (a: t) : integer;
-end.
+    fn hash (a: t) : int;
+}
 
-interface HASHMAP =
-    type r;
-    type t = ref r;
+interface HASHMAP {
+    type repr;
+    type t = ref repr;
     type kt;
     type vt;
-    procedure create (sizelimit: integer): t;
-    procedure set (m: t; k: kt; v: vt);
-    procedure get (m: t; k: kt; var v: vt) : boolean;
-end.
+    fn create (sizelimit: int): t;
+    fn set (m: t, k: kt, v: vt);
+    fn get (m: t, k: kt, var v: vt) : bool;
+}
 
-module HashMap (Key: HASHABLE; Value: ADT) : HASHMAP where kt := Key_t, vt := Value_t =
+module HashMap <Key: HASHABLE, Value: ADT> : HASHMAP where kt = Key::t, vt = Value::t
+{
+    type repr = struct {
+        size, count: int;
+        table: ref [] ref Value::T;
+    };
 
-    type r = record
-        size, count: integer;
-        table: ref array of ref Value_t
-    end;
-
-    procedure create (sizelimit: integer): t =
-        var m := new(t);
-        m.size := sizelimit;
-        m.count := 0;
-        m.table := new(ref Value_t, size);
-        for i := 0 until TableSize do 
-            m.table := nil;
-        end;
+    fn create (sizelimit: int) : t {
+        var m = new(repr);
+        m.size = sizelimit;
+        m.count = 0;
+        m.table = new(ref Value::t, size);
+        for (i = 0 : TableSize) 
+            m.table = null;
         return m;
-    end;
+    }
 
-    procedure place (m: t; k: kt; v: vt): integer =
+    fn place (m: t, k: kt, v: vt): int {
         expect(m.count < m.size);
-        var i := Key_hash(k) mod m.size;
-        while m.table[i] != nil do
-            if Key_equal(m.table[i], k) then
-                m.table[i] := v;
+        var i = k.hash() % m.size;
+        while (m.table[i] != null) {
+            if (m.table[i].equal(k)) {
+                m.table[i] = v;
                 return i;
-            end;
-            i := (i + 1) mod m.size
-        end;
+            }
+            i = (i + 1) % m.size;
+        }
         return i;
-    end;
+    }
 
-    procedure set (m: t; k: kt; v: vt) =
-        val i := place(m, k, v);
-        if m.table[i] = nil then inc(m.count) end;
-        m.table[i] := v
-    end;
+    fn set (m: t, k: kt, v: vt) {
+        let i = m.place(k, v);
+        if (m.table[i] == null) m.count++;
+        m.table[i] = v;
+    }
 
-    procedure get (m: t; k: kt; var v: vt) : boolean =
-        val i := place(m, k, v);
-        if m.table[i] = nil then 
+    fn get (m: t, k: kt, var v: vt) : bool {
+        let i = m.place(k, v);
+        if (m.table[i] == null) 
             return false;
-        else
-            v := m.table[i];
+        else {
+            v = m.table[i];
             return true;
-        end;
-    end;
-end.
+        }
+    }
+}
 

@@ -1,112 +1,111 @@
 #
-# Vanilla grammar in Lark. 
-#
-# The grammar is (or can be made) LL(1), so just about any parsing method will do. 
+# VanillaC grammar in Lark. 
 #
 
-file: (module | interface | functor) ("." (module | interface| functor))* ["."]
+program: (module | interface | functor)*
 
-module    : "module" NAME [publicinterface] "=" declarationlist "end"
-functor   : "module" NAME moduleparameters [publicinterface] [typeequivalences] "=" declarationlist "end"
-interface : "interface" NAME "=" definitionlist "end"
+module    : "module" NAME [publicinterface] "{" declaration* "}"
+functor   : "module" NAME moduleparameters [publicinterface] [typeconstraints] "{" declaration* "}"
+interface : "interface" NAME "{" definition* "}"
 
-moduleparameters : "(" moduleparameter (";" moduleparameter)* ")"
-typeequivalences : "where" typeequivalence ("," typeequivalence)*
+moduleparameters : "<" moduleparameter ("," moduleparameter)* ">"
+typeconstraints : "where" typeconstraint ("," typeconstraint)*
 moduleparameter : NAME ":" NAME
-typeequivalence : NAME ":=" importedname
+typeconstraint : NAME "=" importedname
 publicinterface : ":" NAME
 
-definitionlist: (definition ";")*
-declarationlist: (declarationordefinition ";")*
-
 ?definition : vardefinition | procdefinition | otherdefinitions
-?declarationordefinition: vardeclaration | procdeclaration | otherdefinitions
+?declaration: vardeclaration | procdeclaration | otherdefinitions
 ?otherdefinitions : inclusion | constdefinition | typedefinition
 
 inclusion : include | import
-import : "import" NAME [":=" parameterizedmodule]
-include : "include" NAME [typeequivalences] ("for" NAME ("," NAME)*)?
+import : "import" NAME ["=" parameterizedmodule] ";"
+include : "include" NAME [typeconstraints] ("for" NAME ("," NAME)*)? ";"
 
-parameterizedmodule : NAME "(" NAME ("," NAME)* ")"
+parameterizedmodule : NAME "<" NAME ("," NAME)* ">"
 
-importedname : NAME "_" NAME
-globalname : NAME | NAME "_" NAME
+importedname : NAME "::" NAME
+globalname : NAME | NAME "::" NAME
 
-constdefinition : "const" NAME "=" constant
+constdefinition : "const" NAME "=" constant ";"
 constant: expression
 
-vardefinition : ("var" | "val") varlist
-vardeclaration : vardefinition [":=" structuredconstant]
+vardefinition : ("var" | "let") varlist ";"
+vardeclaration : ("var" | "let") varlist ["=" structuredconstant] ";"
 varlist:  namelist ":" type
 namelist: NAME ("," NAME)*
 ?structuredconstant : constant | structure
-structure: "[" structureitems ("," structureitems)* "]"
+structure: "{" structureitems ("," structureitems)* "}"
 structureitems: structuredconstant ["for" constant]
 
-procdefinition: "procedure" NAME proctype
-procdeclaration: ["loop"] procdefinition [procbody]
+procdefinition: "fn" NAME proctype ";"
+procdeclaration: ["loop"] "fn" NAME proctype block
 proctype:        "(" parameterlist ")" [":" type]
-procbody:        "=" body "end"
-parameterlist:   (parameters (";" parameters)*)?
+parameterlist:   (parameters ("," parameters)*)?
 parameters: varlist       -> constparameters
         | "var" varlist   -> varparameters
 
-typedefinition : "type" NAME ("=" type)?
+typedefinition : "type" NAME ("=" type)? ";"
 type : globalname                         -> namedtype
-        | "array" dimensionlist "of" type -> arraytype
-        | "record" elementlist "end"      -> recordtype
-        | "array" "of" type               -> openarraytype
+        | "[" constant "]" type           -> arraytype
+        | "[" "]" type                    -> openarraytype
+        | "struct" "{" (varlist ";")* "}" -> recordtype
         | "ref" type                      -> referencetype
         | "byte"                          -> bytetype
-        | "integer"                       -> integertype
+        | "inte"                          -> integertype
         | "word"                          -> wordtype
-        | "real"                          -> realtype
-        | "boolean"                       -> booleantype
-        | "procedure" proctype            -> proceduretype
-dimensionlist: constant ("," constant)*
-elementlist: varlist (";" varlist)*
+        | "float"                         -> realtype
+        | "bool"                          -> booleantype
+        | "fn" proctype                   -> fntype
 
-body:      statement (";" statement)*
-statement: localvardeclaration | constdefinition
-         | assignment | call | if | loop | exit | return | switch | empty
+statement: localvar | locallet | constdefinition | block
+         | assignment | call | if | loop | break | return | switch | empty
 
-localvardeclaration : ("var" | "val") namelist (":" type [":=" expression] | ":=" expression)
+block: "{" statement* "}"
 
-if:     "if" iflist [ifelse] "end"
-iflist: ifthen ("elsif" ifthen)*
-ifthen: expression "then" body
-ifelse: "else" body
+localvar : "var" namelist ([":" type ["=" expression]] | "=" expression) ";"
+locallet : "let" namelist [":" type] "=" expression ";"
 
-loop :     ["loop" NAME] [loopfor] ["while" expression] "do" body "end"
-loopfor:   "for" NAME ":=" expression ["by" constant] (loopto | loopuntil) expression
-loopto:    "to"
-loopuntil: "until"
+if:        "if" "(" expression ")" statement ["else" statement]
 
-switch :   "case" expression "of" caselist [caseelse] "end"
-caselist:  case ("|" case)*
-case:      rangelist ":" body
-rangelist: range ("," range)*
-range:     constant [".." constant]
-caseelse:  "else" body
+loop     : label? (for | while | forever)
+for      : "for" "(" NAME "=" expression (loopto | loopuntil) expression ")" statement
+while    : "while" "(" expression ")" statement
+forever  : "loop" statement
+break    : "break" [NAME] ";"
+loopto: ".." 
+loopuntil: ":"
+label    : NAME ":"
 
-call: designator
+switch :    "switch" "(" expression ")" "{" case* [default] "}"
+case:       "case" range ("," range)* ":" block
+range:      constant (".." constant)?
+default:    "default" ":" statements
+statements: statement+
 
-assignment:     designatorlist ":=" expression
-designatorlist: designator ("," designator)*
+call: designator "(" (expression ("," expression)*)? ")" ";"
 
-exit: "exit" [NAME]
-return: "return" [expression]
+assignment : designator "=" expression ";"
+        | designator mathop "=" expression ";"
+        | designator "++" ";"
+        | designator "--" ";"
+mathop : "+" | "-" | "*" | "/" | "%"
+
+return: "return" [expression] ";"
 
 empty:
 
-?expression: conjunction
-        | conjunction "or" expression -> logicalor
+?expression: disjunction
+        | disjunction "?" disjunction ":" expression
+
+?disjunction: conjunction
+        | conjunction "||" disjunction -> logicalor
 
 ?conjunction: relation
-        | relation "and" conjunction -> logicaland
+        | relation "&&" conjunction -> logicaland
 
 ?relation: sum
-        | sum "=" sum  -> eq
+        | sum "==" sum  -> eq
         | sum "!=" sum -> ne
         | sum "<" sum  -> lt
         | sum "<=" sum -> le
@@ -120,16 +119,16 @@ empty:
 ?term:  factor
         | factor "*" term   -> times
         | factor "/" term   -> divide
-        | factor "mod" term -> mod
+        | factor "%" term -> mod
 
 ?factor: "+" factor
         | "-" factor   -> negate
-        | "not" factor -> not
+        | "!" factor -> not
         | "new" "(" type ["," constant] ")"
         | "TYPESIZE" "(" type ")" 
         | "TYPE" "(" expression "," type ")" 
         | designator
-        | conditional
+        | designator "(" (expression ("," expression)*)? ")" -> call
         | "(" expression ")"
         | INTEGER
         | REAL
@@ -139,16 +138,10 @@ empty:
         | FALSE
         | NIL
 
-conditional: "if" condlist condelse "end"
-condlist:    condthen ("elsif" condthen)*
-condthen:    expression "then" expression
-condelse:    "else" expression
-
 ?designator: globalname
-        | designator "." NAME                                -> selection
-        | designator "^"                                     -> dereference
-        | designator "(" (expression ("," expression)*)? ")" -> call
-        | designator "["  expression ("," expression)*   "]" -> subscript
+        | designator "." NAME           -> selection
+        | designator "^"                -> dereference
+        | designator "[" expression "]" -> subscript
 
 COMMENT: "//" /[^\n]*/
 WHITESPACE: /[ \t\n\r]+/
@@ -158,7 +151,7 @@ WHITESPACE: /[ \t\n\r]+/
 NIL: "nil"
 TRUE: "true"
 FALSE: "false"
-NAME: /[A-Za-z][A-Za-z0-9]*/
+NAME: /[A-Za-z_][A-Za-z0-9_]*/
 
 INTEGER:   /[0-9]+[XL]?/ | /0x[0-9A-Fa-f]+[XL]?/ | /0o[0-7]+[XL]?/ | /0b[01]+[XL]?/
 REAL:      /[0-9]+[.][0-9]+([Ee][+-]?[0-9]+)?/

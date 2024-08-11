@@ -1,102 +1,104 @@
-interface ADT =
+interface ADT {
     type t;
-end.
+}
 
-interface COMPARABLE =
+interface COMPARABLE {
     include ADT;
-    procedure equal (a, b: t) : boolean;
-end.
+    fn equal (a, b: t) : bool;
+}
 
-interface PRINTABLE =
+interface PRINTABLE {
     include ADT;
-    procedure print (a: t);
-end.
+    fn print (a: t);
+}
 
-interface STRING =
+interface STRING {
     include COMPARABLE;
     include PRINTABLE;
     type t;
-    procedure make (text: array of byte): t;
-end.
+    fn make (text: []byte): t;
+}
 
-module String: STRING =
-    type t = ref array of byte;
+module String: STRING {
+    type t = ref []byte;
     
-    procedure make (text: array of byte): t =
-        var s := new(byte, len(text));
-        s^ := text;
+    fn make (text: []byte): t {
+        var s = new(byte, len(text));
+        s^ = text;
         return s;
-    end;
+    }
     
-    procedure equal (a, b: t) : boolean =
-        return a = b or len(a) = len(b) and a^ = b^;
-    end;
+    fn equal (a, b: t) : bool {
+        return a == b || len(a) == len(b) && a^ == b^;
+    }
     
     import System;
 
-    procedure print (a: t) =
-        for i := 0 until len(a) while a[i] != '\0' do
-            System_putchar(a[i])
-        end
-    end;
-end.
+    fn print (a: t) {
+        for (i = 0 : len(a)) { 
+            if (a[i] != '\0')
+                System::putchar(a[i]);
+            else {
+                System::putchar('\n');
+                break;
+            }
+        }
+    }
+}
 
-interface LIST =
+interface LIST {
     include COMPARABLE;
     type t;
     type element;
-    val empty: t;
-    procedure make () : t;
-    procedure prepend (head: element; tail: t) : t;
-    procedure takeHead (var list: t; var head: element) : boolean;
-end.
+    let empty: t;
+    fn make () : t;
+    fn prepend (head: element, tail: t) : t;
+    fn takeHead (var list: t, var head: element) : bool;
+}
 
-module List (Element: COMPARABLE): LIST where element := Element_t =
+module List <Element: COMPARABLE>: LIST where element = Element::t {
     type element;
-    type t = ref record value: element; next: t end;
+    type t = ref struct { value: element; next: t; };
 
-    val empty: t := nil;
+    let empty: t = nil;
     
-    procedure equal (a, b: list) : boolean =
-        while a != nil and b != nil and Element_equal(a.head, b.head) do
-            a := a.tail;
-            b := b.tail;
-        end;
-        return a = b
-    end;
+    fn equal (a, b: list) : bool {
+        while (a != nil && b != nil && a.head.equal(b.head)) {
+            a = a.tail;
+            b = b.tail;
+        }
+        return a == b;
+    }
     
-    procedure prepend (head: element; tail: t) : t =
-        var list := new(t);
-        list.head := head; 
-        list.tail := tail;
-        return list
-    end;
+    fn prepend (head: element, tail: t) : t {
+        let list = new(t);
+        list.head = head; 
+        list.tail = tail;
+        return list;
+    }
     
-    procedure takeHead (var list: t; var head: element) : boolean =
-        if list = nil then 
-            return false
-        else
-            head := list.head;
-            list := list.tail;
-            return true
-        end
-    end;
-end.
+    fn takeHead (var list: t, var head: element) : bool {
+        if (list == nil) 
+            return false;
+        else {
+            head = list.head;
+            list = list.tail;
+            return true;
+        }
+    }
+}
 
-module ReverseArguments =
+module ReverseArguments {
     import System;
     import String;
-    import StringList := List(String);
-    
-    procedure main() =
-        var list := StringList_empty;
-        for i := 1 until System_argc do
-            list := StringList_prepend(list, String_make(System_argv[i]))
-        end;
-        StringList_reverse();
+    import StringList = List<String>;
+
+    fn main() {
+        var list = StringList::empty;
+        for (i = 1 : System::argc)
+            list = list.prepend(String::make(System::argv[i]));
         var head: String;
-        while StringList_takeHead(list, head) do
-            String_print(head)
-        end
-    end;
-end.
+        while (list.takeHead(head))
+            head.print();
+    }
+}

@@ -1,3 +1,5 @@
+(* Menhir grammar for Vanilla *)
+
 (* ---------------------------------------------------------------------------
 MARK: Literals 
 *)
@@ -19,8 +21,6 @@ MARK: Operators
 %token ADD "+"  
 %token AND "&&"
 %token ASSIGN "="
-%token ASSIGN_ADD "+="
-%token ASSIGN_SUB "-="
 %token CARET "^"
 %token CONTAINS "::"
 %token DEC "--"
@@ -121,6 +121,7 @@ MARK: Rule Types
 %type <unit> importedname
 %type <unit> label
 %type <unit> limiter
+%type <unit> mathop
 %type <unit> moduledecl
 %type <unit> moduleparameter
 %type <unit> name
@@ -149,8 +150,7 @@ MARK: Rule Types
 
 %%
 
-%inline commas(X) : xs=separated_nonempty_list(",", X)
-    { () }
+%inline commas(X) : xs=separated_nonempty_list(",", X) { xs }
 
 
 /* ---------------------------------------------------------------------------
@@ -358,17 +358,19 @@ simple_statement
     { () }
 | d=designator "=" e=expression ";"
     { () }
-| d=designator "+=" e=expression ";"
+| d=designator m=mathop "=" e=expression ";"
     { () }
-| d=designator "-=" e=expression ";"
+| d=designator "++" ";"
     { () }
-| "++" d=designator ";"
-    { () }
-| "--" d=designator ";"
+| d=designator "--" ";"
     { () }
 | "return" e=expression? ";"
     { () }
 | ";"
+    { () }
+
+mathop 
+: "-" | "+" | "*" | "/" | "%"
     { () }
 
 limiter

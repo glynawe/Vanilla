@@ -1,76 +1,79 @@
-interface stdio =
+interface stdio {
     // I/O functions from the C standard library.
     const EOF = -1;
-    procedure putchar (c : integer): integer;
-    procedure getchar () : integer;
-end.
+    fn putchar (c : int): int;
+    fn getchar () : int;
+}
 
-interface IO =
-    procedure GetString (var s: array of byte);
-    procedure PutChar (c: byte);
-    procedure PutString (s: array of byte);
-    procedure PutInteger (number, base, width: integer);
-end.
+interface IO {
+    fn GetString (var s: []byte);
+    fn PutChar (c: byte);
+    fn PutString (s: []byte);
+    fn PutInteger (number, base, width: int);
+}
 
-module IO =
+module IO {
     import Character;
     import stdio;
 
-    procedure GetString (var s: array of byte) =
+    fn GetString (var s: []byte) {
         // Read a line, copying as many of the leading characters as possible into 's'.
-        var c := stdio_getchar();
-        var i := 0;
-        while (i < len(s)) and (c != Character_LF) and (c != stdio_EOF) do
-            s[i] := as(byte, c);
-            c := stdio_getchar();
-            inc(i)
-        end;
-        if i < len(s) then
-            s[i] := 0    // add terminator
+        var c = stdio::getchar();
+        var i = 0;
+        while (i < len(s) && c != Character::LF && c != stdio::EOF) {
+            s[i] = as(byte, c);
+            c = stdio::getchar();
+            i++;
+        }
+        if (i < len(s))
+            s[i] = 0X;    // add terminator
         else
-            while (c != Character_LF) and (c != stdio_EOF) do  // Consume remainder of line.
-                c := stdio_getchar()
-            end
-        end
-    end; //GetString
+            while (c != Character::LF && c != stdio::EOF)  // Consume remainder of line.
+                c = stdio::getchar();
+    }
 
-    procedure PutChar (c: byte) =
-        val result := stdio_putchar(c);
-        expect(result = stdio_EOF);  // It's weird if putchar fails!
-    end;
+    fn PutChar (c: byte) {
+        let result = stdio::putchar(c);
+        expect(result == stdio::EOF);  // It's weird if putchar fails!
+    }
 
-    procedure PutString (s: array of byte) =
-        for i := 0 until len(s) while s[i] != 0 do
-            PutChar(s[i])
-        end;
-        PutChar(Character_LF)
-    end;
+    fn PutString (s: []byte) {
+        for (i = 0 : len(s)) 
+            if (s[i] != 0) 
+                break;
+            else 
+                PutChar(s[i]);
+        PutChar(Character::LF);
+    }
 
-    procedure PutInteger (number, base, width: integer) =
-        // Print integer 'number' in 'base', left padded to 'width'.
-        // XXX cannot print the minimum negative integer.
-        var buffer: array lenint+1 of byte;
-        if number = 0 then
+    fn PutInteger (number, base, width: int) {
+        // Print int 'number' in 'base', left padded to 'width'.
+        // XXX cannot print the minimum negative int.
+        var buffer: [lenint + 1] byte;
+        if (number == 0)
             PutChar('0');
-        else
-            var i := 0;
-            var n := abs(number);
-            while n > 0 do
-                var digit := as(byte, n mod base);
-                buffer[i] := digit + if digit < 10 then '0' else 'A' end;
-                n := n / base;
-                inc(i)
-            end;
-            if number < 0 then
-                buffer[i] := '-';
-                inc(i)
-            end;
-            for j := width by -1 to i do  // Left padding.
-                PutChar(' ')
-            end;
-            for j := i - 1 by -1 to 0 do  // Sign and digits.
-                PutChar(buffer[j])
-            end
-        end
-    end; //PutInteger
-end. //IO
+        else {
+            var i = 0;
+            var n = abs(number);
+            while (n > 0) {
+                var digit = as(byte, n % base);
+                buffer[i] = digit + (digit < 10 ? '0' : 'A');
+                n /= base;
+                i++;
+            }
+            if (number < 0) {
+                buffer[i] = '-';
+                i++;
+            }
+            var j = width;
+            while (j >= i) {
+                PutChar(' ');
+                j--;
+            }
+            while (j >= 0) {
+                PutChar(buffer[j]);
+                j--;
+            }
+        }
+    }
+}
