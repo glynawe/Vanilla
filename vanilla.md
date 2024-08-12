@@ -150,11 +150,11 @@ A Vanilla program may contain any number of interfaces, modules and functors. On
     ModuleName    = NAME.
     FunctorName   = NAME.
 
-An *interface* contains a set of definitions. A *module* contains a set of definitions and declarations. The primary purpose of modules is group together collections of types and functions to define abstract data types.
+An *interface* contains a set of definitions. A *module* contains a set of definitions and declarations. The primary purpose of modules is to group together collections of types and functions to define abstract data types.
 
 If a module is declared with a *public interface* then only the definitions in that interface will be available when the module is imported. The module must contain declarations for all the definitions in its public interface. 
 
-A *functor* is a module parametrized by interfaces for modules that it may import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each interface argument has specifies a minimum set of definitions that the actual module must provide. A functor *type constraint* specifies types from different argument modules that are to be equivalent (this is important when defining generic types). 
+A *functor* is a module parametrized by interfaces for modules that it may import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each interface argument specifies a minimum set of definitions that the actual module must provide. A functor *type constraint* specifies types from different argument modules that are to be equivalent (this is important when defining generic types). 
 
 All interfaces and modules implicitly contain a set of *standard declarations* supplied by the Vanilla language. For example, the type `int` is a standard declaration.
 
@@ -195,7 +195,7 @@ A module without an explicit public interface has a default interface that exclu
 
     ConstDefinition = "const" NAME "=" Constant ";".
 
-A Constant is an expression that is evaluated by the compiler. The declared length of an array is example of an expression that must be constant.  The only names allowed in a constant expression are the names of other constants and calls to standard functions.
+A *constant* is an expression that is evaluated by the compiler. The declared length of an array is an example of an expression that must be constant.  The only names allowed in a constant expression are the names of other constants and calls to standard functions.
 
 A ConstDefinition names a constant. A named constant may be described more than once, but the additional definitions must evaluate to the same value.
 
@@ -264,9 +264,9 @@ The above rule is also used to initialize local variables within blocks.
 
     DimensionList = Constant ","... .
 
-Arrays begin at element 0. An array with no specified dimension is an *open array* which may have any length. An open array's length can be found using the standard function `len`. An open array type may only be used as the type of a argument or as the target of a pointer type.
+Arrays begin at element 0. An array with no specified dimension is an *open array* which may have any length. An open array's length can be found using the standard function `len`. An open array type may only be used as the type of an argument or as the target of a pointer type.
 
-A function type may only be used as the type of a argument or as the target of a pointer type.
+A function type may only be used as the type of an argument or as the target of a pointer type.
 
 An *opaque type* is a type whose definition is not yet given. An opaque type can be used in an interface to denote an abstract type, or in a module to allow a record type to contain pointers to itself. An opaque type must be defined before it can be used in a module, either by a full type definition or a functor type constraint.
 
@@ -281,17 +281,17 @@ An *opaque type* is a type whose definition is not yet given. An opaque type can
 
 The argument names in function definitions are placeholders for describing each argument. They are not examined when determining type equivalence. However, arguments names are significant in function declarations.
 
-A function with a return type is an *expression function*. A function without a return type is a *procedure function*. A expression function may only be used in an expression. A procedure function may only be used as a statement.
+A function with a return type is an *expression function*. A function without a return type is a *procedure function*. An expression function may only be used in an expression. A procedure function may only be used as a statement.
 
 Assigning to a `var` argument assigns to the argument supplied by the function call, i.e. `var` arguments are passed by reference. Parameters without `var` are *value arguments*. Value arguments are immutable. *The compiler may pass record and array value arguments by reference.*
 
 An array of any length may be passed to an *open array* argument if their element types are the same. 
 
-A function definition can be used in a module to define it early. This allows sets of mutually recursive functions to be defined. (This like providing a *function prototype* in C.) 
+A function definition can be used in a module to define it early. This allows sets of mutually recursive functions to be defined. (This is like providing a *function prototype* in C.) 
 
 A `loop` function must be tail-call optimizable. I.e. if the function calls itself recursively then that call must be optimizable into a loop. The compiler will reject the program if it cannot perform the optimisation. 
 
-*A value argument does not come with a guarantee that the argument will retain the same value all though the execution of its function. "Aliasing" is possible. If a global variable is given as a argument then assigning to that variable from within the function also changes the argument's value.*
+*A value argument does not come with a guarantee that the argument will retain the same value all through the execution of its function. "Aliasing" is possible. If a global variable is given as an argument then assigning to that variable from within the function also changes the argument's value.*
 
 # Statements
 
@@ -323,9 +323,9 @@ A local definition may not have the same name as any definition in the same bloc
 
     MathOp = "+" | "-" | "*" | "/" | "%"
 
-The expression is evaluated  then its value is assigned to the designator. The designator must have the same type as the expression. The `++`, `--`, `+=` etc. operators have the same meaning as in C, but may only be used in statements.
+The expression is evaluated  then its value is assigned to the designator. The designator must have the same type as the expression. The `++`, `--`, `+=` etc. operators have the same meaning as in C, but may only be used as statements.
 
-Records of the same type and arrays of the same type and length may by assigned to each other.
+Records of the same type and arrays of the same type and length may be assigned to each other.
 
 
 ## Function Calls
@@ -389,7 +389,7 @@ A `loop` statement continues looping until an applicable `break` statement is ex
     Range      = Constant [".." Constant].
     Statements = Statement {Statement}
 
-Switch expressions and switch range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a case's ranges then that case's block are executed. If the value does not match a case and there is an `default` clause then its block is executed; if there is no `default` clause then nothing is done. 
+Switch expressions and switch range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a case's ranges then that case's statements are executed. If the value does not match a case and there is a `default` clause then its statements are executed; if there is no `default` clause then nothing is done. 
 
 **Example**
 
@@ -407,7 +407,7 @@ Switch expressions and switch range constants must be integers or bytes. All con
 
 *Cases do not not "fall through", `break` is not necessary.*
 
-*The highest range constant must be less than 256 higher that the lowest constant. Switch statements are most useful when implemented using jump tables, and there must be some limit to the size of those tables.*
+*The highest range constant must be less than 256 higher than the lowest constant. Switch statements are most useful when implemented using jump tables, and there must be some limit to the size of those tables.*
 
 ## Return Statements
 
@@ -418,22 +418,21 @@ Switch expressions and switch range constants must be integers or bytes. All con
 
 # Expressions
 
-    Expression = Conjunction {"or" Conjunction}. 
-    Conjunction = Relation {"and" Relation}.
+    Expression = Disjunction "?" Disjunction ":" Expression.
+    Disjunction = Conjunction {"||" Conjunction}. 
+    Conjunction = Relation {"&&" Relation}.
     Relation = Sum [RelationOp Sum].
     Sum  = Term {AddOp Term}.
     Term = Factor {MulOp Factor}.
+    Factor = UnaryOp Factor
+           | Designator
+           | FunctionCall
+           | Literal
+           | "(" Expression ")".
 
     AddOp  = "+" | "-".
     MulOp  = "*" | "/" | "%".
     RelationOp = "==" | "!=" | ">" | "<" | ">=" | "<=".
-
-    Factor = UnaryOp Factor
-           | Designator
-           | Literal
-           | Conditional
-           | "(" Expression ")".
-
     UnaryOp = "+" | "-" | "!".
 
 ## Operators
@@ -450,11 +449,13 @@ Switch expressions and switch range constants must be integers or bytes. All con
 
 *NumType* is `real`, `int`, `word` or `byte`. *IntType* is `int`, `word` or `byte`. *RefType* is any pointer type. Operands and results must have the same type.
 
-`x / y` and `x % y` may raise an runtime error if *y* = 0. How that runtime error is handled is implementation-dependant behaviour.
+`x / y` and `x % y` may raise a runtime error if *y* = 0. How that runtime error is handled is implementation-dependent behaviour.
 
 Relational operators compare `int`, `word`, `byte`, `float` and pointer types. They return `bool` values. Pointers may only be compared for equality and inequality. Two pointers are equal if they refer to the same variable or both are `null`.
 
 ### Logical operators
+
+*cond* `?` *expr1* `:` *expr2* is the conditional expression. If *cond* is true then *expr1* is evaluated and returned. If *cond* is false then *expr2* is evaluated and returned. *cond* must have the `bool` type, and *expr1* and *expr2* must have identical types.
 
 The `&&` and `||` operators are "shortcut operators", they are equivalent to these conditional expressions:
 
@@ -462,12 +463,6 @@ The `&&` and `||` operators are "shortcut operators", they are equivalent to the
 
 `a && b`  ≡  `a ? b : false`
 
-
-## Conditional expressions
-
-    Conditional  = Expression "?" Expression ":" Expression.
-
-The expressions following `?` and `:` must have the same type.
 
 ## Designators, Function Calls
 
@@ -576,7 +571,7 @@ The standard declarations are implicitly included at the start of every interfac
 | `byte`    | Integers between 0 and 255. Also used to store characters. |
 | `float`   | Floating-point numbers.                                    |
 
-The floating-point number representation is implementation-dependant. `int` should have a convenient range for arithmetic. `word` must be wide enough to contain a memory address.
+The floating-point number representation is implementation-dependent. `int` should have a convenient range for arithmetic. `word` must be wide enough to contain a memory address.
 
 
 ## Standard Constants
@@ -594,7 +589,7 @@ The floating-point number representation is implementation-dependant. `int` shou
 
 The constant `null` may be assigned to any pointer variable. A variable containing `null` must not be dereferenced.
 
-The values of `minint`, `maxint` and `lenint` are implementation-dependant.
+The values of `minint`, `maxint` and `lenint` are implementation-dependent.
 
 ## Standard Functions
 
@@ -614,7 +609,7 @@ In the following tables *IntType* is an `int`, `word` or `byte` value, *NumType*
 
 `len(a, 0)` is the length of the first dimension of array `a`.
 
-`as` may raise an runtime error if its argument value are outside its return type's range. `fits` can be used to determine if that will happen. How runtime errors are handled is implementation-dependant behaviour.
+`as` may raise a runtime error if its argument value ie outside its return type's range. `fits` can be used to determine if that will happen. How runtime errors are handled is implementation-dependent behaviour.
 
 ### Bit Manipulation Functions
 
@@ -653,7 +648,7 @@ The `free` function does nothing.
     fn ALLOCATE (size: int): word;  // returns an address
     fn DEALLOCATE (address: word);
 
-The `new` function calls `ALLOCATE(SYSTEM::TYPESIZE(T))` or `ALLOCATE(SYSTEM::TYPESIZE(T) * d)` to obtain the address of memory space for an anonymous variable of  type `T`. If that address is 0 then an runtime error is raised, otherwise the anonymous variable is assigned a default initial value and a pointer to it is returned.
+The `new` function calls `ALLOCATE(SYSTEM::TYPESIZE(T))` or `ALLOCATE(SYSTEM::TYPESIZE(T) * d)` to obtain the address of memory space for an anonymous variable of  type `T`. If that address is 0 then a runtime error is raised, otherwise the anonymous variable is assigned a default initial value and a pointer to it is returned.
 
 The `free(r)` function calls `DEALLOCATE(SYSTEM::TYPE(r, int))` to mark the space at *r* as free for reallocation.
 
@@ -667,7 +662,7 @@ The `free(r)` function calls `DEALLOCATE(SYSTEM::TYPE(r, int))` to mark the spac
 
  `assert` is for testing if the program is correct. `expect` is for testing whether the program should continue, e.g. testing whether an operating system service is still functioning. *The execution of `assert` may optionally be turned off by the compiler.*
 
-How runtime errors and exit codes are handled is implementation-dependant behaviour.
+How runtime errors and exit codes are handled is implementation-dependent behaviour.
 
 **Example**
 
@@ -683,7 +678,7 @@ Including the interface `SYSTEM` allows a set of "unsafe" standard functions to 
 
 If a particular computer requires language extensions, e.g. functions that access CPU registers, then they should be added to `SYSTEM`.
 
-In the following table *RAM* refers the computer's random access memory, addressed by byte; *AnyType* is any type; *T* is a type definition given as a argument.
+In the following table *RAM* refers to the computer's random access memory, addressed by byte; *AnyType* is any type; *T* is a type definition given as an argument.
 
 |  Definition                          | Function                                     |
 |--------------------------------------|----------------------------------------------|
@@ -696,7 +691,7 @@ In the following table *RAM* refers the computer's random access memory, address
 | `TYPESIZE (T)  : word`               | number of bytes required by type `T`         |
 | `TYPE (x: AnyType, T) : T`           | give `x` the type `T`                        |
 
-`TYPE` changes the type of a value or variable without altering the underlying bits that represent it. E.g. it can be used to represent a pointer as an word or a record as an array of bytes.
+`TYPE` changes the type of a value or variable without altering the underlying bits that represent it. E.g. it can be used to represent a pointer as a word or a record as an array of bytes.
 
 **Example**
 
