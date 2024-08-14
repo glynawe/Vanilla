@@ -9,7 +9,7 @@ functor   : "module" NAME moduleparameters [publicinterface] [typeconstraints] "
 interface : "interface" NAME "{" definition* "}"
 
 moduleparameters : "<" moduleparameter ("," moduleparameter)* ">"
-typeconstraints : "where" typeconstraint ("," typeconstraint)*
+typeconstraints : "with" typeconstraint ("," typeconstraint)*
 moduleparameter : NAME ":" NAME
 typeconstraint : NAME "=" importedname
 publicinterface : ":" NAME

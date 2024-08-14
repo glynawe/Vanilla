@@ -4,7 +4,7 @@
 	"patterns": [
 		{
 			"name": "keyword.other.vanilla",
-			"match": "\\b(break|case|const|default|else|fn|for|if|import|include|interface|let|loop|module|ref|return|struct|type|var|where|while)\\b"
+			"match": "\\b(break|case|const|default|else|fn|for|if|import|include|interface|let|loop|module|ref|return|struct|type|var|with|while)\\b"
 		},{
 			"name": "support.type.vanilla",
 			"match": "\\b(bool|byte|int|float|word)\\b"

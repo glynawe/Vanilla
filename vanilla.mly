@@ -98,7 +98,7 @@ MARK: Keywords
 %token TYPEFN "TYPE"
 %token TYPESIZE "TYPESIZE"
 %token VAR "var"
-%token WHERE "where"
+%token WITH "with"
 %token WHILE "while"
 %token WORD "word"
 
@@ -178,7 +178,7 @@ publicinterface
     { () }
 
 typeconstraints 
-: "where" tc=commas(typeconstraint)
+: "with" tc=commas(typeconstraint)
     { () }
 
 typeconstraint : n1=NAME "=" n2=importedname

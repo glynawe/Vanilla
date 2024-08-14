@@ -22,7 +22,7 @@ interface HASHMAP {
     fn get (m: t, k: kt, var v: vt) : bool;
 }
 
-module HashMap <Key: HASHABLE, Value: ADT> : HASHMAP where kt = Key::t, vt = Value::t
+module HashMap <Key: HASHABLE, Value: ADT> : HASHMAP with kt = Key::t, vt = Value::t
 {
     type repr = struct {
         size, count: int;

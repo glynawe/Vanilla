@@ -71,7 +71,7 @@ This very simplified program defines strings and generic sets as abstract data t
         fn Includes (set: T, element: ElemT) : bool;
     }
 
-    module Set <Element: COMPARABLE> : SET where ElemT = Element::T {
+    module Set <Element: COMPARABLE> : SET with ElemT = Element::T {
         type ElemT;
         type Repr = struct { 
             value: Element; 
@@ -142,7 +142,7 @@ A Vanilla program may contain any number of interfaces, modules and functors. On
 
     PublicInterface  = [":" InterfaceName].
     ModuleParameter  = ModuleName ":" InterfaceName.
-    TypeConstraints  = "where" TypeEquivalence ","... 
+    TypeConstraints  = "with" TypeEquivalence ","... 
     TypeEquivalence  = NAME "=" TypeName.
     TypeName         = ModuleName "::" NAME.
 
@@ -161,7 +161,7 @@ All interfaces and modules implicitly contain a set of *standard declarations* s
 **Example**
 
     module Map <Key: Comparable, Value: ADT> 
-        where KeyType = Key::Type, ValueType = Value::Type 
+        with KeyType = Key::Type, ValueType = Value::Type 
     {
         type MapType;
         type ValueType;
@@ -486,7 +486,7 @@ The "method call" syntax for procedure function calls may be used for expression
 
 INTEGER literals have the type `int`. WORD literals have type `word`. BYTE literals have the type `byte`. FLOAT literals have the type `float`. STRING literals  are anonymous immutable variables of type `[]byte`. A string literal's array has an additional element at the end containing `'\0'`. 
 
-BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer literals with the suffix `X` or character literals in single quotes. The range of BYTE literals is 0X to 255X. The range of WORD literals is 0 to `maxword`. WORD literals are integer literals with the suffix `L`. 
+BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer literals with the suffix `X` or character literals in single quotes. The range of BYTE literals is 0X to 255X. The range of WORD literals is 0 to `maxword`. WORD literals are integer literals with the suffix `LOWER`. 
 
 # Lexical Elements
 
@@ -498,7 +498,7 @@ BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer l
              | "0o" OCTDIGIT {OCTDIGIT}.
 
     BYTE      = INTEGER "X" | CHARACTER.
-    WORD      = INTEGER "L".
+    WORD      = INTEGER "LOWER".
     CHARACTER = "'" (STRCHAR | '"' | "\'" | ESCAPE) "'".
 
     STRING    = '"' {STRCHAR | "'" | '\"' | ESCAPE} '"'.
@@ -530,7 +530,7 @@ BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer l
         "break" | "case" | "const" | "default" | "else" | 
         "for" | "if" | "import" | "include" | "interface" |
         "module" | "fn" | "struct" |
-        "ref" | "return" | "type" | "let" | "var" | where" | 
+        "ref" | "return" | "type" | "let" | "var" | with" | 
         "while".
 
     StandardDefinitionIds =
@@ -710,3 +710,45 @@ In the following table *RAM* refers to the computer's random access memory, addr
             return TYPE(b, int);
         }
     }
+
+
+# Appendix: the syntax metalanguage
+
+This is a description of the metalanguage used to describe the syntax of Vanilla in this document. It is Nicolas Wirth's ENBF with some extensions.
+
+| Rule               | Meaning                                         |
+|--------------------|-------------------------------------------------|
+| Capitalised        | The name of a grammar rule.                     |
+| ALLCAPS            | The name of a lexical rule or special character.|
+| "text"  or 'text'  | A keyword or punctuation symbol literal         |
+| Name = *x*.        | A grammar rule definition.                      |
+| *x* *y*            | *x* followed by *y*                             |
+| *x* | *y*          | Either *x* or *y* is allowed here               |
+| [ *x* ]            | and optional *x*                                |    
+| { *x* }            | *x* can be repeated zero or more times          |    
+| ( *x* )            | parentheses                                     |    
+| *x* "c"...         | a list of at least one *x*s separated by "c"s   |
+| "a"..."z"          | a character between "a" and "z"                 |
+
+Whitespace is allowed between the elements of grammar rule. Whitespace is *required* between alphanumeric elements. E.g. between "var" and a NAME. The lexical rule WHITESPACE defines what whitespace is. Whitespace is *not* allowed between the elements of a lexical rule. "CR" and "TAB" are examples of special characters.
+
+The metasyntax written in itself:
+
+    Grammar     = Rule {Rule}.
+    Rule        = (GRAMRULE | LEXRULE) "=" {Options} ".".
+    Options     = Sequence "|"... .
+    Sequence    = {Group} | Group [KEYWORD "..."].
+    Group       = Element | "{" Options "}" | "[" Options "]" | "(" Options ")".
+    Element     = GRAMRULE | LEXRULE | KEYWORD | KEYWORD "..." KEYWORD.
+
+    KEYWORD     = '"' DQCHAR {DQCHAR} '"' | "'" SQCHAR {SQCHAR} "'".
+    LEXRULE     = UPPER {UPPER}.
+    GRAMRULE    = CAPITALIZED {CAPITALIZED}.
+    CAPITALIZED = UPPER LOWER {LOWER}.
+    WHITESPACE  = SPACE {SPACE}.
+
+    UPPER       = "A"..."Z"
+    LOWER       = "a"..."z"
+    DQCHAR      = " "..."&" | "("..."~".
+    SQCHAR      = " " | "!" | "#"..."~".
+    SPACE       = " " | CR | TAB.

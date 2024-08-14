@@ -56,7 +56,7 @@ interface LIST {
     fn takeHead (var list: t, var head: element) : bool;
 }
 
-module List <Element: COMPARABLE>: LIST where element = Element::t {
+module List <Element: COMPARABLE>: LIST with element = Element::t {
     type element;
     type t = ref struct { value: element; next: t; };
 

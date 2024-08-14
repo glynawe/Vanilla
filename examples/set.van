@@ -42,7 +42,7 @@ interface SET
     fn includes (set: t, element: element_t) : bool;
 }
 
-module Set <Element: COMPARABLE> : SET where  element_t = Element::t
+module Set <Element: COMPARABLE> : SET with  element_t = Element::t
 {
     type repr = struct { 
         head: element_t; 
