@@ -712,27 +712,30 @@ In the following table *RAM* refers to the computer's random access memory, addr
     }
 
 
-# Appendix: the syntax metalanguage
+# The Vanilla Syntax
 
-This is a description of the metalanguage used to describe the syntax of Vanilla in this document. It is Nicolas Wirth's ENBF with some extensions.
+The syntax of Vanilla is presented informally in this document, but is LR(1). [vanilla.mly](vanilla.mly) is an LR(1) skeleton grammar for Ocaml [Menhir](https://gallium.inria.fr/~fpottier/menhir/). [vanilla.lark](vanilla.lark) is an Earley grammar for Python [Lark](https://github.com/lark-parser/lark).   
 
-| Rule               | Meaning                                         |
+The following is an description of the metalanguage used to describe the syntax of Vanilla in this document. It is Nicolas Wirth's ENBF with some extensions:
+
+
+| Rule example       | Meaning                                         |
 |--------------------|-------------------------------------------------|
-| Capitalised        | The name of a grammar rule.                     |
-| ALLCAPS            | The name of a lexical rule or special character.|
-| "text"  or 'text'  | A keyword or punctuation symbol literal         |
-| Name = *x*.        | A grammar rule definition.                      |
+| RuleName           | The name of a grammar rule.                     |
+| LEXICALNAME        | The name of a lexical rule or special character.|
+| "text"  '@'  "#"   | Keyword or punctuation symbol literals          |
+| RuleName = *x*.    | A grammar rule definition.                      |
 | *x* *y*            | *x* followed by *y*                             |
-| *x* | *y*          | Either *x* or *y* is allowed here               |
-| [ *x* ]            | and optional *x*                                |    
-| { *x* }            | *x* can be repeated zero or more times          |    
-| ( *x* )            | parentheses                                     |    
-| *x* "c"...         | a list of at least one *x*s separated by "c"s   |
+| *x* \| *y*         | Either *x* or *y* is allowed here               |
+| [ *x* ]            | An optional *x*                                 |    
+| { *x* }            | An optional repetition of *x*                   |    
+| *x* ","...         | a non-empty list of *x* separated by literal ","|
 | "a"..."z"          | a character between "a" and "z"                 |
+| ( *x* )            | parentheses for metasyntax rules                |    
 
 Whitespace is allowed between the elements of grammar rule. Whitespace is *required* between alphanumeric elements. E.g. between "var" and a NAME. The lexical rule WHITESPACE defines what whitespace is. Whitespace is *not* allowed between the elements of a lexical rule. "CR" and "TAB" are examples of special characters.
 
-The metasyntax written in itself:
+This is the metasyntax written in itself: 
 
     Grammar     = Rule {Rule}.
     Rule        = (GRAMRULE | LEXRULE) "=" {Options} ".".
