@@ -23,7 +23,7 @@ Vanilla is an imperative systems programming language in the Algol family. Vanil
 - Nevertheless, ADT function calls resemble method calls. 
 - Parameterized modules (functors) take the place of C++ templates and Java generic classes.
 - Unlike generic classes, functors can supply whole groups of interrelated types.
-- There is no inheritance of implementation, but inclusion of trait functions is possible.
+- There is no inheritance of implementation, but inclusion of trait functions (mixins) is possible.
 
 **A quick comparison to SML and Ocaml.**
 
@@ -182,7 +182,7 @@ All interfaces and modules implicitly contain a set of *standard declarations* s
     ImportedName = ModuleName "::" NAME.
     GlobalName   = NAME | ImportedName. 
 
-`include` includes content from other modules or interfaces. The contents of an interface are its definitions, the contents of a module are its declarations. If an `include` has a `for` clause then only a selection of its contents are included. A module can be included into another module with a set of type constraints, this allows the included module to add a set of *trait* functions to those types. 
+`include` includes content from other modules or interfaces. The contents of an interface are its definitions, the contents of a module are its declarations. If an `include` has a `for` clause then only a selection of its contents are included. A module can be included into another module with a set of type constraints, this allows the included module to add a set of *mixin* functions to those types. 
 
 `import` includes content from other interfaces and modules, but each definition is given an *imported name*, which is the definition's name prefixed with the name of the interface. A *functor import* imports a new module created from a functor and a list of modules.
 
@@ -725,10 +725,11 @@ The following is an informal description of the metalanguage used to describe th
 
 | Rule example       | Meaning                                         |
 |--------------------|-------------------------------------------------|
-| RuleName           | The name of a grammar rule.                     |
-| LEXICALNAME        | The name of a lexical rule or special character.|
-| "text"  '@'  "#"   | Keyword or punctuation symbol literals          |
-| RuleName = *x*.    | A grammar rule definition.                      |
+| Name               | (mixed-case) The name of a grammar rule.                     |
+| NAME               | (uppercase) The name of a lexical element's rule. |
+| "text"  '@'  "#"   | Lexical elements. E.g. keywords or punctuation symbols |
+| CR LF TAB          | The names of special characters.                |
+| Name = *x*.        | A grammar rule definition.                      |
 | *x* *y*            | *x* followed by *y*                             |
 | *x* \| *y*         | Either *x* or *y* is allowed here               |
 | [ *x* ]            | An optional *x*                                 |    
@@ -737,7 +738,7 @@ The following is an informal description of the metalanguage used to describe th
 | "a"..."z"          | a character between "a" and "z"                 |
 | ( *x* )            | parentheses for metasyntax rules                |    
 
-Whitespace is allowed between grammar rule tokens. Whitespace is *required* between alphanumeric tokens. E.g. between "var" and a NAME. The lexical rule WHITESPACE defines what whitespace is. Whitespace is not allowed between the characters of a lexical token. "CR" and "TAB" are examples of special characters.
+Whitespace is allowed between grammar rule elements. Whitespace is *required* between alphanumeric elements. E.g. there must be whitespace between `var` and a variable name. The lexical rule `WHITESPACE` defines what whitespace is. Whitespace is *not* allowed between the characters of a lexical element. E.g. this is not a Vanilla variable name: `Endian Reversal`.  `CR`, `LF` and `TAB` are examples of special character names.
 
 This is the metasyntax written in itself: 
 
@@ -758,4 +759,4 @@ This is the metasyntax written in itself:
     LOWER       = "a"..."z"
     DQCHAR      = " "..."&" | "("..."~".
     SQCHAR      = " " | "!" | "#"..."~".
-    SPACE       = " " | CR | TAB.
+    SPACE       = " " | CR | LF | TAB.
