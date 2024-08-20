@@ -30,7 +30,9 @@ Vanilla is an imperative systems programming language in the Algol family. Vanil
 - The 'core language' is imperative, and lower-level. 
   - Variables are assignable, functions can have call-by-reference parameters.
   - There are no closures.
-- The 'module language' is simpler. Modules cannot be nested. 
+- The 'module language' is simpler. 
+  - Modules cannot be nested.
+  - Modules, interfaces (signatures) and functors must always be named. 
 - A functor instantiation can be included (opened) into a module.
 - A method call-like syntax makes module name prefixes less necessary. 
 
@@ -47,7 +49,7 @@ This very simplified program defines strings and generic sets as abstract data t
         include COMPARABLE;
         type Repr;
         type T = ref Repr;
-        fn Create (text: []byte): T;
+        fn New (text: []byte): T;
     }
 
     module String : STRING {
@@ -488,75 +490,6 @@ INTEGER literals have the type `int`. WORD literals have type `word`. BYTE liter
 
 BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer literals with the suffix `X` or character literals in single quotes. The range of BYTE literals is 0X to 255X. The range of WORD literals is 0 to `maxword`. WORD literals are integer literals with the suffix `LOWER`. 
 
-# Lexical Elements
-
-## Numeric and String Literals 
-
-    INTEGER  = DIGITS
-             | "0x" HEXDIGIT {HEXDIGIT}
-             | "0b" BINDIGIT {BINDIGIT}
-             | "0o" OCTDIGIT {OCTDIGIT}.
-
-    BYTE      = INTEGER "X" | CHARACTER.
-    WORD      = INTEGER "LOWER".
-    CHARACTER = "'" (STRCHAR | '"' | "\'" | ESCAPE) "'".
-
-    STRING    = '"' {STRCHAR | "'" | '\"' | ESCAPE} '"'.
-
-    FLOAT     = DIGITS "." DIGITS [EXPONENT].
-
-    EXPONENT = ("E" | "e") ["+" | "-"] DIGITS.
-    DIGITS   = DIGIT {DIGIT}.
-    DIGIT    = "0"..."9".
-    BINDIGIT = "0" | "1".
-    OCTDIGIT = "0"..."7".
-    HEXDIGIT = "0"..."9" | "A"..."F".
-    ESCAPE    = "\a" | "\b" | "\e" | "\f" | "\n" | "\t" | "\v" | "\0" | "\\"
-                "\x" HEXDIGIT HEXDIGIT.
-    STRCHAR   = " "..."~" except for "\", "'" and '"'.
-
-## Names
-
-    NAME    = LETTER {LETTER | DIGIT}.
-    LETTER  = "A"..."Z" | "a"..."z" | "_".
-    DIGIT   = "0"..."9".
-
-    ImportedName = ModuleName "::" NAME.
-    ModuleName   = NAME.
-
-## Keywords
-
-    Keywords = 
-        "break" | "case" | "const" | "default" | "else" | 
-        "for" | "if" | "import" | "include" | "interface" |
-        "module" | "fn" | "struct" |
-        "ref" | "return" | "type" | "let" | "var" | with" | 
-        "while".
-
-    StandardDefinitionIds =
-        "abs" | "assert" | "bool" | "byte" | "dec" | "exit" | "expect" |
-        "false" | "free" | "inc" | "int" | "land" | "len" | 
-        "lenint" | "lnot" | "lor" |  "lxor" | "main" | "maxint" | "maxword" | "minint" |
-        "new" | "null" | "float" | "sha" | "shl" | "shr" | "true" | "word" | "SYSTEM" |
-        "ADDRESS" | "GET" | "MOVE" | "PUT" | "LOC" | "SIZE" | "TYPE" | "TYPESIZE".
-
-Keywords and the names of standard declarations may not be used for any other purpose. 
-
-## Whitespace and comments
-
-    WHITESPACE = SPACER {SPACER}.
-    SPACER     = COMMENT | " " | CR | LF | TAB.
-    COMMENT    = "//" {" "..."~" | TAB} (CR | LF).
-
-Adjacent names and keywords must be separated by whitespace. Whitespace is allowed anywhere except inside lexical elements (syntactic elements between double quotes and elements with all-uppercase names). Comments begin with `//` and end at the end of the line. Comments are allowed anywhere that whitespace is allowed.
-
-## Source files
-
-    SourceFile = (Interface | Module) {Interface | Module}.
-
-A Vanilla source file contains one or more interfaces or modules. The names of the files are not significant, but the file extension `.van` should be used by convention.
-
-
 # The standard declarations
 
 The standard declarations are implicitly included at the start of every interface and module. Their names cannot be used for other purposes.
@@ -711,10 +644,81 @@ In the following table *RAM* refers to the computer's random access memory, addr
         }
     }
 
+# Lexical Elements
+
+## Numeric and String Literals 
+
+    INTEGER  = DIGITS
+             | "0x" HEXDIGIT {HEXDIGIT}
+             | "0b" BINDIGIT {BINDIGIT}
+             | "0o" OCTDIGIT {OCTDIGIT}.
+
+    BYTE      = INTEGER "X" | CHARACTER.
+    WORD      = INTEGER "LOWER".
+    CHARACTER = "'" (STRCHAR | '"' | "\'" | ESCAPE) "'".
+
+    STRING    = '"' {STRCHAR | "'" | '\"' | ESCAPE} '"'.
+
+    FLOAT     = DIGITS "." DIGITS [EXPONENT].
+
+    EXPONENT = ("E" | "e") ["+" | "-"] DIGITS.
+    DIGITS   = DIGIT {DIGIT}.
+    DIGIT    = "0"..."9".
+    BINDIGIT = "0" | "1".
+    OCTDIGIT = "0"..."7".
+    HEXDIGIT = "0"..."9" | "A"..."F".
+    ESCAPE    = "\a" | "\b" | "\e" | "\f" | "\n" | "\t" | "\v" | "\0" | "\\"
+                "\x" HEXDIGIT HEXDIGIT.
+    STRCHAR   = " "..."~" except for "\", "'" and '"'.
+
+## Names
+
+    NAME    = LETTER {LETTER | DIGIT}.
+    LETTER  = "A"..."Z" | "a"..."z" | "_".
+    DIGIT   = "0"..."9".
+
+    ImportedName = ModuleName "::" NAME.
+    ModuleName   = NAME.
+
+## Keywords
+
+    Keywords = 
+        "break" | "case" | "const" | "default" | "else" | 
+        "for" | "if" | "import" | "include" | "interface" |
+        "module" | "fn" | "struct" |
+        "ref" | "return" | "type" | "let" | "var" | with" | 
+        "while".
+
+    StandardDefinitionIds =
+        "abs" | "assert" | "bool" | "byte" | "dec" | "exit" | "expect" |
+        "false" | "free" | "inc" | "int" | "land" | "len" | 
+        "lenint" | "lnot" | "lor" |  "lxor" | "main" | "maxint" | "maxword" | "minint" |
+        "new" | "null" | "float" | "sha" | "shl" | "shr" | "true" | "word" | "SYSTEM" |
+        "ADDRESS" | "GET" | "MOVE" | "PUT" | "LOC" | "SIZE" | "TYPE" | "TYPESIZE".
+
+Keywords and the names of standard declarations may not be used for any other purpose. 
+
+## Whitespace and comments
+
+    WHITESPACE = SPACER {SPACER}.
+    SPACER     = COMMENT | " " | CR | LF | TAB.
+    COMMENT    = "//" {" "..."~" | TAB} (CR | LF).
+
+Adjacent names and keywords must be separated by whitespace. Whitespace is allowed anywhere except inside lexical elements (syntactic elements between double quotes and elements with all-uppercase names). Comments begin with `//` and end at the end of the line. Comments are allowed anywhere that whitespace is allowed.
+
+## Source files
+
+    SourceFile = (Interface | Module) {Interface | Module}.
+
+A Vanilla source file contains one or more interfaces or modules. The names of the files are not significant, but the file extension `.van` should be used by convention.
+
+
 
 # The Vanilla Syntax
 
 The syntax of Vanilla is presented informally in this document, but is LR(1). [vanilla.mly](vanilla.mly) is an LR(1) skeleton grammar for Ocaml [Menhir](https://gallium.inria.fr/~fpottier/menhir/). [vanilla.lark](vanilla.lark) is an Earley grammar for Python [Lark](https://github.com/lark-parser/lark).   
+
+## The syntax metalanguage
 
 The following is an informal description of the metalanguage used to describe the syntax of Vanilla in this document. It is Nicolas Wirth's ENBF with some extensions:
 
