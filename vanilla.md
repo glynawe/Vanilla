@@ -76,7 +76,7 @@ This very simplified program defines strings and generic sets as abstract data t
     module Set <Element: COMPARABLE> : SET with ElemT = Element::T {
         type ElemT;
         type Repr = struct { 
-            value: Element; 
+            value: ElemT; 
             next: T; 
         };
         let Empty: T = null;
@@ -420,7 +420,7 @@ Switch expressions and switch range constants must be integers or bytes. All con
 
 # Expressions
 
-    Expression = Disjunction "?" Disjunction ":" Expression.
+    Expression = Disjunction ["?" Disjunction ":" Expression].
     Disjunction = Conjunction {"||" Conjunction}. 
     Conjunction = Relation {"&&" Relation}.
     Relation = Sum [RelationOp Sum].
