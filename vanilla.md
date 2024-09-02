@@ -158,6 +158,8 @@ If a module is declared with a *public interface* then only the definitions in t
 
 A *functor* is a module parametrized by interfaces for modules that it may import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each interface argument specifies a minimum set of definitions that the actual module must provide. A functor *type constraint* specifies types from different argument modules that are to be equivalent (this is important when defining generic types). 
 
+A module without an explicit public interface is given a default interface that excludes its imported names.
+
 All interfaces and modules implicitly contain a set of *standard declarations* supplied by the Vanilla language. For example, the type `int` is a standard declaration.
 
 **Example**
@@ -174,21 +176,21 @@ All interfaces and modules implicitly contain a set of *standard declarations* s
 
 ### Inclusion
 
-    Inclusion     = Include | Import | FunctorImport.
-    Include       = "include" ModuleName [TypeConstraints] ["for" NAME ","...] ";".
-    Import        = "import" ModuleName ";".
-    FunctorImport = "import" ModuleName "=" FunctorName "<" ModuleName ","... ">" ";".
+    Inclusion = Include | Import.
+    Import    = "import" ModuleName ["=" Expansion] ";".
+    Include   = "include"  Expansion ";".
+    Expansion = [":" PublicInterface] FunctorName ["<" ModuleName ","... ">"] [typeconstraints]. 
 
     ImportedName = ModuleName "::" NAME.
     GlobalName   = NAME | ImportedName. 
 
-`include` includes content from other modules or interfaces. The contents of an interface are its definitions, the contents of a module are its declarations. If an `include` has a `for` clause then only a selection of its contents are included. A module can be included into another module with a set of type constraints, this allows the included module to add a set of *mixin* functions to those types. 
+`include` includes content from another module or interface. The contents of an interface are its definitions, the contents of a module are its declarations. `import` also includes content, but each definition is given an *imported name*, which is the definition's name prefixed with the name of the module. 
 
-`import` includes content from other interfaces and modules, but each definition is given an *imported name*, which is the definition's name prefixed with the name of the interface. A *functor import* imports a new module created from a functor and a list of modules.
+An `expansion` designates an existing module or interface, or it creates a new module from a functor. The functor's module arguments are replaced with the modules in the functor expansion's list of module names, and types from those modules are made equivalent according to the functor's type constraints. If a *public interface* is given then only the subset of definitions in that interface will be visible.
 
-A module or interface's *global names* are the names of all its definitions.
+A module's *global names* are the names of all its definitions.
 
-A module without an explicit public interface has a default interface that excludes its imported names.
+\[In Ocaml interfaces are called *module types*, in Standard ML interfaces are called *signatures*. Vanilla functors are *generative*; i.e. if two modules are made from the same functor then the abstract types that they contain are not equivalent. Vanilla modules are not *translucent*; if a concrete type definition is given inside a module but the type is abstract in its public interface to a module then that type becomes abstract.]
 
 
 # Constants
@@ -751,8 +753,7 @@ This is the metasyntax written in itself:
 
     KEYWORD     = '"' DQCHAR {DQCHAR} '"' | "'" SQCHAR {SQCHAR} "'".
     LEXRULE     = UPPER {UPPER}.
-    GRAMRULE    = CAPITALIZED {CAPITALIZED}.
-    CAPITALIZED = UPPER LOWER {LOWER}.
+    GRAMRULE    = {UPPER | LOWER} LOWER {UPPER | LOWER}.
     WHITESPACE  = SPACE {SPACE}.
 
     UPPER       = "A"..."Z"

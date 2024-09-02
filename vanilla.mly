@@ -114,11 +114,13 @@ MARK: Rule Types
 %type <unit> definition
 %type <unit> designator
 %type <unit> elements 
+%type <unit> expansion
 %type <unit> expr
 %type <unit> expression
 %type <unit> functioncall
 %type <unit> globalname
 %type <unit> importedname
+%type <unit> inclusion
 %type <unit> label
 %type <unit> limiter
 %type <unit> mathop
@@ -196,11 +198,7 @@ definition :
     { () }  
 | "fn" n=NAME pt=proctype ";"
     { () }  
-| "import" n=NAME ";"
-    { () }  
-| "import" n1=NAME "=" n2=NAME "<" ns=commas(name) ">" ";"
-    { () }  
-| "include" n=NAME tc=typeconstraints? ns=selection? ";"
+| inclusion
     { () }  
 | d=otherdefinitions 
     { () }
@@ -212,11 +210,7 @@ declaration:
     { () }  
 | l=boption("loop") "fn" n=NAME pt=proctype b=block
     { () }  
-| "import" n=NAME ";"
-    { () }  
-| "import" n1=NAME "=" n2=NAME "<" ns=commas(name) ">" ";"
-    { () }  
-| "include" n=NAME tc=typeconstraints? ns=selection? ";"
+| inclusion
     { () }  
 | d=otherdefinitions 
     { () }
@@ -229,9 +223,14 @@ otherdefinitions :
 | "type" NAME ";"
     { Defn_AbsType n @ $loc($1) }  
 
-selection 
-: "for" ns=commas(name)
-    { () }
+inclusion 
+: "include" expansion ";"
+| "import" NAME ";"       
+| "import" NAME "=" expansion ";" { () }
+
+expansion
+: NAME publicinterface? typeconstraints                      { () }
+| NAME "<" commas(NAME) ">" publicinterface? typeconstraints { () }
 
 varlist 
 : ns=commas(name) t=typesuffix

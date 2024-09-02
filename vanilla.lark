@@ -18,9 +18,8 @@ publicinterface : ":" NAME
 ?declaration: vardeclaration | procdeclaration | otherdefinitions
 ?otherdefinitions : inclusion | constdefinition | typedefinition
 
-inclusion : include | import
-import : "import" NAME ["=" parameterizedmodule] ";"
-include : "include" NAME [typeconstraints] ("for" NAME ("," NAME)*)? ";"
+inclusion : "import" NAME ["=" expansion] ";" | "include" expansion ";"
+expansion : NAME ["<" NAME ("," NAME)* ">"] [":" NAME] [typeconstraints] 
 
 parameterizedmodule : NAME "<" NAME ("," NAME)* ">"
 
