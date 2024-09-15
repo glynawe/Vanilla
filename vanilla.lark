@@ -11,7 +11,7 @@ interface : "interface" NAME "{" definition* "}"
 moduleparameters : "<" moduleparameter ("," moduleparameter)* ">"
 typeconstraints : "with" typeconstraint ("," typeconstraint)*
 moduleparameter : NAME ":" NAME
-typeconstraint : NAME "=" importedname
+typeconstraint : globalname "=" globalname
 publicinterface : ":" NAME
 
 ?definition : vardefinition | procdefinition | otherdefinitions

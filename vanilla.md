@@ -145,7 +145,7 @@ A Vanilla program may contain any number of interfaces, modules and functors. On
     PublicInterface  = [":" InterfaceName].
     ModuleParameter  = ModuleName ":" InterfaceName.
     TypeConstraints  = "with" TypeEquivalence ","... 
-    TypeEquivalence  = NAME "=" TypeName.
+    TypeEquivalence  = TypeName "=" TypeName.
     TypeName         = ModuleName "::" NAME.
 
     InterfaceName = NAME.
@@ -157,6 +157,16 @@ An *interface* contains a set of definitions. A *module* contains a set of defin
 If a module is declared with a *public interface* then only the definitions in that interface will be available when the module is imported. The module must contain declarations for all the definitions in its public interface. 
 
 A *functor* is a module parametrized by interfaces for modules that it may import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each interface argument specifies a minimum set of definitions that the actual module must provide. A functor *type constraint* specifies types from different argument modules that are to be equivalent (this is important when defining generic types). 
+
+Functor application is *generative*. Modules are distinct even in their interfaces are the same. In this example `A.t` and `B.t` are incompatible types:
+
+    interface S { type t; }
+    module M <A: S, B.t: S> { ... }  // A.t ≠ B.t
+
+However, a type constraint can be used to make `A.t` and `B.t` compatible:
+
+    interface S { type t; }
+    module M <A: S, B: S> with A.t = B.t { ... } 
 
 A module without an explicit public interface is given a default interface that excludes its imported names.
 

@@ -183,7 +183,8 @@ typeconstraints
 : "with" tc=commas(typeconstraint)
     { () }
 
-typeconstraint : n1=NAME "=" n2=importedname
+typeconstraint 
+: n1=globalname "=" n2=globalname
     { () }
 
 
