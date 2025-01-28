@@ -161,7 +161,7 @@ A *functor* is a module parametrized by interfaces for modules that it may impor
 Functor application is *generative*. Modules are distinct even in their interfaces are the same. In this example `A.t` and `B.t` are incompatible types:
 
     interface S { type t; }
-    module M <A: S, B.t: S> { ... }  // A.t ≠ B.t
+    module M <A: S, B: S> { ... }  // A.t ≠ B.t
 
 However, a type constraint can be used to make `A.t` and `B.t` compatible:
 
