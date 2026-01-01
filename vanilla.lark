@@ -82,7 +82,9 @@ range:      constant (".." constant)?
 default:    "default" ":" statements
 statements: statement+
 
-call: designator "(" (expression ("," expression)*)? ")" ";"
+call: designator "(" (argument ("," argument)*)? ")" ";"
+argument: expression -> valueargument 
+        | "var" designator -> referenceargument
 
 assignment : designator "=" expression ";"
         | designator mathop "=" expression ";"

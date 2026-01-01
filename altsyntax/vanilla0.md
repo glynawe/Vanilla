@@ -224,9 +224,9 @@ The above rule is also used to initialize local variables within procedure bodie
 
     DimensionList = Constant ","... .
 
-Arrays begin at element 0. An array with more than one length in its dimension list describes an array of arrays. I.e. `array a, b, c of t` stands for `array a of array b of array c of t`. An array with no dimension list is an *open array*. An open array is one dimensional, and its length can be found using the standard procedure `len`. An open array type may only be used as the type of a parameter or as the target of a reference type.
+Arrays begin at element 0. An array with more than one length in its dimension list describes an array of arrays. I.e. `array a, b, c of t` stands for `array a of array b of array c of t`. An array with no dimension list is an *open array*. An open array is one dimensional, and its length can be found using the standard procedure `len`. An open array type may only be used as the type of a parameter or as the target of a pointer type.
 
-A procedure type may only be used as the type of a parameter or as the target of a reference type.
+A procedure type may only be used as the type of a parameter or as the target of a pointer type.
 
 An *opaque type* is a type whose definition is not yet given. An opaque type can be used in an interface to denote an abstract type or generic type parameter, or in a module to allow a record type to contain references to itself. An opaque type must be defined before it can be used in a module, either by a full type definition or a functor type constraint.
 
@@ -404,11 +404,11 @@ The list of expressions in a function call are supplied to the designated proced
 | `and` `or`                | `boolean` | `boolean` | `boolean` |
 | `not`                     | `boolean` |           | `boolean` |
 
-*NumType* is `real`, `integer`, `word` or `byte`. *IntType* is `integer`, `word` or `byte`. *RefType* is any reference type. Operands and results must have the same type.
+*NumType* is `real`, `integer`, `word` or `byte`. *IntType* is `integer`, `word` or `byte`. *RefType* is any pointer type. Operands and results must have the same type.
 
 `x / y` and `x mod y` may raise an runtime error if *y* = 0. How that runtime error is handled is implementation-dependant behaviour.
 
-Relational operators compare `integer`, `word`, `byte`, `real` and reference types. They return `boolean` values. References may only be compared for equality and inequality. Two references are equal if they refer to the same variable or both are `nil`.
+Relational operators compare `integer`, `word`, `byte`, `real` and pointer types. They return `boolean` values. References may only be compared for equality and inequality. Two references are equal if they refer to the same variable or both are `nil`.
 
 ### Logical operators
 
@@ -547,7 +547,7 @@ The floating-point number representation is implementation-dependant. `integer` 
 | `true`   |                                                                   |
 | `false`  |                                                                   |
 
-The constant `nil` may be assigned to any reference variable. A variable containing `nil` must not be dereferenced.
+The constant `nil` may be assigned to any pointer variable. A variable containing `nil` must not be dereferenced.
 
 The values of `minint`, `maxint` and `lenint` are implementation-dependant.
 
@@ -603,7 +603,7 @@ The bit shift operators will shift in the opposite direction if *n* is negative.
 
 #### Garbage Collection Option
 
-The `new` procedure takes a type definition as its first parameter, finds memory space for an anonymous variable of that type, assigns a default initial value to the variable and returns a reference to it. If no memory space is available then a runtime error is raised. 
+The `new` procedure takes a type definition as its first parameter, finds memory space for an anonymous variable of that type, assigns a default initial value to the variable and returns a pointer to it. If no memory space is available then a runtime error is raised. 
 
 The `free` procedure does nothing. 
 
@@ -614,7 +614,7 @@ The `free` procedure does nothing.
     procedure ALLOCATE (size: integer): word;  // returns an address
     procedure DEALLOCATE (address: word);
 
-The `new` procedure calls `ALLOCATE(SYSTEM_TYPESIZE(T))` or `ALLOCATE(SYSTEM_TYPESIZE(T) * d)` to obtain the address of memory space for an anonymous variable of  type `T`. If that address is 0 then an runtime error is raised, otherwise the anonymous variable is assigned a default initial value and a reference to it is returned.
+The `new` procedure calls `ALLOCATE(SYSTEM_TYPESIZE(T))` or `ALLOCATE(SYSTEM_TYPESIZE(T) * d)` to obtain the address of memory space for an anonymous variable of  type `T`. If that address is 0 then an runtime error is raised, otherwise the anonymous variable is assigned a default initial value and a pointer to it is returned.
 
 The `free(r)` procedure calls `DEALLOCATE(SYSTEM_TYPE(r, integer))` to mark the space at *r* as free for reallocation.
 
@@ -646,18 +646,17 @@ If a particular computer requires language extensions, e.g. procedures that acce
 
 In the following table *RAM* refers the computer's random access memory, addressed by byte; *AnyType* is any type; *T* is a type definition given as a parameter.
 
-|  Definition                         | Function                                     |
+|  Definition                          | Function                                     |
 |--------------------------------------|----------------------------------------------|
-| `ADDRESS (var v: AnyType) : word`    | address of variable `v`                      |
+| `ADDRESS (var v: AnyType) : ref AnyType`    | pointer to variable `v`               |
 | `MOVE (a, b, n: integer)`            | move `n` bytes from `RAM[a]` to `RAM[b]`     |
 | `GET (a: word; var v: AnyType)`      | fill `v` with the bytes starting at `RAM[a]` |
 | `PUT (a: word; v: AnyType)`          | move the bytes of `v` to `RAM[a]`            |
 | `SIZE (v : AnyType) : integer`       | number of bytes in variable `v`              |
-| `REF (var v: AnyType) : ref AnyType` | make a reference to a variable or procedure  |
 | `TYPESIZE (T)  : word`               | number of bytes required by type `T`         |
 | `TYPE (x: AnyType; T) : T`           | give `x` the type `T`                        |
 
-`TYPE` changes the type of a value or variable without altering the underlying bits that represent it. E.g. it can be used to represent a reference as an word or a record as an array of bytes.
+`TYPE` changes the type of a value or variable without altering the underlying bits that represent it. E.g. it can be used to represent a pointer as an word or a record as an array of bytes.
 
 **Example**
 

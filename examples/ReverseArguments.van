@@ -98,7 +98,7 @@ module ReverseArguments {
         for (i = 1 : System::argc)
             list = list.prepend(String::make(System::argv[i]));
         var head: String;
-        while (list.takeHead(head))
+        while (list.takeHead(var head))
             head.print();
     }
 }

@@ -156,7 +156,7 @@ An *interface* contains a set of definitions. A *module* contains a set of defin
 
 If a module is declared with a *public interface* then only the definitions in that interface will be available when the module is imported. The module must contain declarations for all the definitions in its public interface. 
 
-A *functor* is a module parametrized by interfaces for modules that it may import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each interface argument specifies a minimum set of definitions that the actual module must provide. A functor *type constraint* specifies types from different argument modules that are to be equivalent (this is important when defining generic types). 
+A *functor* is a module parametrized by interfaces for modules that it may import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each interface parameter specifies a minimum set of definitions that the actual module must provide. A functor *type constraint* specifies types from different parameter modules that to be treated as being identical (this is important when defining generic types).
 
 Functor application is *generative*. Modules are distinct even if their interfaces are the same. In this example `A.t` and `B.t` are incompatible types:
 
@@ -196,11 +196,11 @@ All interfaces and modules implicitly contain a set of *standard declarations* s
 
 `include` includes content from another module or interface. The contents of an interface are its definitions, the contents of a module are its declarations. `import` also includes content, but each definition is given an *imported name*, which is the definition's name prefixed with the name of the module. 
 
-An `expansion` designates an existing module or interface, or it creates a new module from a functor. The functor's module arguments are replaced with the modules in the functor expansion's list of module names, and types from those modules are made equivalent according to the functor's type constraints. If a *public interface* is given then only the subset of definitions in that interface will be visible.
+An *expansion* designates an existing module or interface, or it creates a new module from a functor. The functor's module parameters are replaced with the modules in the functor expansion's list of module arguments, and types from those modules are made equivalent according to the functor's type constraints. If a *public interface* is given then only the subset of definitions in that interface will be visible.
 
 A module's *global names* are the names of all its definitions.
 
-\[In Ocaml interfaces are called *module types*, in Standard ML interfaces are called *signatures*. Vanilla functors are *generative*; i.e. if two modules are made from the same functor then the abstract types that they contain are not equivalent. Vanilla modules are not *translucent*; if a concrete type definition is given inside a module but the type is abstract in its public interface to a module then that type becomes abstract.]
+\[In Ocaml interfaces are called *module types*, in Standard ML interfaces are called *signatures*. Vanilla functors are *generative*; i.e. if two modules are made from the same functor then the abstract types that they contain are not equivalent. Vanilla modules are not *translucent*; if a concrete type definition is given inside a module but the type is abstract in its public interface to a module then that type remains abstract to other modules.]
 
 
 # Constants
@@ -278,7 +278,7 @@ The above rule is also used to initialize local variables within blocks.
 
     DimensionList = Constant ","... .
 
-Arrays begin at element 0. An array with no specified dimension is an *open array* which may have any length. An open array's length can be found using the standard function `len`. An open array type may only be used as the type of an argument or as the target of a pointer type.
+Arrays begin at element 0. An array with no specified dimension is an *open array* which may have any length. An open array's length can be found using the standard function `len`. An open array type may only be used as the type of an parameter or as the target of a pointer type.
 
 A function type may only be used as the type of an argument or as the target of a pointer type.
 
@@ -293,19 +293,17 @@ An *opaque type* is a type whose definition is not yet given. An opaque type can
     Parameters = ["var"] VariableList.
     ReturnType = ":" Type
 
-The argument names in function definitions are placeholders for describing each argument. They are not examined when determining type equivalence. However, arguments names are significant in function declarations.
+In a function type definition the parameter names are placeholders. They are not examined when determining type equivalence. However, parameter names are significant in function declarations.
 
 A function with a return type is an *expression function*. A function without a return type is a *procedure function*. An expression function may only be used in an expression. A procedure function may only be used as a statement.
 
-Assigning to a `var` argument assigns to the argument supplied by the function call, i.e. `var` arguments are passed by reference. Parameters without `var` are *value arguments*. Value arguments are immutable. *The compiler may pass record and array value arguments by reference.*
+Parameters with a `var` are *reference parameters*. Assigning to a `var` parameter assigns to the designator passed by the function call. Parameters without `var` are *value parameters*. Value parameters are immutable.
 
-An array of any length may be passed to an *open array* argument if their element types are the same. 
+An *open array* parameter may be passed an array of any length if their element types are the same. 
 
 A function definition can be used in a module to define it early. This allows sets of mutually recursive functions to be defined. (This is like providing a *function prototype* in C.) 
 
 A `loop` function must be tail-call optimizable. I.e. if the function calls itself recursively then that call must be optimizable into a loop. The compiler will reject the program if it cannot perform the optimisation. 
-
-*A value argument does not come with a guarantee that the argument will retain the same value all through the execution of its function. "Aliasing" is possible. If a global variable is given as an argument then assigning to that variable from within the function also changes the argument's value.*
 
 # Statements
 
@@ -326,7 +324,7 @@ Variables and constants defined in a block are only valid within that block, i.e
 
 If a local variable declaration has an initializer expression then the expression is evaluated first and then all the variables named in its list are assigned that value, otherwise it is initialized to a default value by the same rules used to initialize global variables. If a local declaration has an initializer expression but no type then it takes on the type of its initializer. `let` declares a *immutable variable*, a variable that can only be assigned once when it is declared.  
 
-A local definition may not have the same name as any definition in the same block or any surrounding block, including the function's argument names. I.e. local names may not be shadowed. 
+A local definition may not have the same name as any definition in the same block or any surrounding block, including the function's parameter names. I.e. local names may not be shadowed. 
 
 ## Assignments
 
@@ -346,9 +344,15 @@ Records of the same type and arrays of the same type and length may be assigned 
 
     FunctionCall = Designator "(" [Expression ","...] ")" ";"
 
-The designator part of a function call statement must designate a procedure function. 
+    Call        = "(" [Argument ","...] ")".
+    Argument    = Expression | "var" Designator.
 
-The list of expressions in a function call are passed to the designated function as arguments. A reference argument must be passed a designator of the same type. A value argument may be passed any expression, following the same rules as assignment.
+Pointer values are automatically dereferenced when they are the designator of a call, selection or subscript. The dereferencing operator `^` will not need to be used often, but is useful when comparing or assigning the targets of pointers.
+
+The list of arguments in a call is passed to the designated function as parameters. An argument must match its parameter's type. A reference parameter must be passed a `var` argument which is a designator of the same type. A value parameter may be passed an expression, following the same rules as assignment.
+
+The designator part of a function call statement must designate a procedure function, i.e it must not return a value. 
+
 
 ### "Method calls"
 
@@ -419,7 +423,7 @@ Switch expressions and switch range constants must be integers or bytes. All con
             kind = UNEXPECTED;
     }
 
-*Cases do not not "fall through", `break` is not necessary.*
+*Cases do not not "fall through".*
 
 *The highest range constant must be less than 256 higher than the lowest constant. Switch statements are most useful when implemented using jump tables, and there must be some limit to the size of those tables.*
 
@@ -427,7 +431,7 @@ Switch expressions and switch range constants must be integers or bytes. All con
 
     Return = "return" [Expression] ";".
 
-`return` returns from a function immediately. If the function has a return type specified in its definition then a return value must be supplied, and the function's execution must end with a return statement in every case.
+`return` returns from a function immediately. If the function has a return type specified in its definition then a return value must be supplied, and all the function's paths of execution must end with a return statement.
 
 
 # Expressions
@@ -458,12 +462,12 @@ Switch expressions and switch range constants must be integers or bytes. All con
 | unary `-` `+`              | *NumType* |           | *NumType* |
 | `==` `!=` `<` `<=` `>` `>=`| *NumType* | *NumType* | `bool`    |
 | `==` `!=`                  | *RefType* | *RefType* | `bool`    |
-| `&&` `||`                  | `bool`    | `bool`    | `bool`    |
+| `&&` `\|\|`                | `bool`    | `bool`    | `bool`    |
 | `!`                        | `bool`    |           | `bool`    |
 
 *NumType* is `real`, `int`, `word` or `byte`. *IntType* is `int`, `word` or `byte`. *RefType* is any pointer type. Operands and results must have the same type.
 
-`x / y` and `x % y` may raise a runtime error if *y* = 0. How that runtime error is handled is implementation-dependent behaviour.
+`x / y` and `x % y` will cause a runtime error if *y* = 0. How that runtime error is handled is implementation-dependent behaviour.
 
 Relational operators compare `int`, `word`, `byte`, `float` and pointer types. They return `bool` values. Pointers may only be compared for equality and inequality. Two pointers are equal if they refer to the same variable or both are `null`.
 
@@ -480,18 +484,17 @@ The `&&` and `||` operators are "shortcut operators", they are equivalent to the
 
 ## Designators, Function Calls
 
-    Designator = GlobalName {Selection | Subscript | Dereference | Call}.
+    Designator = GlobalName {Selection | Subscript | Dereference}.
+    Selection    = "." NAME.
+    Subscript    = "[" Expression "]".
+    Dereference  = "^".
 
-    Selection   = "." NAME.
-    Subscript   = "[" Expression ","... "]".
-    Dereference = "^".
-    Call        = "(" [Expression ","...] ")"
+Pointer designators are automatically dereferenced when they are the designator of a function call, selection or subscript. *Therefore the dereferencing operator `^` will not need to be used often, but is useful when comparing or assigning the targets of pointers.*
 
-Pointer values are automatically dereferenced when they are the designator of a call, selection or subscript. The dereferencing operator `^` will not need to be used often, but is useful when comparing or assigning the targets of pointers.
+    FunctionCall = Call.
+    Argument     = Expression | "var" Designator.
 
-The list of expressions in a call are supplied to the designated function as arguments. A by-reference argument must be supplied with a designator. A supplied argument must match its argument's type. 
-
-The "method call" syntax for procedure function calls may be used for expression function calls too. 
+Function call expressions follow the same rules as function call statements (see above). However, function call expressions return a value. The designator part of a function call must designate an expression function. 
 
 
 ## Literals
@@ -500,7 +503,7 @@ The "method call" syntax for procedure function calls may be used for expression
 
 INTEGER literals have the type `int`. WORD literals have type `word`. BYTE literals have the type `byte`. FLOAT literals have the type `float`. STRING literals  are anonymous immutable variables of type `[]byte`. A string literal's array has an additional element at the end containing `'\0'`. 
 
-BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer literals with the suffix `X` or character literals in single quotes. The range of BYTE literals is 0X to 255X. The range of WORD literals is 0 to `maxword`. WORD literals are integer literals with the suffix `LOWER`. 
+BYTE, WORD and INTEGER literals are distinct. BYTE literals are eitareher integer literals with the suffix `X` or character literals in single quotes. The range of BYTE literals is 0X to 255X. The range of WORD literals is 0 to `maxword`. WORD literals are integer literals with the suffix `LOWER`. 
 
 # The standard declarations
 
@@ -554,7 +557,7 @@ In the following tables *IntType* is an `int`, `word` or `byte` value, *NumType*
 
 `len(a, 0)` is the length of the first dimension of array `a`.
 
-`as` may raise a runtime error if its argument value ie outside its return type's range. `fits` can be used to determine if that will happen. How runtime errors are handled is implementation-dependent behaviour.
+`as` will cause a runtime error if its argument value ie outside its return type's range. `fits` can be used to determine if that will happen. How runtime errors are handled is implementation-dependent behaviour.
 
 ### Bit Manipulation Functions
 
@@ -582,7 +585,7 @@ The bit shift operators will shift in the opposite direction if *n* is negative.
 
 #### Garbage Collection Option
 
-The `new` function takes a type definition as its first argument, finds memory space for an anonymous variable of that type, assigns a default initial value to the variable and returns a pointer to it. If no memory space is available then a runtime error is raised. 
+The `new` function takes a type definition as its first argument, finds memory space for an anonymous variable of that type, assigns a default initial value to the variable and returns a pointer to it. If no memory space is available then a runtime error is caused. 
 
 The `free` function does nothing. 
 
@@ -593,17 +596,17 @@ The `free` function does nothing.
     fn ALLOCATE (size: int): word;  // returns an address
     fn DEALLOCATE (address: word);
 
-The `new` function calls `ALLOCATE(SYSTEM::TYPESIZE(T))` or `ALLOCATE(SYSTEM::TYPESIZE(T) * d)` to obtain the address of memory space for an anonymous variable of  type `T`. If that address is 0 then a runtime error is raised, otherwise the anonymous variable is assigned a default initial value and a pointer to it is returned.
+The `new` function calls `ALLOCATE(SYSTEM::TYPESIZE(T))` or `ALLOCATE(SYSTEM::TYPESIZE(T) * d)` to obtain the address of memory space for an anonymous variable of  type `T`. If that address is 0 then a runtime error is caused, otherwise the anonymous variable is assigned a default initial value and a pointer to it is returned. \[*This is the system used by Modula-2.*]
 
-The `free(r)` function calls `DEALLOCATE(SYSTEM::TYPE(r, int))` to mark the space at *r* as free for reallocation.
+The `free(r)` function calls `DEALLOCATE(SYSTEM::TYPE(r, word))` to mark the memory space pointed to by *r* as free for reallocation.
 
 ### Halting functions
 
 | Definition            | Function                          |
 |-----------------------|-----------------------------------|
 | `exit (n: int)`       | halt with exit code *n*           |
-| `assert (x: bool)`    | raise runtime error if not *x*    |
-| `expect (x: bool)`    | raise runtime error if not *x*    |
+| `assert (x: bool)`    | cause runtime error if not *x*    |
+| `expect (x: bool)`    | cause runtime error if not *x*    |
 
  `assert` is for testing if the program is correct. `expect` is for testing whether the program should continue, e.g. testing whether an operating system service is still functioning. *The execution of `assert` may optionally be turned off by the compiler.*
 
@@ -611,10 +614,9 @@ How runtime errors and exit codes are handled is implementation-dependent behavi
 
 **Example**
 
-    assert(String::length(text) > 0);    // The program created text.
-    status = Cstdio::fputs(text, file);
-    expect(status != Cstdio::EOF);       // The I/O system is working.
-    exit(0);                            // The program is finished now.
+    assert(String::length(text) > 0);    // There must always be some text at this point.
+    expect(Io::Status == Io::OKAY);      // The I/O system should still be working.
+    exit(0);                             // The program is finished now.
 
 
 # The SYSTEM Interface
@@ -632,7 +634,7 @@ In the following table *RAM* refers to the computer's random access memory, addr
 | `GET (a: word, var v: AnyType)`      | fill `v` with the bytes starting at `RAM[a]` |
 | `PUT (a: word, v: AnyType)`          | move the bytes of `v` to `RAM[a]`            |
 | `SIZE (v : AnyType) : int`           | number of bytes in variable `v`              |
-| `LOC (var v: AnyType) : ref AnyType` | make a pointer to a variable or function     |
+| `LOC (var v: AnyType) : ref AnyType` | return a pointer to a variable or function   |
 | `TYPESIZE (T)  : word`               | number of bytes required by type `T`         |
 | `TYPE (x: AnyType, T) : T`           | give `x` the type `T`                        |
 
@@ -708,7 +710,7 @@ In the following table *RAM* refers to the computer's random access memory, addr
         "new" | "null" | "float" | "sha" | "shl" | "shr" | "true" | "word" | "SYSTEM" |
         "ADDRESS" | "GET" | "MOVE" | "PUT" | "LOC" | "SIZE" | "TYPE" | "TYPESIZE".
 
-Keywords and the names of standard declarations may not be used for any other purpose. 
+Keywords and the names of standard definitions may not be used for any other purpose. 
 
 ## Whitespace and comments
 

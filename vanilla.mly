@@ -135,7 +135,6 @@ MARK: Rule Types
 %type <unit> publicinterface
 %type <unit> range
 %type <unit> repetition
-%type <unit> selection
 %type <unit> simple_statement
 %type <unit> statement
 %type <unit> structure
@@ -143,7 +142,7 @@ MARK: Rule Types
 %type <unit> structureitems
 %type <unit> typeconstraint
 %type <unit> typeconstraints
-%type <unit> typedef
+%type <unit list> typedef
 %type <unit> typesuffix
 %type <unit> varlist
 
@@ -152,7 +151,7 @@ MARK: Rule Types
 
 %%
 
-%inline commas(X) : xs=separated_nonempty_list(",", X) { xs }
+%inline commas(X) : xs=separated_nonempty_list(",", X) { () }  (* xs *)
 
 
 /* ---------------------------------------------------------------------------
@@ -311,8 +310,8 @@ block
     { () }
 
 statement
-: s=open_statement { s }
-| s=closed_statement { s }
+: s=open_statement { () }
+| s=closed_statement { () }
 
 open_statement
 : "if" "(" e=expression ")" s1=statement  
@@ -328,7 +327,7 @@ open_statement
 
 closed_statement
 : s=simple_statement 
-    { s }
+    { () }
 | "if" "(" e=expression ")" s1=closed_statement "else" s2=closed_statement  
     { () }
 | n1=label? "for" "(" n2=NAME "=" e1=expression limiter expression ")" s=closed_statement  
@@ -474,9 +473,14 @@ expr
     { () }
 
 functioncall 
-: d=designator "(" es=separated_list(",", expression) ")"  
+: d=designator "(" es=separated_list(",", argument) ")"  
     { () }
 
+argument
+: e=expression  
+    { () }
+| "var" d=designator
+    { () }
 
 /* ---------------------------------------------------------------------------
 MARK: Designators 
