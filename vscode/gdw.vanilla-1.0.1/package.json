@@ -2,9 +2,9 @@
   "name": "vanilla",
   "displayName": "vanilla",
   "description": "Language support for Vanilla.",
-  "version": "0.0.1",
+  "version": "1.0.1",
   "engines": {
-    "vscode": "^1.86.0"
+    "vscode": "^1.110.0"
   },
   "categories": [
     "Programming Languages"
@@ -13,16 +13,12 @@
     "languages": [{
       "id": "vanilla",
       "aliases": ["Vanilla", "vanilla"],
-      "extensions": ["van"],
+      "extensions": [".van"],
       "configuration": "./language-configuration.json"
     }],
     "grammars": [{
       "language": "vanilla",
       "scopeName": "source.vanilla",
-      "path": "./syntaxes/vanilla.tmLanguage.json"
-    },{
-      "language": "vanillaC",
-      "scopeName": "source.vanillaC",
       "path": "./syntaxes/vanilla.tmLanguage.json"
     }]
   }

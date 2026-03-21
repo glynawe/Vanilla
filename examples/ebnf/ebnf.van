@@ -1,0 +1,13 @@
+module ebnf {
+    import IO;
+    import Ebnf;
+
+    fn main () {
+        var path: [512] byte;
+        expect(IO::Argc() == 2);
+        IO::Argv(var path, 1);
+        let input = IO::Open(path, "r");
+        expect(input.Readable());
+        Ebnf::Run(input);
+    }
+}

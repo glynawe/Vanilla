@@ -4,13 +4,13 @@
 	"patterns": [
 		{
 			"name": "keyword.other.vanilla",
-			"match": "\\b(break|case|const|default|else|fn|for|if|import|include|interface|let|loop|module|return|struct|type|var|with|while)\\b"
+			"match": "\\b(break|case|const|default|else|fn|for|if|import|include|interface|let|loop|module|match|object|return|ref|struct|switch|type|var|with|while)\\b"
 		},{
 			"name": "support.type.vanilla",
 			"match": "\\b(bool|byte|int|float|word)\\b"
 		},{
 			"name": "support.function.vanilla",
-			"match": "\\b(abs|as|assert|expect|exit|fits|len|lnot|land|lor|lxor|shl|shr|sha|SYSTEM|ADDR|GET|MOVE|PUT|SIZE|TYPE|REF)\\b"
+			"match": "\\b(abs|as|assert|expect|exit|fits|free|instance|getbit|len|lnot|land|lor|lxor|new|shl|shr|sha|setbit|SYSTEM|ADDRESS|ALLOCATE|DEALLOCATE|LOC|GET|MOVE|PUT|SIZE|TYPE|TYPESIZE|REF)\\b"
 		},{
 			"name": "constant.language.vanilla",
 			"match": "\\b(true|false|null|maxint|minint|lenint)\\b"

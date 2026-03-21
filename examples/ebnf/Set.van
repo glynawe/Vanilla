@@ -1,0 +1,76 @@
+interface SET {
+    import SYSTEM;
+
+    const Size = 512;
+
+    const WordSize = SYSTEM::TYPESIZE(word) * 8;
+    const ArraySize = Size / WordSize;
+
+    type T = [ArraySize] word;
+
+    let empty: T;
+    fn union (a: T, b: T) : T;
+    fn intersection (a: T, b: T) : T;
+    fn excluding (self: T, element: int) : T;
+    fn including (self: T, element: int) : T;
+    fn singleton (self: T, element: int) : T;
+    fn equals (self: T, other: T) : bool;
+    fn isempty (self: T) : bool;
+    fn contains (self: T, element: int): bool;
+}
+
+
+module Set : SET {
+    include SET;
+
+    let empty: T = {};
+
+    fn equals (self: T, other: T) : bool {
+        for (i = 0 : ArraySize)
+            if (self[i] != other[i]) return false;
+        return true;
+    }
+
+    fn empty (self: T) : bool {
+        for (i = 0 : ArraySize)
+            if (self[i] != 0L) return false;
+        return true;
+    }
+
+    fn contains (self: T, element: int): bool {
+        expect(element >= 0 && element < Size);
+        return getbit(self[element / WordSize], element % WordSize);
+    }
+
+    fn excluding (self: T, element: int) : T {
+        expect(element >= 0 && element < Size);
+        var result = self;
+        setbit(result[element / WordSize], element % WordSize, false);
+        return result;
+    }
+
+    fn including (self: T, element: int) : T {
+        expect(element >= 0 && element < Size);
+        var result = self;
+        setbit(self[element / WordSize], element % WordSize, true);
+        return result;
+    }
+
+    fn singleton (self: T, element: int) : T {
+        return empty.including(element);
+    }
+
+    fn union (self: T, b: T) : T{
+        var result: T;
+        for (i = 0 : ArraySize)
+            result[i] = lor(self[i], b[i]);
+        return result;
+    }
+
+    fn intersection (self: T, b: T) : T {
+        var result: T;
+        for (i = 0 : ArraySize)
+            result[i] = land(self[i], b[i]);
+        return result;
+    }
+}

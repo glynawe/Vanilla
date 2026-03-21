@@ -9,6 +9,7 @@ Vanilla is an imperative systems programming language in the Algol family. Vanil
 - Pointers cannot point to arbitrary locations, just to allocated objects. 
 - Pointers are not used to implement arrays. Arrays are a type. 
 - Array argument lengths are always known. 
+- Arrays can be copied by assignment and can be returned from functions.
 - The pointer dereference operator is postfix.
 - Types are inferred when declaring new variables. 
 - There is a smaller selection of numeric types. 
@@ -238,8 +239,8 @@ A structured constant can be used to initialize global variables of any type, es
     StructureList      = "{" StructureItems ","... "}".
     StructureItems     = StructuredConstant ["for" Constant].
 
-A structure list can be assigned to a record or array variable. Each item from a structure list is assigned to
-an element of the record or array in order. For records that is that order used its definition. If those
+A structure list can be assigned to a structure or array variable. Each item from a structure list is assigned to
+an element of that variable in order. For structures that is that order used in their definitions. If those
 elements are records or arrays then this rule is applied recursively.
 
 A `for` clause indicates that an item should be repeated a number of times within its structure list.
@@ -259,20 +260,24 @@ A string literal can be used to declare a byte array. If it is shorter than the 
 
 A variable definition has an implicit declaration if one is not given in a program's modules. 
 
-An implicit variable declaration has a default value. Numeric variables are initialized to zero. Pointer values are initialized to `null`. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero or null.
+An implicit variable declaration has a default value. Numeric variables are initialized to zero. Pointer, procedure and object values are initialized to `null`. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero or null.
 
 The above rule is also used to initialize local variables within blocks.
 
 
 # Types
 
-    TypeDefinition = "type" NAME "=" Type | OpaqueType.
-    OpaqueType     = "type" NAME.
+    TypeDefinition = "type" NAME "=" Type ";" | OpaqueType.
+    OpaqueType     = "type" NAME ";".
 
     Type = GlobalName
          | "[" Constant "]" Type
          | "[" "]" Type
-         | "struct" "{" {VariableList ";"} "}"
+         | "struct" "{" {VariableList ";"} "}
+         | ReferenceType. 
+         
+    ReferenceType =
+         | "object" [GlobalName] [ "{" {VariableList ";"} "}" ]
          | "ref" Type
          | "fn" FnType.
 
@@ -280,9 +285,47 @@ The above rule is also used to initialize local variables within blocks.
 
 Arrays begin at element 0. An array with no specified dimension is an *open array* which may have any length. An open array's length can be found using the standard function `len`. An open array type may only be used as the type of an parameter or as the target of a pointer type.
 
-A function type may only be used as the type of an argument or as the target of a pointer type.
+A reference type may be `null`.
 
 An *opaque type* is a type whose definition is not yet given. An opaque type can be used in an interface to denote an abstract type, or in a module to allow a record type to contain pointers to itself. An opaque type must be defined before it can be used in a module, either by a full type definition or a functor type constraint.
+
+A pointer to an undeclared type can be declared provided that that type is declared later in the same module.
+
+**Example:**
+
+    type Tree = ref Node;
+    type Node = record { left, right: Tree; };
+
+## Objects
+
+An `object` value behaves like a pointer to a `struct` value, except that it carries a hidden tag that allows its type to be determined at runtime. Objects are for to creating variant types and tree-structured data. [The `object` type is the Oberon 07 language's *extensible record* type.]
+
+An object type can extend a parent object type. An object variable may be assigned objects with extentions of the variable's type. Any object variable may be assigned `null`. 
+
+The name of an object type is a function that returns a new object of that type with its fields initialised with each of the function's arguments.
+
+(See also the `match` statement.)
+
+**Example:**
+
+    type Expression = object;
+    type Value      = object Expression { value: int; };
+    type BinOp      = object Expression { left, right: ref Expression; };
+    type Plus       = object BinOp;
+    type Times      = object BinOp;
+
+    fn increment (e: Expression) : Expression {
+        return Plus(e, Value(1));
+    }
+
+    fn evalulate (e: Expression) : int {
+        match (e) {
+            case (v: Value): return v;
+            case (p: Plus):  return evalulate(p.left) + evalulate(p.right);
+            case (t: Times): return evalulate(t.left) * evalulate(t.right);
+        }
+    }
+
 
 # Functions
 
@@ -337,7 +380,7 @@ A local definition may not have the same name as any definition in the same bloc
 
 The expression is evaluated  then its value is assigned to the designator. The designator must have the same type as the expression. The `++`, `--`, `+=` etc. operators have the same meaning as in C, but may only be used as statements.
 
-Records of the same type and arrays of the same type and length may be assigned to each other.
+Structures of the same type and arrays of the same type and length may be assigned to each other.
 
 
 ## Function Calls
@@ -371,7 +414,7 @@ list.head.add(value)
 
     If = "if" "(" Expression ")" Statement ["else" Statement].
 
-*The "dangling else" ambiguity is resolved in the usual way: if there are two open `if` statements then an `else` clause attaches to the innermost one.*  
+*The "dangling else" ambiguity is resolved in the usual way: if there are two nested `if` statements then an `else` clause attaches to the innermost one.*  
 
 ## Looping Statements
 
@@ -427,6 +470,37 @@ Switch expressions and switch range constants must be integers or bytes. All con
 
 *The highest range constant must be less than 256 higher than the lowest constant. Switch statements are most useful when implemented using jump tables, and there must be some limit to the size of those tables.*
 
+## Match Statements
+
+A `match` statement chooses statements to execute based on the runtime type of an object. An argument variable of that type is declared in the scope of each case branch. These arguments follow the same rules as function argument passing. E.g. the `var` version of the `match` statement creates assignable arguments that alias the `match` statement's designator. 
+
+If the match's expression is `null` then the `case null:` branch is excuted.
+
+    Match = "match" "(" (Expression | "var" Designator) ")" "{" 
+                {"case" "(" Name ":" GlobalName ")" ":" Statements} 
+                ["case" "null" ":" Statements] 
+                ["default" ":" Statements] 
+            "}".
+
+**Example**
+
+    fn sum (node: Tree) : int { 
+        match (node) {
+            case (n: Node):   return n.value;
+            case (b: Branch): return sum(b.child);
+            case (f: Fork):   return sum(f.left) + sum(f.right);
+            null:             return 0;
+        }
+    }
+
+    fn inc (var node: Tree) { 
+        match (var node) {
+            case (n: Node):   n.value += 1;
+            case (b: Branch): inc(b.child);
+            case (f: Fork):   inc(f.left); inc(f.right);
+        }
+    }
+
 ## Return Statements
 
     Return = "return" [Expression] ";".
@@ -464,8 +538,9 @@ Switch expressions and switch range constants must be integers or bytes. All con
 | `==` `!=`                  | *RefType* | *RefType* | `bool`    |
 | `&&` `\|\|`                | `bool`    | `bool`    | `bool`    |
 | `!`                        | `bool`    |           | `bool`    |
+| `==` `!=`                  | *RefType* | *RefType* | `bool`    |
 
-*NumType* is `real`, `int`, `word` or `byte`. *IntType* is `int`, `word` or `byte`. *RefType* is any pointer type. Operands and results must have the same type.
+*NumType* is `real`, `int`, `word` or `byte`. *IntType* is `int`, `word` or `byte`. *RefType* is any reference type. Operands and results must have the same type.
 
 `x / y` and `x % y` will cause a runtime error if *y* = 0. How that runtime error is handled is implementation-dependent behaviour.
 
@@ -567,6 +642,8 @@ In the following tables *IntType* is an `int`, `word` or `byte` value, *NumType*
 | `land (x, y: IntType) : IntType`          | bitwise logical AND                       |
 | `lor (x, y: IntType) : IntType`           | bitwise logical inclusive-OR              |
 | `lxor (x, y: IntType) : IntType`          | bitwise logical exclusive-OR              |
+| `setbit (x: IntType, n: int, v: bool)`    | set bit `n` of `x` to `v`                 |
+| `getbit (x: IntType, y: int) : bool`      | true if bit `n` of `x` is set             |
 | `shl (x: IntType, n: int) : IntType`      | left-shift bits of `x` by `n`             |
 | `shr (x: IntType, n: int) : IntType`      | right-shift bits of `x` by `n`            |
 | `sha (x: IntType, n: int) : IntType`      | arithmetic right-shift bits of `x` by `n` |
@@ -638,7 +715,7 @@ In the following table *RAM* refers to the computer's random access memory, addr
 | `TYPESIZE (T)  : word`               | number of bytes required by type `T`         |
 | `TYPE (x: AnyType, T) : T`           | give `x` the type `T`                        |
 
-`TYPE` changes the type of a value or variable without altering the underlying bits that represent it. E.g. it can be used to represent a pointer as a word or a record as an array of bytes.
+`TYPE` changes the type of a value or variable without altering the underlying bits that represent it. E.g. it can be used to represent a pointer as a word or a structure as an array of bytes.
 
 **Example**
 
@@ -668,7 +745,7 @@ In the following table *RAM* refers to the computer's random access memory, addr
              | "0o" OCTDIGIT {OCTDIGIT}.
 
     BYTE      = INTEGER "X" | CHARACTER.
-    WORD      = INTEGER "LOWER".
+    WORD      = INTEGER "L".
     CHARACTER = "'" (STRCHAR | '"' | "\'" | ESCAPE) "'".
 
     STRING    = '"' {STRCHAR | "'" | '\"' | ESCAPE} '"'.
@@ -699,11 +776,11 @@ In the following table *RAM* refers to the computer's random access memory, addr
     Keywords = 
         "break" | "case" | "const" | "default" | "else" | 
         "for" | "if" | "import" | "include" | "interface" |
-        "module" | "fn" | "struct" |
+        "module" | "fn" | "struct" | "object" | "match" |
         "ref" | "return" | "type" | "let" | "var" | with" | 
         "while".
 
-    StandardDefinitionIds =
+    StandardDefinitionNames =
         "abs" | "assert" | "bool" | "byte" | "dec" | "exit" | "expect" |
         "false" | "free" | "inc" | "int" | "land" | "len" | 
         "lenint" | "lnot" | "lor" |  "lxor" | "main" | "maxint" | "maxword" | "minint" |

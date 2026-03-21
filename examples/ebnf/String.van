@@ -1,0 +1,33 @@
+module String {
+    fn Length (string: []byte) : int {
+        for (i = 0 : len(string))
+            if (string[i] == '\0') return i;
+        return len(string);
+    }
+
+    fn Assign (var dest: []byte, src: []byte) {
+        for (i = 0 : len(src)) {
+            expect(i < len(dest));
+            dest[i] = src[i];
+            if (src[i] == '\0') return;
+        }
+    }
+
+    fn Ref (string: []byte) : ref []byte {
+        var s = new(byte, Length(string));
+        Assign(s^, string);
+        return s;
+    }
+
+    fn IsAlpha (c: byte) : bool {
+        return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z';
+    }
+
+    fn IsBreak (c: byte) : bool {
+        return c == '\n' ||  c == '\r' ||  c == '\f';
+    }
+
+    fn IsWhitespace (c: byte) : bool {
+        return c == ' ' ||  c == '\t' || IsBreak(c);
+    }
+}

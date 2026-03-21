@@ -1,0 +1,23 @@
+interface IO {
+    type File;
+
+    let Stdout: File;
+    let Stdin: File;
+
+    fn Open (path: []byte, flags: []byte) : File;
+    fn Close (file: File);
+
+    fn Writeable (file: File) : bool;
+    fn Readable (file: File) : bool;
+
+    fn String (file: File, string: []byte);
+    fn Int (file: File, value: int, width: int);
+    fn Char (file: File, value: byte);
+    fn Ln (file: File);
+    fn Getchar (file: File) : int;
+
+    fn Argc () : int;
+    fn Argv (var s: []byte, i: int);
+
+    const EOF = -1;
+}

@@ -1,0 +1,51 @@
+module Errors {
+    import IO;
+    import String;
+
+    var MaxErrors: int = 10;
+    var NumErrors: int = 0;
+    var Filename: [512] byte = "";
+
+    fn Okay () : bool {
+        return NumErrors == 0;
+    }
+
+    fn Start (filename: []byte, maxerrors: int) {
+        String::Assign(Filename, filename);
+        MaxErrors = maxerrors;
+        NumErrors = 0;
+    }
+
+    fn Finish () {
+        if (NumErrors > 0) {
+            IO::Stderr.String("*** ");
+            IO::Stderr.Int(NumErrors, 1);
+            IO::Stderr.String(" errors ***");
+            IO::Stderr.Ln;
+            exit(1);
+        }
+    }
+
+    fn Print (line, column: int, message: []byte)
+    {
+        IO::Stderr.String(Filename);
+        IO::Stderr.Char(":");
+        IO::Stderr.Int(line, 0);
+        IO::Stderr.Char(":");
+        IO::Stderr.Int(column, 0);
+        IO::Stderr.String(": ");
+        IO::Stderr.String(message);
+        IO::Stderr.Ln;
+    }
+
+    fn Fatal (message: []byte) {
+        Print(0, 0, message);
+        Finish;
+    }
+
+    fn Error (line, column: int, message: []byte) {
+        Print(line, column, message);
+        NumErrors++;
+        if (NumErrors > MaxErrors) Finish();
+    }
+}
