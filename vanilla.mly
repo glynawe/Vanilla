@@ -38,6 +38,7 @@ MARK: Operators
 %token OR "||"
 %token SUB "-"  
 %token QUESTION "?"
+%token ARROW "->"
 
 %left "||"
 %left "&&"
@@ -86,9 +87,11 @@ MARK: Keywords
 %token INTERFACE "interface"
 %token LET "let"
 %token LOOP "loop"
+%token MATCH "match"
 %token MODULE "module"
+%token OBJECT "object"
 %token NEW "new"
-%token NIL "nil"
+%token NULL "null"
 %token REF "ref"
 %token RETURN "return"
 %token STRUCT "struct"
@@ -106,8 +109,10 @@ MARK: Keywords
 MARK: Rule Types 
 *)
 
+%type <unit> argument
 %type <unit> block
 %type <unit> case
+%type <unit> callchain
 %type <unit> closed_statement
 %type <unit> declaration
 %type <unit> default
@@ -117,13 +122,16 @@ MARK: Rule Types
 %type <unit> expansion
 %type <unit> expr
 %type <unit> expression
-%type <unit> functioncall
+%type <unit> fields
+%type <unit> fnbody
 %type <unit> globalname
-%type <unit> importedname
 %type <unit> inclusion
 %type <unit> label
 %type <unit> limiter
 %type <unit> mathop
+%type <unit> matchcase
+%type <unit> matchparameter
+%type <unit> methodname
 %type <unit> moduledecl
 %type <unit> moduleparameter
 %type <unit> name
@@ -142,6 +150,7 @@ MARK: Rule Types
 %type <unit> structureitems
 %type <unit> typeconstraint
 %type <unit> typeconstraints
+%type <unit list> structuredtypedef
 %type <unit list> typedef
 %type <unit> typesuffix
 %type <unit> varlist
@@ -204,28 +213,36 @@ definition :
     { () }
 
 declaration: 
-| "var" ns=commas(name) t=typesuffix sc=structuredconstant? ";"
+| "var" ns=commas(name) t=typesuffix "=" sc=structuredconstant? ";"
     { () }  
-| "let" commas(name) typesuffix structuredconstant ";"
+| "let" commas(name) typesuffix "=" structuredconstant ";"
     { () }  
-| l=boption("loop") "fn" n=NAME pt=proctype b=block
+| l=boption("loop") "fn" n=NAME pt=proctype b=fnbody
     { () }  
 | inclusion
     { () }  
 | d=otherdefinitions 
     { () }
 
+fnbody
+: b=block
+    { () }
+| "=" e=expression ";"
+    { () }
+
 otherdefinitions : 
 | "const" NAME "=" e=expression ";"
     { () }  
-| "type" n=NAME "=" t=typedef ";"
+| "type" n=NAME "=" t=structuredtypedef ";"
     { () }  
 | "type" NAME ";"
     { Defn_AbsType n @ $loc($1) }  
 
 inclusion 
 : "include" expansion ";"
+    { () }
 | "import" NAME ";"       
+    { () }
 | "import" NAME "=" expansion ";" { () }
 
 expansion
@@ -262,12 +279,6 @@ MARK: Types
 typedef
 : n=globalname
     { () }
-| "[" e=expression "]" t=typedef
-    { () }
-| "[" "]" t=typedef
-    { () }
-| "struct" "{" es=elements* "}"
-    { () }
 | "ref" t=typedef
     { () }
 | "byte"
@@ -279,6 +290,20 @@ typedef
 | "float"
     { () }
 | "bool"
+    { () }
+| "[" e=expression "]" t=typedef
+    { () }
+| "[" "]" t=typedef
+    { () }
+
+structuredtypedef
+: t=typedef
+    { () }
+| "struct" fs=fields
+    { () }
+| "object" fs=fields?
+    { () }
+| "object" p=globalname fs=fields?
     { () }
 | "fn" pt=proctype
     { () }
@@ -295,6 +320,10 @@ parameters
 
 elements
 : vs=varlist ";"
+    { () }
+
+fields
+: "{" elements+ "}"
     { () }
 
 typesuffix : ":" t=typedef
@@ -357,7 +386,9 @@ simple_statement
     { () }
 | "switch" "(" e=expression ")" "{" cs=case* d=default? "}"
     { () }
-| f=functioncall ";"
+| "match" "(" a=argument ")" "{" cs=matchcase* d=default? "}"
+    { () }
+| d=designator callchain ";"
     { () }
 | d=designator "=" e=expression ";"
     { () }
@@ -394,7 +425,15 @@ default
 : "default" ":" ss=statement+
     { () }
 
+matchcase
+: "case" matchparameter ":" ss=statement+
+    { () }
 
+matchparameter
+: "null"
+    { () }
+| "(" n=NAME ":" t=globalname ")"
+    { () }
 
 /* ---------------------------------------------------------------------------
 MARK: Expressions 
@@ -425,11 +464,9 @@ expr
     { () }
 | "false"
     { () }
-| "nil"
+| "null"
     { () }
-| d=designator
-    { () }
-| f=functioncall
+| d=designator callchain?
     { () }
 | "!" e=expr
     { () }
@@ -472,15 +509,6 @@ expr
 | "TYPE" "(" e=expression "," t=typedef ")"
     { () }
 
-functioncall 
-: d=designator "(" es=separated_list(",", argument) ")"  
-    { () }
-
-argument
-: e=expression  
-    { () }
-| "var" d=designator
-    { () }
 
 /* ---------------------------------------------------------------------------
 MARK: Designators 
@@ -501,12 +529,26 @@ name
     { () } 
 
 globalname 
-: n=name
+: n=NAME
     { () } 
-| n=importedname
-    { () } 
-
-importedname 
-: n1=name "::" n2=name
+| n1=NAME "::" n2=NAME
     { () }
 
+
+/* ---------------------------------------------------------------------------
+MARK: Calls 
+*/
+
+callchain
+: methodname? "(" es=separated_list(",", argument) ")" callchain?
+    { () }
+
+methodname
+: "->" n=NAME
+    { () }
+
+argument
+: e=expression  
+    { () }
+| "var" d=designator
+    { () }

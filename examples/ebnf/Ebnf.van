@@ -30,7 +30,7 @@ var NumDefinitions: int = 0;
 var Terminals: [MaxTerminals] Name;
 var NumTerminals: int = 0;
 
-fn MakeTerminal (l: int, c: int, symbol: Name) : Terminal {
+fn MakeTerminal (l, c: int, symbol: Name) : Terminal {
     var i = 0;
     while (i < NumTerminals && s != Terminals[i]) i++;
     if (i == NumTerminals) {
@@ -45,7 +45,7 @@ let Epsilon:   Terminal = MakeTerminal(0, 0, "ɛ");
 let End:       Terminal = MakeTerminal(0, 0, "$");
 let Undefined: Terminal = MakeTerminal(0, 0, "?");
 
-fn MakeDefinition (l: int, c: int, name: Name) : Definition
+fn MakeDefinition (l, c: int, name: Name) : Definition
 {
     var i = 0;
     while (i < NumDefinitions && s != Definitions[i].name) i++;
@@ -57,7 +57,7 @@ fn MakeDefinition (l: int, c: int, name: Name) : Definition
     return Definitions[i];
 }
 
-fn MakeNonterminal (l: int, c: int, name: Name) : Nonterminal
+fn MakeNonterminal (l, c: int, name: Name) : Nonterminal
 {
     return Nonterminal(l, c, MakeDefinition(l, c, name));
 }
@@ -73,35 +73,35 @@ fn ParseFactor (lexer: Lexer.T) : Expression
 {
     // factor = NAME | STRING
     //        | "[" alternatives "]" | "{" alternatives "}" | "(" alternatives ")".
-    let l = lexer.Line();
-    let c = lexer.Column();
+    let l = lexer->Line();
+    let c = lexer->Column();
     var e: Expression;
-    switch (lexer.Lexeme()) {
+    switch (lexer->Lexeme()) {
         case Lexer::NAME:
-            e = MakeNonterminal(l, c, lexer.Symbol());
-            lexer.Get();
+            e = MakeNonterminal(l, c, lexer->Symbol());
+            lexer->Get();
         case Lexer::LITERAL:
-            e = MakeTerminal(lexer.Symbol(), l, c);
-            lexer.Get();
+            e = MakeTerminal(lexer->Symbol(), l, c);
+            lexer->Get();
         case '(':
-            lexer.Get();
+            lexer->Get();
             e = ParseAlternative();
-            lexer.Expect(')');
+            lexer->Expect(')');
         case '[':
-            lexer.Get();
+            lexer->Get();
             e = ParseAlternative();
-            lexer.Expect(']');
+            lexer->Expect(']');
             let opt = Option(l, c, e);
             e = opt;
         case '{':
-            lexer.Get();
+            lexer->Get();
             e = ParseAlternative();
-            lexer.Expect('}');
+            lexer->Expect('}');
             let iter = Iterator(l, c, e);
             e = iter;
         default:
-            Errors::Error(lexer.Line, lexer.Column, "syntax error");
-            lexer.Get();
+            Errors::Error(lexer->Line, lexer->Column, "syntax error");
+            lexer->Get();
             e = Undefined;
     }
     return e;
@@ -111,10 +111,10 @@ fn ParseFactor (lexer: Lexer.T) : Expression
 fn ParseConcatenation (lexer: Lexer.T) : Expression
 {
     // concatenation = factor [concatenation].
-    let l = lexer.Line();
-    let c = lexer.Column();
+    let l = lexer->Line();
+    let c = lexer->Column();
     var e = ParseFactor();
-    switch (lexer.Lexeme()) {
+    switch (lexer->Lexeme()) {
         case Lexer::NAME, Lexer::LITERAL, '(', '{', '[':
             let b = ParseConcatenation();
             e = Concatenation(l, c, e, b);
@@ -129,10 +129,10 @@ fn ParseAlternative (lexer: Lexer.T) : Expression
 {
     // alternatives == concatenation ["|" alternatives].
     var e = ParseConcatenation();
-    if (lexer.Lexeme() == '|') {
-        let l = lexer.Line();
-        let c = lexer.Column();
-        lexer.Get();
+    if (lexer->Lexeme() == '|') {
+        let l = lexer->Line();
+        let c = lexer->Column();
+        lexer->Get();
         let b = ParseAlternative();
         let alt = new(Alternative);
         e = Alternative(l, c, e, b);
@@ -144,13 +144,13 @@ fn ParseAlternative (lexer: Lexer.T) : Expression
 fn ParseProduction (lexer: Lexer.T)
 {
     // production = NAME "=" alternatives ".".
-    let l = lexer.Line();
-    let c = lexer.Column();
-    let s = lexer.Symbol();
-    lexer.Get();
-    lexer.Expect("==");
+    let l = lexer->Line();
+    let c = lexer->Column();
+    let s = lexer->Symbol();
+    lexer->Get();
+    lexer->Expect("==");
     let e = ParseAlternative();
-    lexer.Expect('.');
+    lexer->Expect('.');
     d = MakeDefinition(s, l, c);
     d.expression = e;
 }
@@ -159,10 +159,10 @@ fn ParseProduction (lexer: Lexer.T)
 fn Parse ()
 {
     // expression = {production} EOF.
-    while (lexer.Lexeme == Lexer::NAME)
+    while (lexer->Lexeme() == Lexer::NAME)
         ParseProduction;
-    if (lexer.Lexeme != Lexer::EOF)
-        Errors::Error(lexer.Line, lexer.Column, "syntax error, expected end of file")
+    if (lexer->Lexeme() != Lexer::EOF)
+        Errors::Error(lexer->Line(), lexer->Column(), "syntax error, expected end of file")
 }
 
 
@@ -173,30 +173,30 @@ fn FindFirstsWalk (expr: Expression, var changed: bool) {
     let initial = expr.first;
     match (expr) {
         case (t: Terminal):
-            t.first.Singleton(t.number);
+            t.first->Singleton(t.number);
         case (nt: Nonterminal):
             nt.first = nt.definition.expression.first;
         case (cat: Concatenation):
             FindFirstsWalk(cat.left, var changed);
             FindFirstsWalk(cat.right, var changed);
-            if (cat.left.first.Contains(Epsilon.number)) {
-                let s = cat.left.first.excluding(Epsilon.number);
-                cat.first = cat.first.union(s).union(cat.right.first);
+            if (cat.left.first->Contains(Epsilon.number)) {
+                let s = cat.left.first->excluding(Epsilon.number);
+                cat.first = cat.first->union(s)->union(cat.right.first);
             } else {
-                cat.first = cat.first.union(cat.left.first);
+                cat.first = cat.first->union(cat.left.first);
             }
         case (alt: Alternative):
             FindFirstsWalk(alt.left, var changed);
             FindFirstsWalk(alt.right, var changed);
-            alt.first = alt.first.union(alt.left.first).union(alt.right.first);
+            alt.first = alt.first->union(alt.left.first)->union(alt.right.first);
         case (opt: Option):
             FindFirstsWalk(opt.operand, var changed);
-            opt.first = opt.first.union(opt.operand.first).including(Epsilon.number);
+            opt.first = opt.first->union(opt.operand.first)->including(Epsilon.number);
         case (iter: Iteration):
             FindFirstsWalk(iter.operand, var changed);
-            opt.first = opt.first.union(opt.operand.first).including(Epsilon.number);
+            opt.first = opt.first->union(opt.operand.first)->including(Epsilon.number);
     }
-    changed = changed || !initial.equals(expr.first);
+    changed = changed || !initial->equals(expr.first);
 }
 
 fn FindFirsts ()
@@ -219,41 +219,41 @@ fn FindFirsts ()
 fn OutTerminal (out: IO::File, t: int)
 {
     if (t == Epsilon.number)
-        out.String("ɛ");
+        out->String("ɛ");
     else if (t == End.number)
-        out.String("$");
+        out->String("$");
     else if (t == Undefined.number)
-        out.String("?");
+        out->String("?");
     else {
-        out.Char('"');
-        out.String(Terminals[t]);
-        out.Char('"');
+        out->Char('"');
+        out->String(Terminals[t]);
+        out->Char('"');
     }
 }
 
 
 fn OutTerminalSet (out: IO::File, set: Set::T)
 {
-    out.String("{");
+    out->String("{");
     for (i = 0 : NumTerminals) {
-        if (set.Contains(i)) {
-            out.String(" ");
+        if (set->Contains(i)) {
+            out->String(" ");
             OutTerminal(out, i);
         }
     }
-    out.String(" }");
+    out->String(" }");
 }
 
 
 fn OutputTerminals (out: IO::File)
 {
-    out.String("TERMINALS:");
-    out.Ln();
+    out->String("TERMINALS:");
+    out->Ln();
     for (i = 0 : NumTerminals) {
         if (i != Epsilon.number && i != Undefined.number) {
-            out.String("    ");
+            out->String("    ");
             OutTerminal(i);
-            out.Ln();
+            out->Ln();
         }
     }
 }
@@ -261,16 +261,16 @@ fn OutputTerminals (out: IO::File)
 
 fn OutputNonterminals (out: IO::File)
 {
-    out.String("NONTERMINALS:");
-    out.Ln();
+    out->String("NONTERMINALS:");
+    out->Ln();
     for (i = 0 : NumDefinitions) {
         let d = Definitions[i];
-        out.String("    ");
-        out.String(d.name);
-        for (j = String::Length(d.name) .. 24) out.Char(' ');
-        out.String(" ");
+        out->String("    ");
+        out->String(d.name);
+        for (j = String::Length(d.name) .. 24) out->Char(' ');
+        out->String(" ");
         OutTerminalSet(d.expression.first);
-        out.Ln();
+        out->Ln();
     }
 }
 
@@ -281,40 +281,40 @@ fn OutputNonterminals (out: IO::File)
 fn OutOpName (out: IO::File, o: Operator)
 {
     match (o) {
-        case (c: Concatenation): out.String("+");
-        case (a: Alternative):   out.String("|");
-        case (o: Option):        out.String("[]");
-        case (i: Iteration):     out.String("{}");
+        case (c: Concatenation): out->String("+");
+        case (a: Alternative):   out->String("|");
+        case (o: Option):        out->String("[]");
+        case (i: Iteration):     out->String("{}");
     }
 }
 
 
 fn OutBranch (out: IO::File, e: Expression, indent: int)
 {
-    out.Int(e.line, 4);
-    out.Int(e.column, 4);
-    out.String("    ");
-    for (i = 1..indent) out.String("    ");
+    out->Int(e.line, 4);
+    out->Int(e.column, 4);
+    out->String("    ");
+    for (i = 1..indent) out->String("    ");
     match (e) {
         case (t: Terminal):
             OutTerminal(t.number);
-            out.Ln();
+            out->Ln();
         case (nt: Nonterminal):
-            out.String(nt.definition.name);
-            out.String("  ");
+            out->String(nt.definition.name);
+            out->String("  ");
             OutTerminalSet(nt.first);
-            out.Ln();
+            out->Ln();
         case (op: Unary):
             OutOpName(u);
-            out.String(" ");
+            out->String(" ");
             OutTerminalSet(op.first);
-            out.Ln();
+            out->Ln();
             OutBranch(op.operand, indent + 1);
         case (op: Binary):
             OutOpName(b);
-            out.String(" ");
+            out->String(" ");
             OutTerminalSet(op.first);
-            out.Ln();
+            out->Ln();
             OutBranch(op.left, indent + 1);
             OutBranch(op.right, indent + 1);
     }
@@ -323,17 +323,17 @@ fn OutBranch (out: IO::File, e: Expression, indent: int)
 
 fn OutputTree (out: IO::File)
 {
-    out.String("TREE:");
-    out.Ln();
+    out->String("TREE:");
+    out->Ln();
     for (i = 0 : NumDefinitions) {
         let d = Definitions[i];
-        out.Int(d.line, 4);
-        out.Int(d.column, 4);
-        out.String("    ");
-        out.String(d.name);
-        out.String("  ");
+        out->Int(d.line, 4);
+        out->Int(d.column, 4);
+        out->String("    ");
+        out->String(d.name);
+        out->String("  ");
         OutTerminalSet(d.expression.first);
-        out.Ln();
+        out->Ln();
         OutBranch(d.expression, 1);
     }
 }
@@ -354,38 +354,38 @@ fn OutputEbnfWalk (out: IO::File, expr: Expression, parenRequired: bool) {
         case (t: Terminal):
             OutTerminal(out, t.number);
         case (nt: Nonterminal):
-            out.String(nt.definition.name);
+            out->String(nt.definition.name);
         case (cat: Concatenation):
             OutputEbnfWalk(cat.left, isAlternative(cat.left));
-            out.String(" ");
+            out->String(" ");
             OutputEbnfWalk(cat.right, isAlternative(cat.right));
         case (alt: Alternative):
-            if (parenRequired) out.Char('(');
+            if (parenRequired) out->Char('(');
             OutputEbnfWalk(alt.left, false);
-            out.String(" | ");
+            out->String(" | ");
             OutputEbnfWalk(alt.right, false);
-            if (parenRequired) out.Char(')');
+            if (parenRequired) out->Char(')');
         case (opt: Option):
-            out.Char('[');
+            out->Char('[');
             OutputEbnfWalk(opt.operand, false);
-            out.Char(']');
+            out->Char(']');
         case (iter: Iteration):
-            out.Char('{');
+            out->Char('{');
             OutputEbnfWalk(iter.operand, false);
-            out.Char('}');
+            out->Char('}');
     }
 }
 
 fn OutputEbnf (out: IO::File) {
-    out.String("EBNF:");
-    out.Ln();
+    out->String("EBNF:");
+    out->Ln();
     for (i = 0 : NumDefinitions) {
-        out.String("    ");
-        out.String(Definitions[i].name);
-        out.String(" == ");
+        out->String("    ");
+        out->String(Definitions[i].name);
+        out->String(" == ");
         OutputEbnfWalk(Definitions[i].expression, false);
-        out.String(".");
-        out.Ln();
+        out->String(".");
+        out->Ln();
     }
 }
 
@@ -405,12 +405,12 @@ fn CheckWalk (e: Expression) {
     case (alt: Alternative):
         var clash: Set::T;
         Set::Intersection(var clash, alt.left.first, alt.right.first);
-        if (!clash.Empty()) {
+        if (clash != Set::Empty) {
             Errors::Error(alt.line, alt.column, "alteratives clash: ");
             OutTerminalSet(IO::Stderr, clash);
-            IO::Stderr.Ln();
+            IO::Stderr->Ln();
             OutBranch(IO::Stderr, alt, 0);
-            IO::Stderr.Ln();
+            IO::Stderr->Ln();
         }
         CheckWalk(alt.left);
         CheckWalk(alt.right);
@@ -423,8 +423,8 @@ fn Check () {
         let d = Definitions[i];
         if (d.expression == Undefined) {
             Errors::Error(d.line, d.column, "undefined nonterminal: ");
-            IO::Stderr.String(d.name);
-            IO::Stderr.Ln();
+            IO::Stderr->String(d.name);
+            IO::Stderr->Ln();
         } else {
             CheckWalk(d.expression);
         }

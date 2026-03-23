@@ -56,9 +56,7 @@ module Set : SET {
         return result;
     }
 
-    fn singleton (self: T, element: int) : T {
-        return empty.including(element);
-    }
+    fn singleton (self: T, element: int) : T = empty->including(element);
 
     fn union (self: T, b: T) : T{
         var result: T;

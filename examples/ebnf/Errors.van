@@ -1,6 +1,7 @@
 module Errors {
-    import IO;
     import String;
+    import IO;
+    let stderr = IO::Stderr;
 
     var MaxErrors: int = 10;
     var NumErrors: int = 0;
@@ -18,24 +19,24 @@ module Errors {
 
     fn Finish () {
         if (NumErrors > 0) {
-            IO::Stderr.String("*** ");
-            IO::Stderr.Int(NumErrors, 1);
-            IO::Stderr.String(" errors ***");
-            IO::Stderr.Ln;
+            strerr->String("*** ");
+            strerr->Int(NumErrors, 1);
+            strerr->String(" errors ***");
+            strerr->Ln;
             exit(1);
         }
     }
 
     fn Print (line, column: int, message: []byte)
     {
-        IO::Stderr.String(Filename);
-        IO::Stderr.Char(":");
-        IO::Stderr.Int(line, 0);
-        IO::Stderr.Char(":");
-        IO::Stderr.Int(column, 0);
-        IO::Stderr.String(": ");
-        IO::Stderr.String(message);
-        IO::Stderr.Ln;
+        strerr->String(Filename);
+        strerr->Char(":");
+        strerr->Int(line, 0);
+        strerr->Char(":");
+        strerr->Int(column, 0);
+        strerr->String(": ");
+        strerr->String(message);
+        strerr->Ln;
     }
 
     fn Fatal (message: []byte) {

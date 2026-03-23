@@ -41,9 +41,9 @@ module HashMap <Key: HASHABLE, Value: ADT> : HASHMAP with kt = Key::t, vt = Valu
 
     fn place (m: t, k: kt, v: vt): int {
         expect(m.count < m.size);
-        var i = k.hash() % m.size;
+        var i = k->hash() % m.size;
         while (m.table[i] != null) {
-            if (m.table[i].equal(k)) {
+            if (m.table[i]->equal(k)) {
                 m.table[i] = v;
                 return i;
             }
@@ -53,13 +53,13 @@ module HashMap <Key: HASHABLE, Value: ADT> : HASHMAP with kt = Key::t, vt = Valu
     }
 
     fn set (m: t, k: kt, v: vt) {
-        let i = m.place(k, v);
+        let i = m->place(k, v);
         if (m.table[i] == null) m.count++;
         m.table[i] = v;
     }
 
     fn get (m: t, k: kt, var v: vt) : bool {
-        let i = m.place(k, v);
+        let i = m->place(k, v);
         if (m.table[i] == null) 
             return false;
         else {

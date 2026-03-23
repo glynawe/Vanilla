@@ -20,3 +20,4 @@ _build
 scratch*
 unused
 Vanilla.opam
+vanilla.conflicts

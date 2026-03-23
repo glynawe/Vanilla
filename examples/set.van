@@ -60,7 +60,7 @@ module Set <Element: COMPARABLE> : SET with  element_t = Element::t
 
     fn includes (set: t, element: element_t) : bool {
         while (set != nil) 
-            if (set.head.equal(element))  
+            if (set.head->equal(element))  
                 return true; 
             else 
                 set = set.tail; 
@@ -78,8 +78,8 @@ module Program
     fn main () {
         let s = String::create("Hello World!");
         var set = StringSet::empty;
-        set = set.add(set, s);
-        if (set.includes(s))
+        set = set->add(set, s);
+        if (set->includes(s))
             Print::print_string("Success!");
     } 
 }

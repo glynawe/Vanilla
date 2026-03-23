@@ -58,12 +58,13 @@ interface LIST {
 
 module List <Element: COMPARABLE>: LIST with element = Element::t {
     type element;
-    type t = ref struct { value: element; next: t; };
+    type r = struct { value: element; next: t; };
+    type t = ref r;
 
     let empty: t = nil;
     
     fn equal (a, b: list) : bool {
-        while (a != nil && b != nil && a.head.equal(b.head)) {
+        while (a != nil && b != nil && a.head->equal(b.head)) {
             a = a.tail;
             b = b.tail;
         }
@@ -96,9 +97,9 @@ module ReverseArguments {
     fn main() {
         var list = StringList::empty;
         for (i = 1 : System::argc)
-            list = list.prepend(String::make(System::argv[i]));
+            list = list->prepend(String::make(System::argv[i]));
         var head: String;
-        while (list.takeHead(var head))
-            head.print();
+        while (list->takeHead(var head))
+            head->print();
     }
 }

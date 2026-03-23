@@ -87,7 +87,7 @@ This very simplified program defines strings and generic sets as abstract data t
         }
         fn Contains (set: T, element: ElemT) : bool {
             while (set != null) {
-                if (set.head.Equals(element)) 
+                if (set.head->Equals(element)) 
                     return true;
                 else 
                     set = set.tail; 
@@ -103,8 +103,8 @@ This very simplified program defines strings and generic sets as abstract data t
         fn main () {
             let s = String::New("Hello World!");
             var set = StringSet::Empty;
-            set = set.Add(s);
-            if (set.Contains(set, s))
+            set = set->Add(s);
+            if (set->Contains(set, s))
                 Print::string("Success!");
         }
     }
@@ -267,25 +267,24 @@ The above rule is also used to initialize local variables within blocks.
 
 # Types
 
-    TypeDefinition = "type" NAME "=" Type ";" | OpaqueType.
+    TypeDefinition = "type" NAME "=" StructuredType ";" | OpaqueType.
     OpaqueType     = "type" NAME ";".
+
+    StructuredType = "object" [GlobalName] [ "{" {VariableList ";"} "}" ]
+                   | "struct" "{" {VariableList ";"} "}
+                   | "fn" FnType
+                   | Type.
 
     Type = GlobalName
          | "[" Constant "]" Type
          | "[" "]" Type
-         | "struct" "{" {VariableList ";"} "}
-         | ReferenceType. 
-         
-    ReferenceType =
-         | "object" [GlobalName] [ "{" {VariableList ";"} "}" ]
-         | "ref" Type
-         | "fn" FnType.
+         | "ref" Type.
 
     DimensionList = Constant ","... .
 
 Arrays begin at element 0. An array with no specified dimension is an *open array* which may have any length. An open array's length can be found using the standard function `len`. An open array type may only be used as the type of an parameter or as the target of a pointer type.
 
-A reference type may be `null`.
+Object, `fn` and `ref` types are reference types. A reference points to a value of that type or `null`. More than one reference can point to a value.
 
 An *opaque type* is a type whose definition is not yet given. An opaque type can be used in an interface to denote an abstract type, or in a module to allow a record type to contain pointers to itself. An opaque type must be defined before it can be used in a module, either by a full type definition or a functor type constraint.
 
@@ -330,7 +329,7 @@ The name of an object type is a function that returns a new object of that type 
 # Functions
 
     FunctionDefinition = "fn" NAME FnType ";".
-    FnDeclaration = ["loop"] "fn" NAME FnType (";" | Block).
+    FnDeclaration = ["loop"] "fn" NAME FnType (";" | Block | "=" Expression ";").
 
     FnType     = "(" [Parameters ","...] ")" [ReturnType]
     Parameters = ["var"] VariableList.
@@ -353,7 +352,7 @@ A `loop` function must be tail-call optimizable. I.e. if the function calls itse
     Block = "{" {Statement} "}".
 
     Statement = LocalDefinition | Block | For | While | Loop
-              | Assignment | FunctionCall | If | Break | Return | Switch | Empty.
+              | Assignment | FunctionCall ";" | If | Break | Return | Switch | Empty.
 
     Empty = ";".
 
@@ -381,34 +380,6 @@ A local definition may not have the same name as any definition in the same bloc
 The expression is evaluated  then its value is assigned to the designator. The designator must have the same type as the expression. The `++`, `--`, `+=` etc. operators have the same meaning as in C, but may only be used as statements.
 
 Structures of the same type and arrays of the same type and length may be assigned to each other.
-
-
-## Function Calls
-
-    FunctionCall = Designator "(" [Expression ","...] ")" ";"
-
-    Call        = "(" [Argument ","...] ")".
-    Argument    = Expression | "var" Designator.
-
-Pointer values are automatically dereferenced when they are the designator of a call, selection or subscript. The dereferencing operator `^` will not need to be used often, but is useful when comparing or assigning the targets of pointers.
-
-The list of arguments in a call is passed to the designated function as parameters. An argument must match its parameter's type. A reference parameter must be passed a `var` argument which is a designator of the same type. A value parameter may be passed an expression, following the same rules as assignment.
-
-The designator part of a function call statement must designate a procedure function, i.e it must not return a value. 
-
-
-### "Method calls"
-
-If the start of a designator refers to a variable *v* of type *M::t*, and the last name in the designator refers to a function *M::p*, then `M::p(v, ...)` may be written as `v.p(...)`. (This is similar to the syntactic sugar that Python uses for method calls.)
-
-**Example**
-
-If `list.head` has type `Set::t` and there exists a function `Set::add(s: Set::t; v: vt)` then these two function calls mean the same thing:
-
-```
-Set::add(list.head, value)
-list.head.add(value)
-```
 
 ## If Statements
 
@@ -476,11 +447,11 @@ A `match` statement chooses statements to execute based on the runtime type of a
 
 If the match's expression is `null` then the `case null:` branch is excuted.
 
-    Match = "match" "(" (Expression | "var" Designator) ")" "{" 
-                {"case" "(" Name ":" GlobalName ")" ":" Statements} 
-                ["case" "null" ":" Statements] 
+    Match = "match" "(" Argument ")" "{" 
+                {"case" MatchParameter ":" Statements} 
                 ["default" ":" Statements] 
             "}".
+    MatchParameter = "(" Name ":" GlobalName ")" | "null".
 
 **Example**
 
@@ -489,7 +460,7 @@ If the match's expression is `null` then the `case null:` branch is excuted.
             case (n: Node):   return n.value;
             case (b: Branch): return sum(b.child);
             case (f: Fork):   return sum(f.left) + sum(f.right);
-            null:             return 0;
+            case null:        return 0;
         }
     }
 
@@ -557,7 +528,7 @@ The `&&` and `||` operators are "shortcut operators", they are equivalent to the
 `a && b`  ≡  `a ? b : false`
 
 
-## Designators, Function Calls
+## Designators
 
     Designator = GlobalName {Selection | Subscript | Dereference}.
     Selection    = "." NAME.
@@ -566,10 +537,25 @@ The `&&` and `||` operators are "shortcut operators", they are equivalent to the
 
 Pointer designators are automatically dereferenced when they are the designator of a function call, selection or subscript. *Therefore the dereferencing operator `^` will not need to be used often, but is useful when comparing or assigning the targets of pointers.*
 
-    FunctionCall = Call.
-    Argument     = Expression | "var" Designator.
+## Function Calls
 
-Function call expressions follow the same rules as function call statements (see above). However, function call expressions return a value. The designator part of a function call must designate an expression function. 
+    FunctionCall = Designator Call.
+
+    Call      = {["->" NAME] "(" [Argument ","...] ")"}. 
+    Argument  = Expression | "var" Designator.
+
+The list of arguments in a call is passed to the designated function as parameters. An argument must match its parameter's type. A reference parameter must be passed a `var` argument which is a designator of the same type. A value parameter may be passed an expression, following the same rules as assignment.
+
+If the start of a designator refers to a variable *v* of type *M::t*, and the last name in the designator refers to a function *M::p*, then `M::p(v, ...)` and `M::p(var v, ...)` may be written as `v->p(...)`. (This is similar to the syntactic sugar that Python uses for method calls.)
+
+**Example**
+
+If `list.head` has type `Set::t` and there exists a function `Set::add(s: Set::t; v: vt)` then these two function calls mean the same thing:
+
+```
+Set::add(var list.head, value)
+list.head->add(value)
+```
 
 
 ## Literals

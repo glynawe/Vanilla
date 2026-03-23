@@ -7,7 +7,7 @@ module ebnf {
         expect(IO::Argc() == 2);
         IO::Argv(var path, 1);
         let input = IO::Open(path, "r");
-        expect(input.Readable());
+        expect(input->Readable());
         Ebnf::Run(input);
     }
 }
