@@ -42,7 +42,7 @@ MARK: Operators
 
 %left "||"
 %left "&&"
-%nonassoc  "<" "<=" "==" "!=" ">" ">="
+%nonassoc  "<" "<=" "==" "!=" ">" ">=" "is"
 %left "+"  "-"
 %left "*" "/" "%"
 %left "!"  (* also unary "-" and "+" *)
@@ -85,6 +85,7 @@ MARK: Keywords
 %token IMPORT "import"
 %token INCLUDE "include"
 %token INTERFACE "interface"
+%token IS "is"
 %token LET "let"
 %token LOOP "loop"
 %token MATCH "match"
@@ -499,6 +500,8 @@ expr
 | e1=expr "/"  e2=expr
     { () }
 | e1=expr "%"  e2=expr
+    { () }
+| e=expr "is" t=globalname
     { () }
 | "new" "(" t=typedef ")"
     { () }

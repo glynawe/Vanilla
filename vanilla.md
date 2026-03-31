@@ -48,15 +48,13 @@ This very simplified program defines strings and generic sets as abstract data t
 
     interface STRING {
         include COMPARABLE;
-        type Repr;
-        type T = ref Repr;
         fn New (text: []byte): T;
     }
 
     module String : STRING {
-        type Repr = []byte;
+        type T = ref []byte;
         fn Equals (a: T, b: T) : bool {
-            return a == b || len(a) == len(b) && a^ == b^;
+            return a == b || a^ == b^;
         }
         fn New (text: []byte): T {
             var s = new(byte, len(text)); 
@@ -66,8 +64,7 @@ This very simplified program defines strings and generic sets as abstract data t
     }
 
     interface SET {
-        type Repr;
-        type T = ref Repr;
+        type T;
         type ElemT;
         let Empty: T;
         fn Add (set: T, element: ElemT) : T;
@@ -75,8 +72,7 @@ This very simplified program defines strings and generic sets as abstract data t
     }
 
     module Set <Element: COMPARABLE> : SET with ElemT = Element::T {
-        type ElemT;
-        type Repr = struct { 
+        type T = object { 
             value: ElemT; 
             next: T; 
         };
@@ -484,7 +480,7 @@ If the match's expression is `null` then the `case null:` branch is excuted.
     Expression = Disjunction ["?" Disjunction ":" Expression].
     Disjunction = Conjunction {"||" Conjunction}. 
     Conjunction = Relation {"&&" Relation}.
-    Relation = Sum [RelationOp Sum].
+    Relation = Sum [RelationOp Sum | "is" GlobalName].
     Sum  = Term {AddOp Term}.
     Term = Factor {MulOp Factor}.
     Factor = UnaryOp Factor
@@ -510,12 +506,15 @@ If the match's expression is `null` then the `case null:` branch is excuted.
 | `&&` `\|\|`                | `bool`    | `bool`    | `bool`    |
 | `!`                        | `bool`    |           | `bool`    |
 | `==` `!=`                  | *RefType* | *RefType* | `bool`    |
+| `is`                       | *ObjType* | *TypeName* | `bool`    |
 
 *NumType* is `real`, `int`, `word` or `byte`. *IntType* is `int`, `word` or `byte`. *RefType* is any reference type. Operands and results must have the same type.
 
 `x / y` and `x % y` will cause a runtime error if *y* = 0. How that runtime error is handled is implementation-dependent behaviour.
 
 Relational operators compare `int`, `word`, `byte`, `float` and pointer types. They return `bool` values. Pointers may only be compared for equality and inequality. Two pointers are equal if they refer to the same variable or both are `null`.
+
+The operator `is` is a runtime type test for objects. `o is T` is  true if object value `o` has the object type `T` or one of its extension types.
 
 ### Logical operators
 
@@ -761,7 +760,7 @@ In the following table *RAM* refers to the computer's random access memory, addr
 
     Keywords = 
         "break" | "case" | "const" | "default" | "else" | 
-        "for" | "if" | "import" | "include" | "interface" |
+        "for" | "if" | "import" | "include" | "interface" | "is" |
         "module" | "fn" | "struct" | "object" | "match" |
         "ref" | "return" | "type" | "let" | "var" | with" | 
         "while".

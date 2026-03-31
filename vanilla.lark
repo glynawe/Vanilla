@@ -51,7 +51,7 @@ type : globalname                         -> namedtype
         | "[" "]" type                    -> openarraytype
         | "ref" type                      -> referencetype
         | "byte"                          -> bytetype
-        | "inte"                          -> integertype
+        | "int"                           -> integertype
         | "word"                          -> wordtype
         | "float"                         -> realtype
         | "bool"                          -> booleantype
@@ -117,6 +117,7 @@ empty:
         | sum "<=" sum -> le
         | sum ">" sum  -> gt
         | sum ">=" sum -> ge
+        | sum "is" globalname -> is
 
 ?sum:   term
         | term "+" sum  -> plus

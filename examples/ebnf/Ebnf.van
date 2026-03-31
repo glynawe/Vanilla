@@ -9,7 +9,7 @@ import IO;
 type Name = Lexer::String;
 
 type Item           = object { line, column: int; };
-type Expression     = object;
+type Expression     = object Item;
 type Definition     = object Item { name: Name; expression: Expression; };
 type Symbol         = object Item;
 type Terminal       = object Symbol { number: int; };
@@ -342,13 +342,6 @@ fn OutputTree (out: IO::File)
 // MARK: expression
 
 
-fn isAlternative (expr: Expression) : bool {
-    match (expr) {
-        case (a: Alternative): return true;
-        default: return false;
-    }
-}
-
 fn OutputEbnfWalk (out: IO::File, expr: Expression, parenRequired: bool) {
     match (expr) {
         case (t: Terminal):
@@ -356,9 +349,9 @@ fn OutputEbnfWalk (out: IO::File, expr: Expression, parenRequired: bool) {
         case (nt: Nonterminal):
             out->String(nt.definition.name);
         case (cat: Concatenation):
-            OutputEbnfWalk(cat.left, isAlternative(cat.left));
+            OutputEbnfWalk(cat.left, cat.left is Alternative);
             out->String(" ");
-            OutputEbnfWalk(cat.right, isAlternative(cat.right));
+            OutputEbnfWalk(cat.right, cat.right is Alternative);
         case (alt: Alternative):
             if (parenRequired) out->Char('(');
             OutputEbnfWalk(alt.left, false);
