@@ -539,21 +539,21 @@ Pointer designators are automatically dereferenced when they are the designator 
 
 ## Function Calls
 
-    FunctionCall = Designator Call.
+    FunctionCall = Designator Call {Call}.
 
-    Call      = {["->" NAME] "(" [Argument ","...] ")"}. 
+    Call      = ["->" NAME] "(" [Argument ","...] ")". 
     Argument  = Expression | "var" Designator.
 
 The list of arguments in a call is passed to the designated function as parameters. An argument must match its parameter's type. A reference parameter must be passed a `var` argument which is a designator of the same type. A value parameter may be passed an expression, following the same rules as assignment.
 
-If the start of a designator refers to a variable *v* of type *M::t*, and the last name in the designator refers to a function *M::p*, then `M::p(v, ...)` and `M::p(var v, ...)` may be written as `v->p(...)`. (This is similar to the syntactic sugar that Python uses for method calls.)
+If the start of a designator refers to a variable *v* of type *M::t*, and the last name in the designator refers to a function *M::p*, then `M::p(v, ...)` or `M::p(var v, ...)` may be written as `v->p(...)`. (This is similar to the syntactic sugar that Python uses for method calls.)
 
 **Example**
 
-If `list.head` has type `Set::t` and there exists a function `Set::add(s: Set::t; v: vt)` then these two function calls mean the same thing:
+If `list.head` has type `Set::t` and there exists a function `Set::add(s: Set::t; v: vt)` then these two function call expressions mean the same thing:
 
 ```
-Set::add(var list.head, value)
+Set::add(list.head, value)
 list.head->add(value)
 ```
 

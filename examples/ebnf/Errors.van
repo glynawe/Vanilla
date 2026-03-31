@@ -1,15 +1,13 @@
 module Errors {
     import String;
     import IO;
-    let stderr = IO::Stderr;
+    const stderr = IO::Stderr;
 
     var MaxErrors: int = 10;
     var NumErrors: int = 0;
     var Filename: [512] byte = "";
 
-    fn Okay () : bool {
-        return NumErrors == 0;
-    }
+    fn Okay () : bool = NumErrors == 0;
 
     fn Start (filename: []byte, maxerrors: int) {
         String::Assign(Filename, filename);
@@ -27,8 +25,7 @@ module Errors {
         }
     }
 
-    fn Print (line, column: int, message: []byte)
-    {
+    fn Print (line, column: int, message: []byte) {
         strerr->String(Filename);
         strerr->Char(":");
         strerr->Int(line, 0);

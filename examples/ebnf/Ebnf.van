@@ -170,16 +170,16 @@ fn Parse ()
 
 
 fn FindFirstsWalk (expr: Expression, var changed: bool) {
-    let initial = expr.first;
+    let initial: Set::T = expr.first;
     match (expr) {
         case (t: Terminal):
-            t.first->Singleton(t.number);
+            t.first = Set::Singleton(t.number);
         case (nt: Nonterminal):
             nt.first = nt.definition.expression.first;
         case (cat: Concatenation):
             FindFirstsWalk(cat.left, var changed);
             FindFirstsWalk(cat.right, var changed);
-            if (cat.left.first->Contains(Epsilon.number)) {
+            if (cat.left.first->contains(Epsilon.number)) {
                 let s = cat.left.first->excluding(Epsilon.number);
                 cat.first = cat.first->union(s)->union(cat.right.first);
             } else {
@@ -344,7 +344,7 @@ fn OutputTree (out: IO::File)
 
 fn isAlternative (expr: Expression) : bool {
     match (expr) {
-        case Alternative: return true;
+        case (a: Alternative): return true;
         default: return false;
     }
 }
@@ -395,7 +395,7 @@ fn OutputEbnf (out: IO::File) {
 
 fn CheckWalk (e: Expression) {
     match (e) {
-    case (s: Symbol):
+    case (s: Symbol): 
         ;
     case (u: Unary):
         CheckWalk(u.operand);
@@ -403,8 +403,7 @@ fn CheckWalk (e: Expression) {
         CheckWalk(cat.left);
         CheckWalk(cat.right);
     case (alt: Alternative):
-        var clash: Set::T;
-        Set::Intersection(var clash, alt.left.first, alt.right.first);
+        let clash = alt.left.first->intersection(alt.right.first);
         if (clash != Set::Empty) {
             Errors::Error(alt.line, alt.column, "alteratives clash: ");
             OutTerminalSet(IO::Stderr, clash);
@@ -416,7 +415,6 @@ fn CheckWalk (e: Expression) {
         CheckWalk(alt.right);
     }
 }
-
 
 fn Check () {
     for (i = 0 : NumDefinitions) {

@@ -19,15 +19,9 @@ module String {
         return s;
     }
 
-    fn IsAlpha (c: byte) : bool {
-        return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z';
-    }
+    fn IsAlpha (c: byte) : bool =  c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z';
 
-    fn IsBreak (c: byte) : bool {
-        return c == '\n' ||  c == '\r' ||  c == '\f';
-    }
+    fn IsBreak (c: byte) : bool = c == '\n' ||  c == '\r' ||  c == '\f';
 
-    fn IsWhitespace (c: byte) : bool {
-        return c == ' ' ||  c == '\t' || IsBreak(c);
-    }
+    fn IsWhitespace (c: byte) : bool = c == ' ' ||  c == '\t' || IsBreak(c);
 }
