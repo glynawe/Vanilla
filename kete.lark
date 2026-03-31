@@ -57,8 +57,10 @@ type : globalname                         -> namedtype
         | "bool"                          -> booleantype
 structuredtype : type 
         | "struct" fields                 -> recordtype
-        | "object" [globalname] [fields]  -> objecttype
+        | "record" [parent] [fields]      -> objecttype
         | "fn" proctype                   -> fntype
+
+parent : "(" globalname ")"
 
 fields : "{" (varlist ";")* "}"
 

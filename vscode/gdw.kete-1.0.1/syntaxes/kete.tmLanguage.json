@@ -4,7 +4,7 @@
 	"patterns": [
 		{
 			"name": "keyword.other.kete",
-			"match": "\\b(break|case|const|default|else|fn|for|if|import|include|interface|is|let|loop|module|match|object|return|ref|struct|switch|type|var|with|while)\\b"
+			"match": "\\b(break|case|const|default|else|fn|for|if|import|include|interface|is|let|loop|module|match|record|return|ref|struct|switch|type|var|with|while)\\b"
 		},{
 			"name": "support.type.kete",
 			"match": "\\b(bool|byte|int|float|word)\\b"

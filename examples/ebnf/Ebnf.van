@@ -8,19 +8,19 @@ import IO;
 
 type Name = Lexer::String;
 
-type Item           = object { line, column: int; };
-type Expression     = object Item;
-type Definition     = object Item { name: Name; expression: Expression; };
-type Symbol         = object Item;
-type Terminal       = object Symbol { number: int; };
-type Nonterminal    = object Symbol { definition: Definition; };
-type Operator       = object Expression;
-type Unary          = object Operator { operand: Expression; };
-type Option         = object Unary;
-type Iteration      = object Unary;
-type Binary         = object Operator { left, right: Expression; };
-type Concatenation  = object Binary;
-type Alternative    = object Binary;
+type Item           = record { line, column: int; };
+type Expression     = record (Item);
+type Definition     = record (Item) { name: Name; expression: Expression; };
+type Symbol         = record (Item);
+type Terminal       = record (Symbol) { number: int; };
+type Nonterminal    = record (Symbol) { definition: Definition; };
+type Operator       = record (Expression);
+type Unary          = record (Operator) { operand: Expression; };
+type Option         = record (Unary);
+type Iteration      = record (Unary);
+type Binary         = record (Operator) { left, right: Expression; };
+type Concatenation  = record (Binary);
+type Alternative    = record (Binary);
 
 const MaxDefinitions = Set::Size;
 const MaxTerminals = Set::Size;

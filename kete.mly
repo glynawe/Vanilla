@@ -90,9 +90,9 @@ MARK: Keywords
 %token LOOP "loop"
 %token MATCH "match"
 %token MODULE "module"
-%token OBJECT "object"
 %token NEW "new"
 %token NULL "null"
+%token RECORD "record"
 %token REF "ref"
 %token RETURN "return"
 %token STRUCT "struct"
@@ -302,9 +302,9 @@ structuredtypedef
     { () }
 | "struct" fs=fields
     { () }
-| "object" fs=fields?
+| "record" fs=fields?
     { () }
-| "object" p=globalname fs=fields?
+| "record" "(" p=globalname ")" fs=fields?
     { () }
 | "fn" pt=proctype
     { () }

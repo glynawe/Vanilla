@@ -23,7 +23,7 @@ module Lexer : LEXER {
     include LEXER;
     import IO, String, Errors;
 
-    type T = object {
+    type T = record {
         Lexeme: byte;
         Symbol: String;
         Line, Column: int;

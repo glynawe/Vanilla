@@ -6,7 +6,7 @@ Kete is an imperative systems programming language in the Algol family. Kete has
 
 - There is a true module system for defining abstract data types. 
 - There is no macro system, but constants and constant expressions are part of the language. 
-- Pointers cannot point to arbitrary locations, just to allocated objects. 
+- Pointers cannot point to arbitrary locations, just to allocated records. 
 - Pointers are not used to implement arrays. Arrays are a type. 
 - Array argument lengths are always known. 
 - Arrays can be copied by assignment and can be returned from functions.
@@ -34,6 +34,7 @@ Kete is an imperative systems programming language in the Algol family. Kete has
 - The 'module language' is simpler. 
   - Modules cannot be nested.
   - Modules, interfaces (signatures) and functors must always be named. 
+- Variant types are Oberon "extensible records".
 - A functor instantiation can be included (opened) into a module.
 - A method call-like syntax makes module name prefixes less necessary. 
 
@@ -72,7 +73,7 @@ This very simplified program defines strings and generic sets as abstract data t
     }
 
     module Set <Element: COMPARABLE> : SET with ElemT = Element::T {
-        type T = object { 
+        type T = record { 
             value: ElemT; 
             next: T; 
         };
@@ -256,7 +257,7 @@ A string literal can be used to declare a byte array. If it is shorter than the 
 
 A variable definition has an implicit declaration if one is not given in a program's modules. 
 
-An implicit variable declaration has a default value. Numeric variables are initialized to zero. Pointer, procedure and object values are initialized to `null`. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero or null.
+An implicit variable declaration has a default value. Numeric variables are initialized to zero. Pointer, procedure and record values are initialized to `null`. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero or null.
 
 The above rule is also used to initialize local variables within blocks.
 
@@ -266,7 +267,7 @@ The above rule is also used to initialize local variables within blocks.
     TypeDefinition = "type" NAME "=" StructuredType ";" | OpaqueType.
     OpaqueType     = "type" NAME ";".
 
-    StructuredType = "object" [GlobalName] [ "{" {VariableList ";"} "}" ]
+    StructuredType = "record" ["(" GlobalName ")"] [ "{" {VariableList ";"} "}" ]
                    | "struct" "{" {VariableList ";"} "}
                    | "fn" FnType
                    | Type.
@@ -291,23 +292,23 @@ A pointer to an undeclared type can be declared provided that that type is decla
     type Tree = ref Node;
     type Node = record { left, right: Tree; };
 
-## Objects
+## Records
 
-An `object` value behaves like a pointer to a `struct` value, except that it carries a hidden tag that allows its type to be determined at runtime. Objects are for to creating variant types and tree-structured data. [The `object` type is the Oberon 07 language's *extensible record* type.]
+An `record` value behaves like a pointer to a `struct` value, except that it carries a hidden tag that allows its type to be determined at runtime. Records are for creating variant types and tree-structured data. [The `record` type is the Oberon 07 language's *extensible record* type.]
 
-An object type can extend a parent object type. An object variable may be assigned objects with extentions of the variable's type. Any object variable may be assigned `null`. 
+A record type can extend a parent record type. A record variable may be assigned records with extentions of the variable's type. Any record variable may be assigned `null`. 
 
-The name of an object type is a function that returns a new object of that type with its fields initialised with each of the function's arguments.
+The name of a record type is a function that returns a new record of that type with its fields initialised with each of the function's arguments.
 
 (See also the `match` statement.)
 
 **Example:**
 
-    type Expression = object;
-    type Value      = object Expression { value: int; };
-    type BinOp      = object Expression { left, right: ref Expression; };
-    type Plus       = object BinOp;
-    type Times      = object BinOp;
+    type Expression = record;
+    type Value      = record (Expression) { value: int; };
+    type BinOp      = record (Expression) { left, right: ref Expression; };
+    type Plus       = record (BinOp);
+    type Times      = record (BinOp);
 
     fn increment (e: Expression) : Expression {
         return Plus(e, Value(1));
@@ -439,7 +440,7 @@ Switch expressions and switch range constants must be integers or bytes. All con
 
 ## Match Statements
 
-A `match` statement chooses statements to execute based on the runtime type of an object. An argument variable of that type is declared in the scope of each case branch. These arguments follow the same rules as function argument passing. E.g. the `var` version of the `match` statement creates assignable arguments that alias the `match` statement's designator. 
+A `match` statement chooses statements to execute based on the runtime type of a record. An argument variable of that type is declared in the scope of each case branch. These arguments follow the same rules as function argument passing. E.g. the `var` version of the `match` statement creates assignable arguments that alias the `match` statement's designator. 
 
 If the match's expression is `null` then the `case null:` branch is excuted.
 
@@ -514,7 +515,7 @@ If the match's expression is `null` then the `case null:` branch is excuted.
 
 Relational operators compare `int`, `word`, `byte`, `float` and pointer types. They return `bool` values. Pointers may only be compared for equality and inequality. Two pointers are equal if they refer to the same variable or both are `null`.
 
-The operator `is` is a runtime type test for objects. `o is T` is  true if object value `o` has the object type `T` or one of its extension types.
+The operator `is` is a runtime type test for records. `r is T` is  true if record value `r` has the record type `T` or one of its extension types.
 
 ### Logical operators
 
@@ -761,7 +762,7 @@ In the following table *RAM* refers to the computer's random access memory, addr
     Keywords = 
         "break" | "case" | "const" | "default" | "else" | 
         "for" | "if" | "import" | "include" | "interface" | "is" |
-        "module" | "fn" | "struct" | "object" | "match" |
+        "module" | "fn" | "struct" | "record" | "match" |
         "ref" | "return" | "type" | "let" | "var" | with" | 
         "while".
 
