@@ -1,5 +1,5 @@
 (library
- (name vanilla)
+ (name kete)
  (modules
    utility
    types

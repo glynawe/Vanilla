@@ -1,7 +1,7 @@
 (lang dune 3.14)
-(name Vanilla)
+(name Kete)
 (package
- (name Vanilla)
+ (name Kete)
  (depends 
    ocaml 
    dune 

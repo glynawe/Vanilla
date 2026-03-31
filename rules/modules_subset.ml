@@ -1,4 +1,4 @@
-(* A subset of Vanilla's module system and top-level defs. *)
+(* A subset of Kete's module system and top-level defs. *)
 
 
 (*

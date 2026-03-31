@@ -1,10 +1,10 @@
 from lark import Lark
 from pathlib import Path
 
-grammar = Path('vanilla.lark').read_text()
+grammar = Path('kete.lark').read_text()
 parser = Lark(grammar, propagate_positions=True, maybe_placeholders=True, start='program')
 
-for example in Path('examples').glob('*.van'):
+for example in Path('examples').glob('*.kete'):
     source = example.read_text()
     try:
         tree = parser.parse(source)

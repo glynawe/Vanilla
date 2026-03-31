@@ -1,4 +1,4 @@
-(* The Vanilla type rules in OCaml. *)
+(* The Kete type rules in OCaml. *)
 
 (* ------------------------------------------------------------------------- *)
 (* Names and Interfaces *)
@@ -33,7 +33,7 @@ end
 (* Types *)
 (* ------------------------------------------------------------------------- *)
 
-  (* Vanilla has "opaque types" whose definitions are hidden in other 
+  (* Kete has "opaque types" whose definitions are hidden in other 
   modules or are unknown because they are in the parameters of a functor.
   Because the size of opaque types are unknown they may only be used as
   the targets of reference types or as pass-by-reference parameters.
@@ -76,7 +76,7 @@ sig
   and element_t = 
     name_t * t
 
-  (* I only mean to describe Vanilla's semantics at the module level. Procedure
+  (* I only mean to describe Kete's semantics at the module level. Procedure
      calls are at the statement and expression level, but procedure calls are an
      aspect of procedure types, so it might be wise to include a description of
      their semantics:  *)

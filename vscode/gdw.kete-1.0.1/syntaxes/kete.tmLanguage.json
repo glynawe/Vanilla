@@ -1,39 +1,39 @@
 {
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-	"name": "Vanilla",
+	"name": "Kete",
 	"patterns": [
 		{
-			"name": "keyword.other.vanilla",
+			"name": "keyword.other.kete",
 			"match": "\\b(break|case|const|default|else|fn|for|if|import|include|interface|is|let|loop|module|match|object|return|ref|struct|switch|type|var|with|while)\\b"
 		},{
-			"name": "support.type.vanilla",
+			"name": "support.type.kete",
 			"match": "\\b(bool|byte|int|float|word)\\b"
 		},{
-			"name": "support.function.vanilla",
+			"name": "support.function.kete",
 			"match": "\\b(abs|as|assert|expect|exit|fits|free|instance|getbit|len|lnot|land|lor|lxor|new|shl|shr|sha|setbit|SYSTEM|ADDRESS|ALLOCATE|DEALLOCATE|LOC|GET|MOVE|PUT|SIZE|TYPE|TYPESIZE|REF)\\b"
 		},{
-			"name": "constant.language.vanilla",
+			"name": "constant.language.kete",
 			"match": "\\b(true|false|null|maxint|minint|lenint)\\b"
 		},{
-			"name": "variable.vanilla",
+			"name": "variable.kete",
 			"match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\b"
 		},{
-			"name": "constant.numeric.vanilla",
+			"name": "constant.numeric.kete",
 			"match": "\\b(0b[01]+)[XL]?\\b"
 		},{
-			"name": "constant.numeric.vanilla",
+			"name": "constant.numeric.kete",
 			"match": "\\b(0o[0-7]+)[XL]?\\b"
 		},{
-			"name": "constant.numeric.vanilla",
+			"name": "constant.numeric.kete",
 			"match": "\\b(0x[0-9A-F]+)[XL]?\\b"
 		},{
-			"name": "constant.numeric.float.vanilla",
+			"name": "constant.numeric.float.kete",
 			"match": "\\b([0-9]+[.][0-9]+([Ee][-+]?[0-9]+)?)\\b"
 		},{
-			"name": "constant.numeric.vanilla",
+			"name": "constant.numeric.kete",
 			"match": "\\b([0-9]+)[Xx]?\\b"
 		},{
-			"name": "comment.line.vanilla",
+			"name": "comment.line.kete",
 			"match": "\\/\\/.*"
 		},{
 			"include": "#strings"
@@ -45,49 +45,49 @@
 	],
 	"repository": {
 		"strings": {
-			"name": "string.quoted.double.vanilla",
+			"name": "string.quoted.double.kete",
 			"begin": "\"",
 			"end": "\"",
 			"patterns": [
 				{
-					"name": "constant.character.escape.vanilla",
+					"name": "constant.character.escape.kete",
 					"match": "\\\\\""
 				},
 				{
-					"name": "constant.character.escape.vanilla",
+					"name": "constant.character.escape.kete",
 					"match": "\\\\[ntabfr0\\\\]"
 				},
 				{
-					"name": "constant.character.escape.vanilla",
+					"name": "constant.character.escape.kete",
 					"match": "\\\\x[0-9A-Fa-f][0-9A-Fa-f]"
 				}
 			]
 		},
 		"characters": {
-			"name": "string.quoted.single.vanilla",
+			"name": "string.quoted.single.kete",
 			"begin": "'",
 			"end": "'",
 			"patterns": [
 				{
-					"name": "constant.character.escape.vanilla",
+					"name": "constant.character.escape.kete",
 					"match": "\\\\['ntabfr0\\\\]"
 				},
 				{
-					"name": "constant.character.escape.vanilla",
+					"name": "constant.character.escape.kete",
 					"match": "\\\\x[0-9A-Fa-f][0-9A-Fa-f]"
 				}
 			]
 		},
 		"comments": {
-			"name": "comment.block.vanilla",
-			"contentName": "comment.block.vanilla",
+			"name": "comment.block.kete",
+			"contentName": "comment.block.kete",
 			"begin": "\\/\\*",
 			"end": "\\*\\/",
 			"patterns": [{
 				"include": "#comments",
-				"name": "comment.block.vanilla"
+				"name": "comment.block.kete"
 			}]
 		}
 	},
-	"scopeName": "source.vanilla"
+	"scopeName": "source.kete"
 }

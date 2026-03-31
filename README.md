@@ -1,3 +1,3 @@
-Vanilla is a design for a systems programming language with ML modules.
+Kete is a design for a systems programming language with ML modules.
 
-Please read [vanilla.md](vanilla.md).
+Please read [kete.md](kete.md).

@@ -1,5 +1,3 @@
-// A possible "curly-bracket language" syntax for Vanilla: 
-
 interface ADT 
 {
     type repr;

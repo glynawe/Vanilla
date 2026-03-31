@@ -1,0 +1,25 @@
+{
+  "name": "kete",
+  "displayName": "kete",
+  "description": "Language support for Kete.",
+  "version": "1.0.1",
+  "engines": {
+    "vscode": "^1.110.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "kete",
+      "aliases": ["Kete", "kete"],
+      "extensions": [".kete"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "kete",
+      "scopeName": "source.kete",
+      "path": "./syntaxes/kete.tmLanguage.json"
+    }]
+  }
+}

@@ -1,4 +1,4 @@
-(* Menhir grammar for Vanilla *)
+(* Menhir grammar for Kete *)
 
 (* ---------------------------------------------------------------------------
 MARK: Literals 

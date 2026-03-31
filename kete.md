@@ -1,6 +1,6 @@
-# Vanilla  [Draft]
+# Kete  [Draft]
 
-Vanilla is an imperative systems programming language in the Algol family. Vanilla has a module system with *functors*, a feature taken from OCaml. Functors are modules that take other modules as arguments. They are a single, simple mechanism that can provide features like abstract data types, generic types, traits, dependency injection and module extension.
+Kete is an imperative systems programming language in the Algol family. Kete has a module system with *functors*, a feature taken from OCaml. Functors are modules that take other modules as arguments. They are a single, simple mechanism that can provide features like abstract data types, generic types, traits, dependency injection and module extension.
 
 **A quick comparison to C.** 
 
@@ -124,7 +124,7 @@ A *declaration* is a definition that also defines *object code*. Object code is 
 
     Program = (Interface | Module | Functor) ... .
 
-A Vanilla program may contain any number of interfaces, modules and functors. One module must declare a function called `main`, which will be the first function to be executed.
+A Kete program may contain any number of interfaces, modules and functors. One module must declare a function called `main`, which will be the first function to be executed.
 
     Interface = "interface" InterfaceName "{" 
                 {Definition} 
@@ -167,7 +167,7 @@ However, a type constraint can be used to make `A.t` and `B.t` compatible:
 
 A module without an explicit public interface is given a default interface that excludes its imported names.
 
-All interfaces and modules implicitly contain a set of *standard declarations* supplied by the Vanilla language. For example, the type `int` is a standard declaration.
+All interfaces and modules implicitly contain a set of *standard declarations* supplied by the Kete language. For example, the type `int` is a standard declaration.
 
 **Example**
 
@@ -197,7 +197,7 @@ An *expansion* designates an existing module or interface, or it creates a new m
 
 A module's *global names* are the names of all its definitions.
 
-\[In Ocaml interfaces are called *module types*, in Standard ML interfaces are called *signatures*. Vanilla functors are *generative*; i.e. if two modules are made from the same functor then the abstract types that they contain are not equivalent. Vanilla modules are not *translucent*; if a concrete type definition is given inside a module but the type is abstract in its public interface to a module then that type remains abstract to other modules.]
+\[In Ocaml interfaces are called *module types*, in Standard ML interfaces are called *signatures*. Kete functors are *generative*; i.e. if two modules are made from the same functor then the abstract types that they contain are not equivalent. Kete modules are not *translucent*; if a concrete type definition is given inside a module but the type is abstract in its public interface to a module then that type remains abstract to other modules.]
 
 
 # Constants
@@ -786,17 +786,17 @@ Adjacent names and keywords must be separated by whitespace. Whitespace is allow
 
     SourceFile = (Interface | Module) {Interface | Module}.
 
-A Vanilla source file contains one or more interfaces or modules. The names of the files are not significant, but the file extension `.van` should be used by convention.
+A Kete source file contains one or more interfaces or modules. The names of the files are not significant, but the file extension `.kete` should be used by convention.
 
 
 
-# The Vanilla Syntax
+# The Kete Syntax
 
-The syntax of Vanilla is presented informally in this document, but is LR(1). [vanilla.mly](vanilla.mly) is an LR(1) skeleton grammar for Ocaml [Menhir](https://gallium.inria.fr/~fpottier/menhir/). [vanilla.lark](vanilla.lark) is an Earley grammar for Python [Lark](https://github.com/lark-parser/lark).   
+The syntax of Kete is presented informally in this document, but is LR(1). [kete.mly](kete.mly) is an LR(1) skeleton grammar for Ocaml [Menhir](https://gallium.inria.fr/~fpottier/menhir/). [kete.lark](kete.lark) is an Earley grammar for Python [Lark](https://github.com/lark-parser/lark).   
 
 ## The syntax metalanguage
 
-The following is an informal description of the metalanguage used to describe the syntax of Vanilla in this document. It is Nicolas Wirth's ENBF with some extensions:
+The following is an informal description of the metalanguage used to describe the syntax of Kete in this document. It is Nicolas Wirth's ENBF with some extensions:
 
 
 | Rule example       | Meaning                                         |
@@ -814,7 +814,7 @@ The following is an informal description of the metalanguage used to describe th
 | "a"..."z"          | a character between "a" and "z"                 |
 | ( *x* )            | parentheses for metasyntax rules                |    
 
-Whitespace is allowed between grammar rule elements. Whitespace is *required* between alphanumeric elements. E.g. there must be whitespace between `var` and a variable name. The lexical rule `WHITESPACE` defines what whitespace is. Whitespace is *not* allowed between the characters of a lexical element. E.g. this is not a Vanilla variable name: `Endian Reversal`.  `CR`, `LF` and `TAB` are examples of special character names.
+Whitespace is allowed between grammar rule elements. Whitespace is *required* between alphanumeric elements. E.g. there must be whitespace between `var` and a variable name. The lexical rule `WHITESPACE` defines what whitespace is. Whitespace is *not* allowed between the characters of a lexical element. E.g. this is not a Kete variable name: `Endian Reversal`.  `CR`, `LF` and `TAB` are examples of special character names.
 
 This is the metasyntax written in itself: 
 

@@ -1,5 +1,5 @@
 //
-// VanillaC grammar in Lark. 
+// KeteC grammar in Lark. 
 //
 
 program: (module | interface | functor)*
