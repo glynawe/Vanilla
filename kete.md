@@ -1,12 +1,16 @@
 # Kete  [Draft]
 
-Kete is an imperative systems programming language in the Algol family. Kete has a module system with *functors*, a feature taken from OCaml. Functors are modules that take other modules as arguments. They are a single, simple mechanism that can provide features like abstract data types, generic types, traits, dependency injection and module extension.
+Kete is an imperative systems programming language. Kete has a module system with *functors*, a feature taken from OCaml. Functors are modules that take other modules as arguments. They are a single, simple mechanism that can provide features like abstract data types, generic types, traits, dependency injection and module extension.
 
-**A quick comparison to C.** 
+## The design space
+
+Kete's syntax resembles C++, Java and Rust. Its module system is similar to that OCaml. Its core type system is close to that of Oberon 07. It can be used for the same tasks as C, but is more "safe" by default.
+
+### A quick comparison to C. 
 
 - There is a true module system for defining abstract data types. 
+- There is garbage colloect by defualt.
 - There is no macro system, but constants and constant expressions are part of the language. 
-- Pointers cannot point to arbitrary locations, just to allocated records. 
 - Pointers are not used to implement arrays. Arrays are a type. 
 - Array argument lengths are always known. 
 - Arrays can be copied by assignment and can be returned from functions.
@@ -14,11 +18,10 @@ Kete is an imperative systems programming language in the Algol family. Kete has
 - Types are inferred when declaring new variables. 
 - There is a smaller selection of numeric types. 
 - There is no automatic casting between types. 
-- The `for` statement is less intricate. 
 - There is a smaller number of operators, less common operations are builtin functions. 
 - Functions that access hardware and circumvent the type system must be imported from the `SYSTEM` module. 
 
-**A quick comparison to C++ and Java.**
+### A quick comparison to C++ and Java.
 
 - The units of encapsulation are modules, typically containing types and functions for ADTs.
 - Nevertheless, ADT function calls resemble method calls. 
@@ -26,7 +29,7 @@ Kete is an imperative systems programming language in the Algol family. Kete has
 - Unlike generic classes, functors can supply whole groups of interrelated types.
 - There is no inheritance of implementation, but inclusion of trait functions (mixins) is possible.
 
-**A quick comparison to SML and Ocaml.**
+## A quick comparison to SML and Ocaml.
 
 - The 'core language' is imperative, and lower-level. 
   - Variables are assignable, functions can have call-by-reference parameters.
@@ -34,9 +37,20 @@ Kete is an imperative systems programming language in the Algol family. Kete has
 - The 'module language' is simpler. 
   - Modules cannot be nested.
   - Modules, interfaces (signatures) and functors must always be named. 
-- Variant types are Oberon "extensible records".
+- Variant types are defined using Oberon 'extensible records'.
 - A functor instantiation can be included (opened) into a module.
 - A method call-like syntax makes module name prefixes less necessary. 
+
+## A quick comparison to Oberon 07.
+- Exports do not need to be marked. Modules can instead be given explict interfaces.
+- Extensible records are distinct from regular records (structures).
+- Extensible records are reference types. Pointers to extensible records are unnecessary.
+- Arrays and structure records are scalar types, they may be returned from procedures.
+- The value and type versions of the CASE statement are distinct.
+- Variables can be declared locally within statement blocks.
+- The control structures are less strict.
+    - Loops can be exited earily.
+    - There can be more than one return statement.
 
 # Example
 
@@ -277,8 +291,6 @@ The above rule is also used to initialize local variables within blocks.
          | "[" "]" Type
          | "ref" Type.
 
-    DimensionList = Constant ","... .
-
 Arrays begin at element 0. An array with no specified dimension is an *open array* which may have any length. An open array's length can be found using the standard function `len`. An open array type may only be used as the type of an parameter or as the target of a pointer type.
 
 Object, `fn` and `ref` types are reference types. A reference points to a value of that type or `null`. More than one reference can point to a value.
@@ -464,8 +476,8 @@ If the match's expression is `null` then the `case null:` branch is excuted.
     fn inc (var node: Tree) { 
         match (var node) {
             case (n: Node):   n.value += 1;
-            case (b: Branch): inc(b.child);
-            case (f: Fork):   inc(f.left); inc(f.right);
+            case (b: Branch): inc(var b.child);
+            case (f: Fork):   inc(var f.left); inc(var f.right);
         }
     }
 
@@ -642,7 +654,8 @@ The bit shift operators will shift in the opposite direction if *n* is negative.
 |----------------------------------------|-----------------------------------|
 | `new (T) : ref T`                      | allocate data                     |
 | `new (T, d: int) : ref [] T`           | allocate an array of `d` elements |
-| `free (r : ref T)`                     | free data                         |
+| `free (d : ref T)`                     | free the allocated data at `d`    |
+| `free (r : R)`                         | free record `r`                   |
 
 `new` and `free` may not be used in constant expressions. The type `T` may not be an opaque type or open array (its size must be known).
 
