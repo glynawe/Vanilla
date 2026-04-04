@@ -2,14 +2,16 @@
 
 Kete is an imperative systems programming language. Kete has a module system with *functors*, a feature taken from OCaml. Functors are modules that take other modules as arguments. They are a single, simple mechanism that can provide features like abstract data types, generic types, traits, dependency injection and module extension.
 
+[(Kete)[https://maoridictionary.co.nz/search?&keywords=kete] is the Māori word for a basket or a domain of knowledge.]
+
 ## The design space
 
-Kete's syntax resembles C++, Java and Rust. Its module system is similar to that OCaml. Its core type system is close to that of Oberon 07. It can be used for the same tasks as C, but is more "safe" by default.
+Kete's syntax resembles C++, Java or Rust. Its module system is similar to that OCaml. Its core type system is close to that of Oberon 07. It can be used for the same tasks as C, but is more "safe" by default.
 
 ### A quick comparison to C. 
 
 - There is a true module system for defining abstract data types. 
-- There is garbage colloect by defualt.
+- There is garbage collection.
 - There is no macro system, but constants and constant expressions are part of the language. 
 - Pointers are not used to implement arrays. Arrays are a type. 
 - Array argument lengths are always known. 
@@ -48,6 +50,8 @@ Kete's syntax resembles C++, Java and Rust. Its module system is similar to that
 - Arrays and structure records are scalar types, they may be returned from procedures.
 - The value and type versions of the CASE statement are distinct.
 - Variables can be declared locally within statement blocks.
+- There is an unsigned integer type for working with machine words.
+- Bit operators are used instead of SETs.
 - The control structures are less strict.
     - Loops can be exited earily.
     - There can be more than one return statement.
@@ -83,7 +87,7 @@ This very simplified program defines strings and generic sets as abstract data t
         type ElemT;
         let Empty: T;
         fn Add (set: T, element: ElemT) : T;
-        fn Includes (set: T, element: ElemT) : bool;
+        fn Contains (set: T, element: ElemT) : bool;
     }
 
     module Set <Element: COMPARABLE> : SET with ElemT = Element::T {
@@ -293,7 +297,7 @@ The above rule is also used to initialize local variables within blocks.
 
 Arrays begin at element 0. An array with no specified dimension is an *open array* which may have any length. An open array's length can be found using the standard function `len`. An open array type may only be used as the type of an parameter or as the target of a pointer type.
 
-Object, `fn` and `ref` types are reference types. A reference points to a value of that type or `null`. More than one reference can point to a value.
+Record, `fn` and `ref` types are *reference types*. A reference points to data of its type or `null`. `fn` names references to functions. `ref` names pointer types. Pointers only reference dynamically allocated data.
 
 An *opaque type* is a type whose definition is not yet given. An opaque type can be used in an interface to denote an abstract type, or in a module to allow a record type to contain pointers to itself. An opaque type must be defined before it can be used in a module, either by a full type definition or a functor type constraint.
 
