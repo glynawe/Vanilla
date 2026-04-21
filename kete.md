@@ -282,31 +282,60 @@ The above rule is also used to initialize local variables within blocks.
 
 # Types
 
-    TypeDefinition = "type" NAME "=" StructuredType ";" | OpaqueType.
-    OpaqueType     = "type" NAME ";".
+    TypeDeclaration = NewType | TypeEquivalance | AbstractType.
 
-    StructuredType = "record" ["(" GlobalName ")"] [ "{" {VariableList ";"} "}" ]
+    NewType          = "type" NAME "=" TypeDefinition ";".
+    TypeEquivalance  = "type" NAME "=" GlobalName ";".
+    AbstractType     = "type" NAME ";".
+
+    TypeDefinition = "record" ["(" GlobalName ")"] [ "{" {VariableList ";"} "}" ]
                    | "struct" "{" {VariableList ";"} "}
                    | "fn" FnType
-                   | Type.
+                   | "[" Constant "]" Type
+                   | "[" "]" Type
+                   | "ref" Type.
 
     Type = GlobalName
          | "[" Constant "]" Type
          | "[" "]" Type
          | "ref" Type.
 
+An *abstract type* is a type whose definition is not yet given. An abstract type can be used in an interface to denote an abstract type, or in a module to allow a record type to contain pointers to itself. An abstract type must be defined before it can be used in a module, either by a full type definition or a functor type constraint.
+
 Arrays begin at element 0. An array with no specified dimension is an *open array* which may have any length. An open array's length can be found using the standard function `len`. An open array type may only be used as the type of an parameter or as the target of a pointer type.
 
 Record, `fn` and `ref` types are *reference types*. A reference points to data of its type or `null`. `fn` names references to functions. `ref` names pointer types. Pointers only reference dynamically allocated data.
 
-An *opaque type* is a type whose definition is not yet given. An opaque type can be used in an interface to denote an abstract type, or in a module to allow a record type to contain pointers to itself. An opaque type must be defined before it can be used in a module, either by a full type definition or a functor type constraint.
-
-A pointer to an undeclared type can be declared provided that that type is declared later in the same module.
+A pointer to an undeclared type can be declared provided that that type is declared later in the same module. [This is the rule used by Pascal and Oberon 07.]
 
 **Example:**
 
     type Tree = ref Node;
     type Node = record { left, right: Tree; };
+
+### Type equivalence
+
+Abstract types and record types are *name equivalent*, all other types are *structurally equivalent*.
+
+Name equivalence:
+
+- If there is a type declaration `type T1 = T2`, where `T1` and `T2` are names, then `T1` and `T2` are *equivalent type names* that name the same type. A type name is equivalent to itself.
+
+- Record and abstract types are the same type if they have equivalent type names.
+
+Structural equivalence:
+
+- If there is a type declaration `type T = t`, where *t* is a type definition that is not a type name or record type, then the type name `T` is the same type as *t*.
+
+- The basic types `int`, `bool`, `byte` and `real` are the same type as themselves.
+
+- Arrays are the same type if they have the same size and their element types are the same. 
+
+- Structures the same type if their fields can be paired and each pair has the same name and type.  
+
+- Pointer types are equivalent if their targets are the same type.
+
+- Function types are the same if they have the same return type, their parameters can be paired, and each pair has the same type and are both value parameters or both reference parameters.  
 
 ## Records
 
@@ -535,7 +564,7 @@ The operator `is` is a runtime type test for records. `r is T` is  true if recor
 
 ### Logical operators
 
-*cond* `?` *expr1* `:` *expr2* is the conditional expression. If *cond* is true then *expr1* is evaluated and returned. If *cond* is false then *expr2* is evaluated and returned. *cond* must have the `bool` type, and *expr1* and *expr2* must have identical types.
+*cond* `?` *expr1* `:` *expr2* is the conditional expression. If *cond* is true then *expr1* is evaluated and returned. If *cond* is false then *expr2* is evaluated and returned. *cond* must have the `bool` type, and *expr1* and *expr2* must have the same type.
 
 The `&&` and `||` operators are "shortcut operators", they are equivalent to these conditional expressions:
 
@@ -562,7 +591,7 @@ Pointer designators are automatically dereferenced when they are the designator 
 
 The list of arguments in a call is passed to the designated function as parameters. An argument must match its parameter's type. A reference parameter must be passed a `var` argument which is a designator of the same type. A value parameter may be passed an expression, following the same rules as assignment.
 
-If the start of a designator refers to a variable *v* of type *M::t*, and the last name in the designator refers to a function *M::p*, then `M::p(v, ...)` or `M::p(var v, ...)` may be written as `v->p(...)`. (This is similar to the syntactic sugar that Python uses for method calls.)
+If a designator refers to a variable *v* of type *M::t*, and the last name in the designator refers to a function *M::p*, then `M::p(v, ...)` or `M::p(var v, ...)` may be written as `v->p(...)`. (This is similar to the syntactic sugar that Python uses for method calls.)
 
 **Example**
 
@@ -661,7 +690,7 @@ The bit shift operators will shift in the opposite direction if *n* is negative.
 | `free (d : ref T)`                     | free the allocated data at `d`    |
 | `free (r : R)`                         | free record `r`                   |
 
-`new` and `free` may not be used in constant expressions. The type `T` may not be an opaque type or open array (its size must be known).
+`new` and `free` may not be used in constant expressions. The type `T` may not be an abstract type or open array (its size must be known).
 
 #### Garbage Collection Option
 
