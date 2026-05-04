@@ -2,49 +2,50 @@
 
 Kete is an imperative systems programming language. Kete has a module system with *functors*, a feature taken from OCaml. Functors are modules that take other modules as arguments. They are a single, simple mechanism that can provide features like abstract data types, generic types, traits, dependency injection and module extension.
 
-[(Kete)[https://maoridictionary.co.nz/search?&keywords=kete] is the Māori word for a basket or a domain of knowledge.]
+[[Kete](https://maoridictionary.co.nz/search?&keywords=kete) is the Māori word for a basket or a domain of knowledge.]
 
 ## The design space
 
 Kete's syntax resembles C++, Java or Rust. Its module system is similar to that OCaml. Its core type system is close to that of Oberon 07. It can be used for the same tasks as C, but is more "safe" by default.
 
-### A quick comparison to C. 
+### A quick comparison to C
 
-- There is a true module system for defining abstract data types. 
+- There is a true module system for defining abstract data types.
 - There is garbage collection.
-- There is no macro system, but constants and constant expressions are part of the language. 
-- Pointers are not used to implement arrays. Arrays are a type. 
-- Array argument lengths are always known. 
+- There is no macro system, but constants and constant expressions are part of the language.
+- Pointers are not used to implement arrays. Arrays are a type.
+- Array argument lengths are always known.
 - Arrays can be copied by assignment and can be returned from functions.
 - The pointer dereference operator is postfix.
-- Types are inferred when declaring new variables. 
-- There is a smaller selection of numeric types. 
-- There is no automatic casting between types. 
-- There is a smaller number of operators, less common operations are builtin functions. 
-- Functions that access hardware and circumvent the type system must be imported from the `SYSTEM` module. 
+- Types are inferred when declaring new variables.
+- There is a smaller selection of numeric types.
+- There is no automatic casting between types.
+- There is a smaller number of operators, less common operations are builtin functions.
+- Functions that access hardware and circumvent the type system must be imported from the `SYSTEM` module.
 
-### A quick comparison to C++ and Java.
+### A quick comparison to C++ and Java
 
 - The units of encapsulation are modules, typically containing types and functions for ADTs.
-- Nevertheless, ADT function calls resemble method calls. 
+- Nevertheless, ADT function calls resemble method calls.
 - Parameterized modules (functors) take the place of C++ templates and Java generic classes.
 - Unlike generic classes, functors can supply whole groups of interrelated types.
 - There is no inheritance of implementation, but inclusion of trait functions (mixins) is possible.
 
-## A quick comparison to SML and Ocaml.
+### A quick comparison to SML and Ocaml
 
-- The 'core language' is imperative, and lower-level. 
+- The 'core language' is imperative, and lower-level.
   - Variables are assignable, functions can have call-by-reference parameters.
   - There are no closures.
-- The 'module language' is simpler. 
+- The 'module language' is simpler.
   - Modules cannot be nested.
-  - Modules, interfaces (signatures) and functors must always be named. 
+  - Modules, interfaces (signatures) and functors must always be named.
 - Variant types are defined using Oberon 'extensible records'.
 - A functor instantiation can be included (opened) into a module.
-- A method call-like syntax makes module name prefixes less necessary. 
+- A method call-like syntax makes module name prefixes less necessary.
 
-## A quick comparison to Oberon 07.
-- Exports do not need to be marked. Modules can instead be given explict interfaces.
+### A quick comparison to Oberon 07
+
+- Exports do not need to be marked. Modules can instead be given explicit interfaces.
 - Extensible records are distinct from regular records (structures).
 - Extensible records are reference types. Pointers to extensible records are unnecessary.
 - Arrays and structure records are scalar types, they may be returned from procedures.
@@ -53,12 +54,12 @@ Kete's syntax resembles C++, Java or Rust. Its module system is similar to that 
 - There is an unsigned integer type for working with machine words.
 - Bit operators are used instead of SETs.
 - The control structures are less strict.
-    - Loops can be exited earily.
-    - There can be more than one return statement.
+  - Loops can be exited early.
+  - There can be more than one return statement.
 
-# Example
+### Example
 
-This very simplified program defines strings and generic sets as abstract data types. They are then used to create sets of strings. 
+This very simplified program defines strings and generic sets as abstract data types. They are then used to create sets of strings.
 
     interface COMPARABLE {
         type T;
@@ -76,8 +77,8 @@ This very simplified program defines strings and generic sets as abstract data t
             return a == b || a^ == b^;
         }
         fn New (text: []byte): T {
-            var s = new(byte, len(text)); 
-            s^ = text; 
+            var s = new(byte, len(text));
+            s^ = text;
             return s;
         }
     }
@@ -91,9 +92,9 @@ This very simplified program defines strings and generic sets as abstract data t
     }
 
     module Set <Element: COMPARABLE> : SET with ElemT = Element::T {
-        type T = record { 
-            value: ElemT; 
-            next: T; 
+        type T = record {
+            value: ElemT;
+            next: T;
         };
         let Empty: T = null;
         fn Add (set: T, element: ElemT) : T {
@@ -102,17 +103,17 @@ This very simplified program defines strings and generic sets as abstract data t
         }
         fn Contains (set: T, element: ElemT) : bool {
             while (set != null) {
-                if (set.head->Equals(element)) 
+                if (set.head->Equals(element))
                     return true;
-                else 
-                    set = set.tail; 
+                else
+                    set = set.tail;
             }
             return false;
         }
     }
 
     module Program {
-        import Print;  
+        import Print;
         import String;
         import StringSet = Set<String>;
         fn main () {
@@ -124,10 +125,9 @@ This very simplified program defines strings and generic sets as abstract data t
         }
     }
 
+## Program Structure
 
-# Program Structure
-
-## Definitions and Declarations
+### Definitions and Declarations
 
     Definition = VarDefinition | FunctionDefinition | OtherDefinitions.
 
@@ -139,28 +139,28 @@ A *definition* names and describes a data type, function, variable, module or co
 
 A *declaration* is a definition that also defines *object code*. Object code is variable data or function code that will be included in an executable program. A declaration can only be made once.
 
-## Modules and Interfaces
+### Modules and Interfaces
 
     Program = (Interface | Module | Functor) ... .
 
 A Kete program may contain any number of interfaces, modules and functors. One module must declare a function called `main`, which will be the first function to be executed.
 
-    Interface = "interface" InterfaceName "{" 
-                {Definition} 
+    Interface = "interface" InterfaceName "{"
+                {Definition}
                 "}".
 
-    Module    = "module" ModuleName [PublicInterface] "{" 
-                {DeclarationOrDefinition} 
+    Module    = "module" ModuleName [PublicInterface] "{"
+                {DeclarationOrDefinition}
                 "}".
 
-    Functor   = "module" ModuleName "<" ModuleParameter ","... ">" 
-                [PublicInterface] [TypeConstraints] "{" 
-                {DeclarationOrDefinition} 
+    Functor   = "module" ModuleName "<" ModuleParameter ","... ">"
+                [PublicInterface] [TypeConstraints] "{"
+                {DeclarationOrDefinition}
                 "}".
 
     PublicInterface  = [":" InterfaceName].
     ModuleParameter  = ModuleName ":" InterfaceName.
-    TypeConstraints  = "with" TypeEquivalence ","... 
+    TypeConstraints  = "with" TypeEquivalence ","...
     TypeEquivalence  = TypeName "=" TypeName.
     TypeName         = ModuleName "::" NAME.
 
@@ -170,7 +170,7 @@ A Kete program may contain any number of interfaces, modules and functors. One m
 
 An *interface* contains a set of definitions. A *module* contains a set of definitions and declarations. The primary purpose of modules is to group together collections of types and functions to define abstract data types.
 
-If a module is declared with a *public interface* then only the definitions in that interface will be available when the module is imported. The module must contain declarations for all the definitions in its public interface. 
+If a module is declared with a *public interface* then only the definitions in that interface will be available when the module is imported. The module must contain declarations for all the definitions in its public interface.
 
 A *functor* is a module parametrized by interfaces for modules that it may import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each interface parameter specifies a minimum set of definitions that the actual module must provide. A functor *type constraint* specifies types from different parameter modules that to be treated as being identical (this is important when defining generic types).
 
@@ -182,35 +182,35 @@ Functor application is *generative*. Modules are distinct even if their interfac
 However, a type constraint can be used to make `A.t` and `B.t` compatible:
 
     interface S { type t; }
-    module M <A: S, B: S> with A.t = B.t { ... } 
+    module M <A: S, B: S> with A.t = B.t { ... }
 
 A module without an explicit public interface is given a default interface that excludes its imported names.
 
 All interfaces and modules implicitly contain a set of *standard declarations* supplied by the Kete language. For example, the type `int` is a standard declaration.
 
-**Example**
+Example:
 
-    module Map <Key: Comparable, Value: ADT> 
-        with KeyType = Key::Type, ValueType = Value::Type 
+    module Map <Key: Comparable, Value: ADT>
+        with KeyType = Key::Type, ValueType = Value::Type
     {
         type MapType;
         type ValueType;
         type KeyType;
-        fn Set (map: MapType, key: KeyType, value: ValueType) { ... } 
+        fn Set (map: MapType, key: KeyType, value: ValueType) { ... }
         ...
     }
 
-### Inclusion
+#### Inclusion
 
     Inclusion = Include | Import.
     Import    = "import" ModuleName ["=" Expansion] ";".
     Include   = "include"  Expansion ";".
-    Expansion = [":" PublicInterface] FunctorName ["<" ModuleName ","... ">"] [typeconstraints]. 
+    Expansion = [":" PublicInterface] FunctorName ["<" ModuleName ","... ">"] [typeconstraints].
 
     ImportedName = ModuleName "::" NAME.
-    GlobalName   = NAME | ImportedName. 
+    GlobalName   = NAME | ImportedName.
 
-`include` includes content from another module or interface. The contents of an interface are its definitions, the contents of a module are its declarations. `import` also includes content, but each definition is given an *imported name*, which is the definition's name prefixed with the name of the module. 
+`include` includes content from another module or interface. The contents of an interface are its definitions, the contents of a module are its declarations. `import` also includes content, but each definition is given an *imported name*, which is the definition's name prefixed with the name of the module.
 
 An *expansion* designates an existing module or interface, or it creates a new module from a functor. The functor's module parameters are replaced with the modules in the functor expansion's list of module arguments, and types from those modules are made equivalent according to the functor's type constraints. If a *public interface* is given then only the subset of definitions in that interface will be visible.
 
@@ -218,8 +218,7 @@ A module's *global names* are the names of all its definitions.
 
 \[In Ocaml interfaces are called *module types*, in Standard ML interfaces are called *signatures*. Kete functors are *generative*; i.e. if two modules are made from the same functor then the abstract types that they contain are not equivalent. Kete modules are not *translucent*; if a concrete type definition is given inside a module but the type is abstract in its public interface to a module then that type remains abstract to other modules.]
 
-
-# Constants
+## Constants
 
     Constant = Expression.
 
@@ -229,8 +228,7 @@ A *constant* is an expression that is evaluated by the compiler. The declared le
 
 A ConstDefinition names a constant. A named constant may be described more than once, but the additional definitions must evaluate to the same value.
 
-
-# Variables
+## Variables
 
     VarDefinition = ("var" | "let") VariableList ";".
     VarDeclaration = ("var" | "let") VariableList ["=" StructuredConstant] ";".
@@ -240,13 +238,13 @@ A ConstDefinition names a constant. A named constant may be described more than 
 
 A list of distinct variable definitions will be made if a list of names is given. `var a, b, c: t;` is shorthand for `var a: t; var b: t; var c: t;`
 
-All of the variables named in the variable list of a VarDeclaration are initialized to the values in the VarDeclaration's structured constant. 
+All of the variables named in the variable list of a VarDeclaration are initialized to the values in the VarDeclaration's structured constant.
 
 `let` declares a *immutable variable*, a variable that can only be assigned once when it is declared. *The compiler may arrange for immutable global variables to be stored in ROM.*
 
 A variable definition has an implicit declaration if one is not given in a program's modules. E.g. the definition `var i: int;` will be provided the declaration `var i: int = 0;`.
 
-## Structured Constants
+### Structured Constants
 
 A structured constant can be used to initialize global variables of any type, especially arrays and records. The value of a structured constant will become object code for the executable program.
 
@@ -262,30 +260,28 @@ A `for` clause indicates that an item should be repeated a number of times withi
 
 A string literal can be used to declare a byte array. If it is shorter than the array then it is padded with zeros.
 
-**Example** This array contains a one, three sevens and a six:
+Example: This array contains a one, three sevens and a six:
 
     var sevens: [5]int = {1, 7 for 3, 6};
 
-**Example** This array contains the bytes {64, 90, 64, 90, 0, 0, 0, 0}:
+Example: This array contains the bytes {64, 90, 64, 90, 0, 0, 0, 0}:
 
     let string: [8]byte = "AZAZ";
 
+### Implicit Variable Declarations
 
-## Implicit Variable Declarations
-
-A variable definition has an implicit declaration if one is not given in a program's modules. 
+A variable definition has an implicit declaration if one is not given in a program's modules.
 
 An implicit variable declaration has a default value. Numeric variables are initialized to zero. Pointer, procedure and record values are initialized to `null`. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero or null.
 
 The above rule is also used to initialize local variables within blocks.
 
+## Types
 
-# Types
-
-    TypeDeclaration = NewType | TypeEquivalance | AbstractType.
+    TypeDeclaration = NewType | TypeEquivalence | AbstractType.
 
     NewType          = "type" NAME "=" TypeDefinition ";".
-    TypeEquivalance  = "type" NAME "=" GlobalName ";".
+    TypeEquivalence  = "type" NAME "=" GlobalName ";".
     AbstractType     = "type" NAME ";".
 
     TypeDefinition = "record" ["(" GlobalName ")"] [ "{" {VariableList ";"} "}" ]
@@ -329,19 +325,19 @@ Structural equivalence:
 
 - The basic types `int`, `bool`, `byte` and `real` are the same type as themselves.
 
-- Arrays are the same type if they have the same size and their element types are the same. 
+- Arrays are the same type if they have the same size and their element types are the same.
 
-- Structures the same type if their fields can be paired and each pair has the same name and type.  
+- Structures the same type if their fields can be paired and each pair has the same name and type.
 
 - Pointer types are equivalent if their targets are the same type.
 
-- Function types are the same if they have the same return type, their parameters can be paired, and each pair has the same type and are both value parameters or both reference parameters.  
+- Function types are the same if they have the same return type, their parameters can be paired, and each pair has the same type and are both value parameters or both reference parameters.
 
-## Records
+### Records
 
 An `record` value behaves like a pointer to a `struct` value, except that it carries a hidden tag that allows its type to be determined at runtime. Records are for creating variant types and tree-structured data. [The `record` type is the Oberon 07 language's *extensible record* type.]
 
-A record type can extend a parent record type. A record variable may be assigned records with extentions of the variable's type. Any record variable may be assigned `null`. 
+A record type can extend a parent record type. A record variable may be assigned records with extentions of the variable's type. Any record variable may be assigned `null`.
 
 The name of a record type is a function that returns a new record of that type with its fields initialised with each of the function's arguments.
 
@@ -359,16 +355,15 @@ The name of a record type is a function that returns a new record of that type w
         return Plus(e, Value(1));
     }
 
-    fn evalulate (e: Expression) : int {
+    fn evaluate (e: Expression) : int {
         match (e) {
             case (v: Value): return v;
-            case (p: Plus):  return evalulate(p.left) + evalulate(p.right);
-            case (t: Times): return evalulate(t.left) * evalulate(t.right);
+            case (p: Plus):  return evaluate(p.left) + evaluate(p.right);
+            case (t: Times): return evaluate(t.left) * evaluate(t.right);
         }
     }
 
-
-# Functions
+## Functions
 
     FunctionDefinition = "fn" NAME FnType ";".
     FnDeclaration = ["loop"] "fn" NAME FnType (";" | Block | "=" Expression ";").
@@ -383,13 +378,13 @@ A function with a return type is an *expression function*. A function without a 
 
 Parameters with a `var` are *reference parameters*. Assigning to a `var` parameter assigns to the designator passed by the function call. Parameters without `var` are *value parameters*. Value parameters are immutable.
 
-An *open array* parameter may be passed an array of any length if their element types are the same. 
+An *open array* parameter may be passed an array of any length if their element types are the same.
 
-A function definition can be used in a module to define it early. This allows sets of mutually recursive functions to be defined. (This is like providing a *function prototype* in C.) 
+A function definition can be used in a module to define it early. This allows sets of mutually recursive functions to be defined. (This is like providing a *function prototype* in C.)
 
-A `loop` function must be tail-call optimizable. I.e. if the function calls itself recursively then that call must be optimizable into a loop. The compiler will reject the program if it cannot perform the optimisation. 
+A `loop` function must be tail-call optimizable. I.e. if the function calls itself recursively then that call must be optimizable into a loop. The compiler will reject the program if it cannot perform the optimisation.
 
-# Statements
+## Statements
 
     Block = "{" {Statement} "}".
 
@@ -398,19 +393,19 @@ A `loop` function must be tail-call optimizable. I.e. if the function calls itse
 
     Empty = ";".
 
-## Local Declarations
+### Local Declarations
 
-    LocalDefinition = LocalVarDeclaration | LocalLetDeclaration | ConstDefinition. 
+    LocalDefinition = LocalVarDeclaration | LocalLetDeclaration | ConstDefinition.
     LocalVarDeclaration = "var" IdentList (":" Type ["=" Expression] | "=" Expression).
     LocalLetDeclaration = "let" IdentList [":" Type] "=" Expression.
 
-Variables and constants defined in a block are only valid within that block, i.e. blocks are scopes. Variables and constants are only visible to the statements that come after their declaration statements. 
+Variables and constants defined in a block are only valid within that block, i.e. blocks are scopes. Variables and constants are only visible to the statements that come after their declaration statements.
 
-If a local variable declaration has an initializer expression then the expression is evaluated first and then all the variables named in its list are assigned that value, otherwise it is initialized to a default value by the same rules used to initialize global variables. If a local declaration has an initializer expression but no type then it takes on the type of its initializer. `let` declares a *immutable variable*, a variable that can only be assigned once when it is declared.  
+If a local variable declaration has an initializer expression then the expression is evaluated first and then all the variables named in its list are assigned that value, otherwise it is initialized to a default value by the same rules used to initialize global variables. If a local declaration has an initializer expression but no type then it takes on the type of its initializer. `let` declares a *immutable variable*, a variable that can only be assigned once when it is declared.
 
-A local definition may not have the same name as any definition in the same block or any surrounding block, including the function's parameter names. I.e. local names may not be shadowed. 
+A local definition may not have the same name as any definition in the same block or any surrounding block, including the function's parameter names. I.e. local names may not be shadowed.
 
-## Assignments
+### Assignments
 
     Assignment = Designator "=" Expression ";"
                | Designator MathOp "=" Expression ";"
@@ -423,13 +418,13 @@ The expression is evaluated  then its value is assigned to the designator. The d
 
 Structures of the same type and arrays of the same type and length may be assigned to each other.
 
-## If Statements
+### If Statements
 
     If = "if" "(" Expression ")" Statement ["else" Statement].
 
-*The "dangling else" ambiguity is resolved in the usual way: if there are two nested `if` statements then an `else` clause attaches to the innermost one.*  
+*The "dangling else" ambiguity is resolved in the usual way: if there are two nested `if` statements then an `else` clause attaches to the innermost one.*
 
-## Looping Statements
+### Looping Statements
 
     For   = [NAME ":"] "for" "(" NAME "=" Expression  (":" | "..") Expression ")" Statement.
     While = [NAME ":"] "while" "(" Expression ")" Statement.
@@ -439,12 +434,12 @@ Structures of the same type and arrays of the same type and length may be assign
 
 Looping statements may be labelled with a name to be used by `break` statements. `break` exits any looping statement; either the loop that is named, or the innermost loop if no name is given. A break statement can only appear inside a looping statement. A named break statement can only appear inside a looping statement with the same name. A break statement within a `switch` statement must have a name.
 
-A `for` loop's control variable name is an immutable integer variable in the looped statement. The limiting expressions of a `for` loop are evaluated only once. If the limits of a `for` statement are separated by `:` then the loop ends when the limiting expression is reached. If `..` is used then the loop ends when the limiting expression is exceeded. `for (i = 0 : 4) print(i);` would print `0 1 2 3` but `for (i = 0 .. 4) print(i);` would print `0 1 2 3 4`. 
+A `for` loop's control variable name is an immutable integer variable in the looped statement. The limiting expressions of a `for` loop are evaluated only once. If the limits of a `for` statement are separated by `:` then the loop ends when the limiting expression is reached. If `..` is used then the loop ends when the limiting expression is exceeded. `for (i = 0 : 4) print(i);` would print `0 1 2 3` but `for (i = 0 .. 4) print(i);` would print `0 1 2 3 4`.
 
 A `loop` statement continues looping until an applicable `break` statement is executed.
 ****
 
-**Example**
+Example:
 
     fn uppercase (var string: []byte) {
         LOOP: for (i = 0 : len(string)) {
@@ -455,27 +450,26 @@ A `loop` statement continues looping until an applicable `break` statement is ex
         }
     }
 
-
-## Switch statements
+### Switch statements
 
     Switch     = "switch" "(" Expression ")" "{" {Case} ["default" ":" Statements] "}".
     Case       = "case" Range ","... ":" Statements.
     Range      = Constant [".." Constant].
     Statements = Statement {Statement}
 
-Switch expressions and switch range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a case's ranges then that case's statements are executed. If the value does not match a case and there is a `default` clause then its statements are executed; if there is no `default` clause then nothing is done. 
+Switch expressions and switch range constants must be integers or bytes. All constants in a `case` statement must be unique and ranges must not overlap. If the expression's value is within a case's ranges then that case's statements are executed. If the value does not match a case and there is a `default` clause then its statements are executed; if there is no `default` clause then nothing is done.
 
-**Example**
+Example:
 
     switch (c) {
-        case '0'..'9': 
+        case '0'..'9':
             kind = DIGIT;
-        case 'a'..'z', 'A'..'Z': 
+        case 'a'..'z', 'A'..'Z':
             kind = LETTER;
-        case ' ', '\t', ',': 
+        case ' ', '\t', ',':
             kind = PUNCTUATION;
-        default: 
-            error(); 
+        default:
+            error();
             kind = UNEXPECTED;
     }
 
@@ -483,21 +477,21 @@ Switch expressions and switch range constants must be integers or bytes. All con
 
 *The highest range constant must be less than 256 higher than the lowest constant. Switch statements are most useful when implemented using jump tables, and there must be some limit to the size of those tables.*
 
-## Match Statements
+### Match Statements
 
-A `match` statement chooses statements to execute based on the runtime type of a record. An argument variable of that type is declared in the scope of each case branch. These arguments follow the same rules as function argument passing. E.g. the `var` version of the `match` statement creates assignable arguments that alias the `match` statement's designator. 
+A `match` statement chooses statements to execute based on the runtime type of a record. An argument variable of that type is declared in the scope of each case branch. These arguments follow the same rules as function argument passing. E.g. the `var` version of the `match` statement creates assignable arguments that alias the `match` statement's designator.
 
-If the match's expression is `null` then the `case null:` branch is excuted.
+If the match's expression is `null` then the `case null:` branch is executed.
 
-    Match = "match" "(" Argument ")" "{" 
-                {"case" MatchParameter ":" Statements} 
-                ["default" ":" Statements] 
+    Match = "match" "(" Argument ")" "{"
+                {"case" MatchParameter ":" Statements}
+                ["default" ":" Statements]
             "}".
     MatchParameter = "(" Name ":" GlobalName ")" | "null".
 
-**Example**
+Example:
 
-    fn sum (node: Tree) : int { 
+    fn sum (node: Tree) : int {
         match (node) {
             case (n: Node):   return n.value;
             case (b: Branch): return sum(b.child);
@@ -506,7 +500,7 @@ If the match's expression is `null` then the `case null:` branch is excuted.
         }
     }
 
-    fn inc (var node: Tree) { 
+    fn inc (var node: Tree) {
         match (var node) {
             case (n: Node):   n.value += 1;
             case (b: Branch): inc(var b.child);
@@ -514,17 +508,16 @@ If the match's expression is `null` then the `case null:` branch is excuted.
         }
     }
 
-## Return Statements
+### Return Statements
 
     Return = "return" [Expression] ";".
 
 `return` returns from a function immediately. If the function has a return type specified in its definition then a return value must be supplied, and all the function's paths of execution must end with a return statement.
 
-
-# Expressions
+## Expressions
 
     Expression = Disjunction ["?" Disjunction ":" Expression].
-    Disjunction = Conjunction {"||" Conjunction}. 
+    Disjunction = Conjunction {"||" Conjunction}.
     Conjunction = Relation {"&&" Relation}.
     Relation = Sum [RelationOp Sum | "is" GlobalName].
     Sum  = Term {AddOp Term}.
@@ -540,18 +533,18 @@ If the match's expression is `null` then the `case null:` branch is excuted.
     RelationOp = "==" | "!=" | ">" | "<" | ">=" | "<=".
     UnaryOp = "+" | "-" | "!".
 
-## Operators
+### Operators
 
-| Operators                - | Operand   | Operand   | Result    |
-|----------------------------|-----------|-----------|-----------|
-| `+` `-` `*` `/`            | *NumType* | *NumType* | *NumType* |
-| `%`                        | *IntType* | *IntType* | *IntType* |
-| unary `-` `+`              | *NumType* |           | *NumType* |
-| `==` `!=` `<` `<=` `>` `>=`| *NumType* | *NumType* | `bool`    |
-| `==` `!=`                  | *RefType* | *RefType* | `bool`    |
-| `&&` `\|\|`                | `bool`    | `bool`    | `bool`    |
-| `!`                        | `bool`    |           | `bool`    |
-| `==` `!=`                  | *RefType* | *RefType* | `bool`    |
+| Operators                - | Operand   | Operand    | Result    |
+|----------------------------|-----------|------------|-----------|
+| `+` `-` `*` `/`            | *NumType* | *NumType*  | *NumType* |
+| `%`                        | *IntType* | *IntType*  | *IntType* |
+| unary `-` `+`              | *NumType* |            | *NumType* |
+| `==` `!=` `<` `<=` `>` `>=`| *NumType* | *NumType*  | `bool`    |
+| `==` `!=`                  | *RefType* | *RefType*  | `bool`    |
+| `&&` `\|\|`                | `bool`    | `bool`     | `bool`    |
+| `!`                        | `bool`    |            | `bool`    |
+| `==` `!=`                  | *RefType* | *RefType*  | `bool`    |
 | `is`                       | *ObjType* | *TypeName* | `bool`    |
 
 *NumType* is `real`, `int`, `word` or `byte`. *IntType* is `int`, `word` or `byte`. *RefType* is any reference type. Operands and results must have the same type.
@@ -562,7 +555,7 @@ Relational operators compare `int`, `word`, `byte`, `float` and pointer types. T
 
 The operator `is` is a runtime type test for records. `r is T` is  true if record value `r` has the record type `T` or one of its extension types.
 
-### Logical operators
+#### Logical operators
 
 *cond* `?` *expr1* `:` *expr2* is the conditional expression. If *cond* is true then *expr1* is evaluated and returned. If *cond* is false then *expr2* is evaluated and returned. *cond* must have the `bool` type, and *expr1* and *expr2* must have the same type.
 
@@ -572,8 +565,7 @@ The `&&` and `||` operators are "shortcut operators", they are equivalent to the
 
 `a && b`  ≡  `a ? b : false`
 
-
-## Designators
+### Designators
 
     Designator = GlobalName {Selection | Subscript | Dereference}.
     Selection    = "." NAME.
@@ -582,42 +574,39 @@ The `&&` and `||` operators are "shortcut operators", they are equivalent to the
 
 Pointer designators are automatically dereferenced when they are the designator of a function call, selection or subscript. *Therefore the dereferencing operator `^` will not need to be used often, but is useful when comparing or assigning the targets of pointers.*
 
-## Function Calls
+### Function Calls
 
     FunctionCall = Designator Call {Call}.
 
-    Call      = ["->" NAME] "(" [Argument ","...] ")". 
+    Call      = ["->" NAME] "(" [Argument ","...] ")".
     Argument  = Expression | "var" Designator.
 
 The list of arguments in a call is passed to the designated function as parameters. An argument must match its parameter's type. A reference parameter must be passed a `var` argument which is a designator of the same type. A value parameter may be passed an expression, following the same rules as assignment.
 
 If a designator refers to a variable *v* of type *M::t*, and the last name in the designator refers to a function *M::p*, then `M::p(v, ...)` or `M::p(var v, ...)` may be written as `v->p(...)`. (This is similar to the syntactic sugar that Python uses for method calls.)
 
-**Example**
+Example:
 
 If `list.head` has type `Set::t` and there exists a function `Set::add(s: Set::t; v: vt)` then these two function call expressions mean the same thing:
 
-```
-Set::add(list.head, value)
-list.head->add(value)
-```
+    Set::add(list.head, value)
+    list.head->add(value)
 
-
-## Literals
+### Literals
 
     Literal = INTEGER | FLOAT | CHARACTER | STRING.
 
-INTEGER literals have the type `int`. WORD literals have type `word`. BYTE literals have the type `byte`. FLOAT literals have the type `float`. STRING literals  are anonymous immutable variables of type `[]byte`. A string literal's array has an additional element at the end containing `'\0'`. 
+INTEGER literals have the type `int`. WORD literals have type `word`. BYTE literals have the type `byte`. FLOAT literals have the type `float`. STRING literals  are anonymous immutable variables of type `[]byte`. A string literal's array has an additional element at the end containing `'\0'`.
 
-BYTE, WORD and INTEGER literals are distinct. BYTE literals are eitareher integer literals with the suffix `X` or character literals in single quotes. The range of BYTE literals is 0X to 255X. The range of WORD literals is 0 to `maxword`. WORD literals are integer literals with the suffix `LOWER`. 
+BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer literals with the suffix `X` or character literals in single quotes. The range of BYTE literals is 0X to 255X. The range of WORD literals is 0 to `maxword`. WORD literals are integer literals with the suffix `LOWER`.
 
-# The standard declarations
+## The standard declarations
 
 The standard declarations are implicitly included at the start of every interface and module. Their names cannot be used for other purposes.
 
-## Standard Types
+### Standard Types
 
-| NAME     | Contents                                                    |
+| NAME      | Contents                                                   |
 |-----------|------------------------------------------------------------|
 | `bool`    | The logical values `true` or `false`.                      |
 | `int`     | Two's-complement signed integers.                          |
@@ -627,27 +616,26 @@ The standard declarations are implicitly included at the start of every interfac
 
 The floating-point number representation is implementation-dependent. `int` should have a convenient range for arithmetic. `word` must be wide enough to contain a memory address.
 
+### Standard Constants
 
-## Standard Constants
-
-| NAME     | Value                                                             |
-|----------|-------------------------------------------------------------------|
-| `minint` | the lowest possible int value                                     |
-| `maxint` | the highest possible int value                                    |
-| `maxword`| the highest possible word value                                   |
-| `lenint` | the number of bits required to store an int                       |
-| `lenword`| the number of bits required to store a word                       |
+| NAME     | Value                                                                 |
+|----------|-----------------------------------------------------------------------|
+| `minint` | the lowest possible int value                                         |
+| `maxint` | the highest possible int value                                        |
+| `maxword`| the highest possible word value                                       |
+| `lenint` | the number of bits required to store an int                           |
+| `lenword`| the number of bits required to store a word                           |
 | `null`   | is the value of pointer variables that are not pointing to variables. |
-| `true`   |                                                                   |
-| `false`  |                                                                   |
+| `true`   |                                                                       |
+| `false`  |                                                                       |
 
 The constant `null` may be assigned to any pointer variable. A variable containing `null` must not be dereferenced.
 
 The values of `minint`, `maxint` and `lenint` are implementation-dependent.
 
-## Standard Functions
+### Standard Functions
 
-The standard functions are operators that resemble function calls. Some are polymorphic, some take type definitions as arguments. Standard functions may be used within constant expressions. 
+The standard functions are operators that resemble function calls. Some are polymorphic, some take type definitions as arguments. Standard functions may be used within constant expressions.
 
 In the following tables *IntType* is an `int`, `word` or `byte` value, *NumType* is an integer type or `float`, `T` is a name of a type and *Array* is any array variable.
 
@@ -660,12 +648,11 @@ In the following tables *IntType* is an `int`, `word` or `byte` value, *NumType*
 | `as (v: NumType, T): NumType`      | convert `v` to numeric type `T`.     |
 | `fits (T, v: NumType): bool`       | true if `v` will fit in type `T`.    |
 
-
 `len(a, 0)` is the length of the first dimension of array `a`.
 
 `as` will cause a runtime error if its argument value ie outside its return type's range. `fits` can be used to determine if that will happen. How runtime errors are handled is implementation-dependent behaviour.
 
-### Bit Manipulation Functions
+#### Bit Manipulation Functions
 
 | Definition                                | Function                                  |
 |-------------------------------------------|-------------------------------------------|
@@ -679,9 +666,9 @@ In the following tables *IntType* is an `int`, `word` or `byte` value, *NumType*
 | `shr (x: IntType, n: int) : IntType`      | right-shift bits of `x` by `n`            |
 | `sha (x: IntType, n: int) : IntType`      | arithmetic right-shift bits of `x` by `n` |
 
-The bit shift operators will shift in the opposite direction if *n* is negative. Shifting by more than the width of *x* results in 0, or -1 in the case of an arithmetic right-shift. 
+The bit shift operators will shift in the opposite direction if *n* is negative. Shifting by more than the width of *x* results in 0, or -1 in the case of an arithmetic right-shift.
 
-### Memory allocation functions
+#### Memory allocation functions
 
 | Definition                             | Function                          |
 |----------------------------------------|-----------------------------------|
@@ -692,15 +679,15 @@ The bit shift operators will shift in the opposite direction if *n* is negative.
 
 `new` and `free` may not be used in constant expressions. The type `T` may not be an abstract type or open array (its size must be known).
 
-#### Garbage Collection Option
+##### Garbage Collection Option
 
-The `new` function takes a type definition as its first argument, finds memory space for an anonymous variable of that type, assigns a default initial value to the variable and returns a pointer to it. If no memory space is available then a runtime error is caused. 
+The `new` function takes a type definition as its first argument, finds memory space for an anonymous variable of that type, assigns a default initial value to the variable and returns a pointer to it. If no memory space is available then a runtime error is caused.
 
-The `free` function does nothing. 
+The `free` function does nothing.
 
-#### Manual Allocation Option
+##### Manual Allocation Option
 
-`new` and `free` exist to provide a type safe way to use low-level `ALLOCATE` and `DEALLOCATE` functions. `ALLOCATE` and `DEALLOCATE` function definitions must be included in any module that calls `new` or `free`. How the functions are implemented is up to the programmer. They will typically be included from the interface of a module that manages memory on a heap. 
+`new` and `free` exist to provide a type safe way to use low-level `ALLOCATE` and `DEALLOCATE` functions. `ALLOCATE` and `DEALLOCATE` function definitions must be included in any module that calls `new` or `free`. How the functions are implemented is up to the programmer. They will typically be included from the interface of a module that manages memory on a heap.
 
     fn ALLOCATE (size: int): word;  // returns an address
     fn DEALLOCATE (address: word);
@@ -709,7 +696,7 @@ The `new` function calls `ALLOCATE(SYSTEM::TYPESIZE(T))` or `ALLOCATE(SYSTEM::TY
 
 The `free(r)` function calls `DEALLOCATE(SYSTEM::TYPE(r, word))` to mark the memory space pointed to by *r* as free for reallocation.
 
-### Halting functions
+#### Halting functions
 
 | Definition            | Function                          |
 |-----------------------|-----------------------------------|
@@ -721,14 +708,13 @@ The `free(r)` function calls `DEALLOCATE(SYSTEM::TYPE(r, word))` to mark the mem
 
 How runtime errors and exit codes are handled is implementation-dependent behaviour.
 
-**Example**
+Example:
 
     assert(String::length(text) > 0);    // There must always be some text at this point.
     expect(Io::Status == Io::OKAY);      // The I/O system should still be working.
     exit(0);                             // The program is finished now.
 
-
-# The SYSTEM Interface
+## The SYSTEM Interface
 
 Including the interface `SYSTEM` allows a set of "unsafe" standard functions to be used. Unsafe functions access computer hardware or circumvent the type system. A module that includes `SYSTEM` should be considered unsafe. An unsafe module may have a safe interface.
 
@@ -749,7 +735,7 @@ In the following table *RAM* refers to the computer's random access memory, addr
 
 `TYPE` changes the type of a value or variable without altering the underlying bits that represent it. E.g. it can be used to represent a pointer as a word or a structure as an array of bytes.
 
-**Example**
+Example:
 
     interface IntegerRepresentation {
         fn EndianReversal (x: int) : int;
@@ -767,9 +753,9 @@ In the following table *RAM* refers to the computer's random access memory, addr
         }
     }
 
-# Lexical Elements
+## Lexical Elements
 
-## Numeric and String Literals 
+### Numeric and String Literals
 
     INTEGER  = DIGITS
              | "0x" HEXDIGIT {HEXDIGIT}
@@ -794,7 +780,7 @@ In the following table *RAM* refers to the computer's random access memory, addr
                 "\x" HEXDIGIT HEXDIGIT.
     STRCHAR   = " "..."~" except for "\", "'" and '"'.
 
-## Names
+### Names
 
     NAME    = LETTER {LETTER | DIGIT}.
     LETTER  = "A"..."Z" | "a"..."z" | "_".
@@ -803,25 +789,25 @@ In the following table *RAM* refers to the computer's random access memory, addr
     ImportedName = ModuleName "::" NAME.
     ModuleName   = NAME.
 
-## Keywords
+### Keywords
 
-    Keywords = 
-        "break" | "case" | "const" | "default" | "else" | 
+    Keywords =
+        "break" | "case" | "const" | "default" | "else" |
         "for" | "if" | "import" | "include" | "interface" | "is" |
         "module" | "fn" | "struct" | "record" | "match" |
-        "ref" | "return" | "type" | "let" | "var" | with" | 
+        "ref" | "return" | "type" | "let" | "var" | with" |
         "while".
 
     StandardDefinitionNames =
         "abs" | "assert" | "bool" | "byte" | "dec" | "exit" | "expect" |
-        "false" | "free" | "inc" | "int" | "land" | "len" | 
+        "false" | "free" | "inc" | "int" | "land" | "len" |
         "lenint" | "lnot" | "lor" |  "lxor" | "main" | "maxint" | "maxword" | "minint" |
         "new" | "null" | "float" | "sha" | "shl" | "shr" | "true" | "word" | "SYSTEM" |
         "ADDRESS" | "GET" | "MOVE" | "PUT" | "LOC" | "SIZE" | "TYPE" | "TYPESIZE".
 
-Keywords and the names of standard definitions may not be used for any other purpose. 
+Keywords and the names of standard definitions may not be used for any other purpose.
 
-## Whitespace and comments
+### Whitespace and comments
 
     WHITESPACE = SPACER {SPACER}.
     SPACER     = COMMENT | " " | CR | LF | TAB.
@@ -829,41 +815,38 @@ Keywords and the names of standard definitions may not be used for any other pur
 
 Adjacent names and keywords must be separated by whitespace. Whitespace is allowed anywhere except inside lexical elements (syntactic elements between double quotes and elements with all-uppercase names). Comments begin with `//` and end at the end of the line. Comments are allowed anywhere that whitespace is allowed.
 
-## Source files
+### Source files
 
     SourceFile = (Interface | Module) {Interface | Module}.
 
 A Kete source file contains one or more interfaces or modules. The names of the files are not significant, but the file extension `.kete` should be used by convention.
 
+## The Kete Syntax
 
+The syntax of Kete is presented informally in this document, but is LR(1). [kete.mly](kete.mly) is an LR(1) skeleton grammar for Ocaml [Menhir](https://gallium.inria.fr/~fpottier/menhir/). [kete.lark](kete.lark) is an Earley grammar for Python [Lark](https://github.com/lark-parser/lark).
 
-# The Kete Syntax
+### The syntax metalanguage
 
-The syntax of Kete is presented informally in this document, but is LR(1). [kete.mly](kete.mly) is an LR(1) skeleton grammar for Ocaml [Menhir](https://gallium.inria.fr/~fpottier/menhir/). [kete.lark](kete.lark) is an Earley grammar for Python [Lark](https://github.com/lark-parser/lark).   
+The following is an informal description of the metalanguage used to describe the syntax of Kete in this document. It is Nicolas Wirth's EBNF with some extensions:
 
-## The syntax metalanguage
-
-The following is an informal description of the metalanguage used to describe the syntax of Kete in this document. It is Nicolas Wirth's ENBF with some extensions:
-
-
-| Rule example       | Meaning                                         |
-|--------------------|-------------------------------------------------|
-| Name               | (mixed-case) The name of a grammar rule.                     |
-| NAME               | (uppercase) The name of a lexical element's rule. |
+| Rule example       | Meaning                                                |
+|--------------------|--------------------------------------------------------|
+| Name               | (mixed-case) The name of a grammar rule.               |
+| NAME               | (uppercase) The name of a lexical element's rule.      |
 | "text"  '@'  "#"   | Lexical elements. E.g. keywords or punctuation symbols |
-| CR LF TAB          | The names of special characters.                |
-| Name = *x*.        | A grammar rule definition.                      |
-| *x* *y*            | *x* followed by *y*                             |
-| *x* \| *y*         | Either *x* or *y* is allowed here               |
-| [ *x* ]            | An optional *x*                                 |    
-| { *x* }            | An optional repetition of *x*                   |    
-| *x* ","...         | a non-empty list of *x* separated by literal ","|
-| "a"..."z"          | a character between "a" and "z"                 |
-| ( *x* )            | parentheses for metasyntax rules                |    
+| CR LF TAB          | The names of special characters.                       |
+| Name = *x*.        | A grammar rule definition.                             |
+| *x* *y*            | *x* followed by *y*                                    |
+| *x* \| *y*         | Either *x* or *y* is allowed here                      |
+| [ *x* ]            | An optional *x*                                        |
+| { *x* }            | An optional repetition of *x*                          |
+| *x* ","...         | a non-empty list of *x* separated by literal ","       |
+| "a"..."z"          | a character between "a" and "z"                        |
+| ( *x* )            | parentheses for metasyntax rules                       |
 
 Whitespace is allowed between grammar rule elements. Whitespace is *required* between alphanumeric elements. E.g. there must be whitespace between `var` and a variable name. The lexical rule `WHITESPACE` defines what whitespace is. Whitespace is *not* allowed between the characters of a lexical element. E.g. this is not a Kete variable name: `Endian Reversal`.  `CR`, `LF` and `TAB` are examples of special character names.
 
-This is the metasyntax written in itself: 
+This is the metasyntax written in itself:
 
     Grammar     = Rule {Rule}.
     Rule        = (GRAMRULE | LEXRULE) "=" [Options] ".".
