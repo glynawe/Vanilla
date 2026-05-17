@@ -30,12 +30,9 @@ constdefinition : "const" NAME "=" constant ";"
 constant: expression
 
 vardefinition : ("var" | "let") varlist ";"
-vardeclaration : ("var" | "let") varlist ["=" structuredconstant] ";"
+vardeclaration : ("var" | "let") varlist ["=" expression] ";"
 varlist:  namelist ":" type
 namelist: NAME ("," NAME)*
-?structuredconstant : constant | structure
-structure: "{" structureitems ("," structureitems)* "}"
-structureitems: structuredconstant ["for" constant]
 
 procdefinition: "fn" NAME proctype ";"
 procdeclaration: ["loop"] "fn" NAME proctype procbody
@@ -145,6 +142,7 @@ empty:
         | TRUE
         | FALSE
         | NULL
+        | "{" (expression ("," expression)*)? "}"
 
 callchain:   ["->" NAME] "(" (argument ("," argument)*)? ")" callchain?
 

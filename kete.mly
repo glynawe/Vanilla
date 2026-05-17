@@ -143,12 +143,9 @@ MARK: Rule Types
 %type <unit> program
 %type <unit> publicinterface
 %type <unit> range
-%type <unit> repetition
 %type <unit> simple_statement
 %type <unit> statement
 %type <unit> structure
-%type <unit> structuredconstant
-%type <unit> structureitems
 %type <unit> typeconstraint
 %type <unit> typeconstraints
 %type <unit list> structuredtypedef
@@ -214,9 +211,17 @@ definition :
     { () }
 
 declaration: 
-| "var" ns=commas(name) t=typesuffix "=" sc=structuredconstant? ";"
+| "var" ns=commas(name) t=typesuffix "=" e=expression ";"
     { () }  
-| "let" commas(name) typesuffix "=" structuredconstant ";"
+| "var" ns=commas(name) t=typesuffix ";"
+    { () }  
+| "var" ns=commas(name) "=" e=expression ";"
+    { () }  
+| "let" ns=commas(name) t=typesuffix "=" e=expression ";"
+    { () }  
+| "let" ns=commas(name) t=typesuffix ";"
+    { () }  
+| "let" ns=commas(name) "=" e=expression ";"
     { () }  
 | l=boption("loop") "fn" n=NAME pt=proctype b=fnbody
     { () }  
@@ -252,24 +257,6 @@ expansion
 
 varlist 
 : ns=commas(name) t=typesuffix
-    { () }
-
-structuredconstant 
-: expression
-    { () }
-| sc=structure
-    { () }
-
-structure 
-: "{" ss=commas(structureitems) "}"
-    { () }
-
-structureitems 
-: sc=structuredconstant r=repetition?
-    { () }
-
-repetition 
-: "for" e=expression
     { () }
 
 
@@ -510,6 +497,8 @@ expr
 | "TYPESIZE" "(" t=typedef ")"
     { () }
 | "TYPE" "(" e=expression "," t=typedef ")"
+    { () }
+| "{" es=separated_list(",", expression) "}"
     { () }
 
 

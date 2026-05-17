@@ -398,7 +398,7 @@ fn CheckWalk (e: Expression) {
     case (alt: Alternative):
         let clash = alt.left.first->intersection(alt.right.first);
         if (clash != Set::Empty) {
-            Errors::Error(alt.line, alt.column, "alteratives clash: ");
+            Errors::Error(alt.line, alt.column, "alternatives clash: ");
             OutTerminalSet(IO::Stderr, clash);
             IO::Stderr->Ln();
             OutBranch(IO::Stderr, alt, 0);

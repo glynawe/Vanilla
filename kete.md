@@ -135,7 +135,7 @@ This very simplified program defines strings and generic sets as abstract data t
 
     OtherDefinitions = Inclusion | ConstDefinition | TypeDefinition.
 
-A *definition* names and describes a data type, function, variable, module or constant. A definition may be given more than once; definitions with the same name must have the same type.
+A *definition* names and describes a data type, function, variable, module or constant. A definition may be given more than once; definitions with the same name must have an equivalent type.
 
 A *declaration* is a definition that also defines *object code*. Object code is variable data or function code that will be included in an executable program. A declaration can only be made once.
 
@@ -242,37 +242,11 @@ All of the variables named in the variable list of a VarDeclaration are initiali
 
 `let` declares a *immutable variable*, a variable that can only be assigned once when it is declared. *The compiler may arrange for immutable global variables to be stored in ROM.*
 
-A variable definition has an implicit declaration if one is not given in a program's modules. E.g. the definition `var i: int;` will be provided the declaration `var i: int = 0;`.
+A variable definition has an implicit declaration if one is not given in a program's modules. E.g. the definition `var i: int;` will be provided the declaration `var i: int = 0;`. The implicit variable declaration will be initialized with the default value for the variable's type.
 
-### Structured Constants
+### Default values
 
-A structured constant can be used to initialize global variables of any type, especially arrays and records. The value of a structured constant will become object code for the executable program.
-
-    StructuredConstant = Constant | StructureList.
-    StructureList      = "{" StructureItems ","... "}".
-    StructureItems     = StructuredConstant ["for" Constant].
-
-A structure list can be assigned to a structure or array variable. Each item from a structure list is assigned to
-an element of that variable in order. For structures that is that order used in their definitions. If those
-elements are records or arrays then this rule is applied recursively.
-
-A `for` clause indicates that an item should be repeated a number of times within its structure list.
-
-A string literal can be used to declare a byte array. If it is shorter than the array then it is padded with zeros.
-
-Example: This array contains a one, three sevens and a six:
-
-    var sevens: [5]int = {1, 7 for 3, 6};
-
-Example: This array contains the bytes {64, 90, 64, 90, 0, 0, 0, 0}:
-
-    let string: [8]byte = "AZAZ";
-
-### Implicit Variable Declarations
-
-A variable definition has an implicit declaration if one is not given in a program's modules.
-
-An implicit variable declaration has a default value. Numeric variables are initialized to zero. Pointer, procedure and record values are initialized to `null`. The elements of arrays and records are recursively initialized by these rules. I.e. every non-structured value in a default structure ends up being zero or null.
+An implicit variable declaration has a *default value*. Numeric variables are initialized to zero. Pointer, procedure and record values are initialized to `null`. The elements of arrays and structures are recursively initialized by these rules. I.e. every numeric or reference value in a default array or structure value ends up being zero or null.
 
 The above rule is also used to initialize local variables within blocks.
 
@@ -298,7 +272,7 @@ The above rule is also used to initialize local variables within blocks.
 
 An *abstract type* is a type whose definition is not yet given. An abstract type can be used in an interface to denote an abstract type, or in a module to allow a record type to contain pointers to itself. An abstract type must be defined before it can be used in a module, either by a full type definition or a functor type constraint.
 
-Arrays begin at element 0. An array with no specified dimension is an *open array* which may have any length. An open array's length can be found using the standard function `len`. An open array type may only be used as the type of an parameter or as the target of a pointer type.
+Arrays begin at element 0. An array with no specified dimension is an *open array* which may have any length. An open array's length can be found using the standard function `len`. An open array type may only be used as the type of a parameter or as the target of a pointer type.
 
 Record, `fn` and `ref` types are *reference types*. A reference points to data of its type or `null`. `fn` names references to functions. `ref` names pointer types. Pointers only reference dynamically allocated data.
 
@@ -317,21 +291,25 @@ Name equivalence:
 
 - If there is a type declaration `type T1 = T2`, where `T1` and `T2` are names, then `T1` and `T2` are *equivalent type names* that name the same type. A type name is equivalent to itself.
 
-- Record and abstract types are the same type if they have equivalent type names.
+- Name equivalence is symmetric and transitive.
+
+- Record and abstract types are equivalent types if they have equivalent type names.
 
 Structural equivalence:
 
-- If there is a type declaration `type T = t`, where *t* is a type definition that is not a type name or record type, then the type name `T` is the same type as *t*.
+- If there is a type declaration `type T = t`, where *t* is a type definition that is not a type name or record type, then the type name `T` is equivalent to the type *t*.
 
-- The basic types `int`, `bool`, `byte` and `real` are the same type as themselves.
+- The numeric types `int`, `bool`, `byte` and `real` are equivalent to themselves.
 
-- Arrays are the same type if they have the same size and their element types are the same.
+- Arrays are equivalent types if they have the equal lengths and their element types are equivalent.
 
-- Structures the same type if their fields can be paired and each pair has the same name and type.
+- Structures are equivalent types if they have a the same set of field names and fields with the same name have equivalent type.
 
-- Pointer types are equivalent if their targets are the same type.
+- Pointer types are equivalent if their targets are equivalent types.
 
-- Function types are the same if they have the same return type, their parameters can be paired, and each pair has the same type and are both value parameters or both reference parameters.
+- Function types are the same if they have equivalent return types, their lists of parameters can be paired, and each pair has an equivalent type and are either both value parameters or both reference parameters. (Parameter names are ignored.)
+
+- Structural equivalence is symmetric and transitive.
 
 ### Records
 
@@ -374,11 +352,9 @@ The name of a record type is a function that returns a new record of that type w
 
 In a function type definition the parameter names are placeholders. They are not examined when determining type equivalence. However, parameter names are significant in function declarations.
 
-A function with a return type is an *expression function*. A function without a return type is a *procedure function*. An expression function may only be used in an expression. A procedure function may only be used as a statement.
+A function with a return type is an *expression function*. A function without a return type is a *procedure function*. An expression function may only be called in an expression. A procedure function may only be called as a statement.
 
 Parameters with a `var` are *reference parameters*. Assigning to a `var` parameter assigns to the designator passed by the function call. Parameters without `var` are *value parameters*. Value parameters are immutable.
-
-An *open array* parameter may be passed an array of any length if their element types are the same.
 
 A function definition can be used in a module to define it early. This allows sets of mutually recursive functions to be defined. (This is like providing a *function prototype* in C.)
 
@@ -401,9 +377,21 @@ A `loop` function must be tail-call optimizable. I.e. if the function calls itse
 
 Variables and constants defined in a block are only valid within that block, i.e. blocks are scopes. Variables and constants are only visible to the statements that come after their declaration statements.
 
-If a local variable declaration has an initializer expression then the expression is evaluated first and then all the variables named in its list are assigned that value, otherwise it is initialized to a default value by the same rules used to initialize global variables. If a local declaration has an initializer expression but no type then it takes on the type of its initializer. `let` declares a *immutable variable*, a variable that can only be assigned once when it is declared.
+If a local variable declaration has an initializer expression then the expression is evaluated first and then all the variables named in its list are assigned that value, otherwise it is initialized to a default value by the same rules used to initialize global variables.
+
+`let` declares a *immutable variable*, a variable that can only be assigned once when it is declared.
 
 A local definition may not have the same name as any definition in the same block or any surrounding block, including the function's parameter names. I.e. local names may not be shadowed.
+
+If a local declaration has an initializer expression but no type then it takes on the type of its initializer. If the initializer is an *element list* then its elements must all have the same type. The type of the variable will be an array of that type with the same length as the list.
+
+Examples:
+
+    var a: real;  // the initial value is 0.0
+    var b = 2;
+    let c = 'A';
+    let d = {-2, -1, 0, 1, 2};  // the type is [5]int
+    var s = "READY";            // the type is [6]byte
 
 ### Assignments
 
@@ -414,9 +402,17 @@ A local definition may not have the same name as any definition in the same bloc
 
     MathOp = "+" | "-" | "*" | "/" | "%"
 
-The expression is evaluated  then its value is assigned to the designator. The designator must have the same type as the expression. The `++`, `--`, `+=` etc. operators have the same meaning as in C, but may only be used as statements.
+The expression is evaluated then its value is assigned to the designator.
 
-Structures of the same type and arrays of the same type and length may be assigned to each other.
+#### Assignment compatibility
+
+- A designator may be assigned a value of an *equivalent type*.
+
+- An array designator may be assigned a shorter array if the arrays' element types are equivalent. The remaining elements are assigned *default values*. Either array may be an open array.
+
+- A record designator may be assigned a value whose type is an *extension* of the designator's type.
+
+The `++`, `--`, `+=` etc. operators have the same meaning as in C, but may only be used as statements.
 
 ### If Statements
 
@@ -526,7 +522,8 @@ Example:
            | Designator
            | FunctionCall
            | Literal
-           | "(" Expression ")".
+           | "(" Expression ")"
+           | {" ElementList "}".
 
     AddOp  = "+" | "-".
     MulOp  = "*" | "/" | "%".
@@ -547,7 +544,7 @@ Example:
 | `==` `!=`                  | *RefType* | *RefType*  | `bool`    |
 | `is`                       | *ObjType* | *TypeName* | `bool`    |
 
-*NumType* is `real`, `int`, `word` or `byte`. *IntType* is `int`, `word` or `byte`. *RefType* is any reference type. Operands and results must have the same type.
+*NumType* is `real`, `int`, `word` or `byte`. *IntType* is `int`, `word` or `byte`. *RefType* is any reference type. Operands and results must have equivalent types.
 
 `x / y` and `x % y` will cause a runtime error if *y* = 0. How that runtime error is handled is implementation-dependent behaviour.
 
@@ -557,7 +554,7 @@ The operator `is` is a runtime type test for records. `r is T` is  true if recor
 
 #### Logical operators
 
-*cond* `?` *expr1* `:` *expr2* is the conditional expression. If *cond* is true then *expr1* is evaluated and returned. If *cond* is false then *expr2* is evaluated and returned. *cond* must have the `bool` type, and *expr1* and *expr2* must have the same type.
+*cond* `?` *expr1* `:` *expr2* is the conditional expression. If *cond* is true then *expr1* is evaluated and returned. If *cond* is false then *expr2* is evaluated and returned. *cond* must have the `bool` type, and *expr1* and *expr2* must have equivalent types.
 
 The `&&` and `||` operators are "shortcut operators", they are equivalent to these conditional expressions:
 
@@ -581,7 +578,7 @@ Pointer designators are automatically dereferenced when they are the designator 
     Call      = ["->" NAME] "(" [Argument ","...] ")".
     Argument  = Expression | "var" Designator.
 
-The list of arguments in a call is passed to the designated function as parameters. An argument must match its parameter's type. A reference parameter must be passed a `var` argument which is a designator of the same type. A value parameter may be passed an expression, following the same rules as assignment.
+The list of arguments in a call is passed to the designated function as parameters. An argument must match its parameter's type. A reference parameter must be passed a `var` argument which is a designator of an equivalent type. A value parameter may be passed an *assignment compatible* expression.
 
 If a designator refers to a variable *v* of type *M::t*, and the last name in the designator refers to a function *M::p*, then `M::p(v, ...)` or `M::p(var v, ...)` may be written as `v->p(...)`. (This is similar to the syntactic sugar that Python uses for method calls.)
 
@@ -599,6 +596,26 @@ If `list.head` has type `Set::t` and there exists a function `Set::add(s: Set::t
 INTEGER literals have the type `int`. WORD literals have type `word`. BYTE literals have the type `byte`. FLOAT literals have the type `float`. STRING literals  are anonymous immutable variables of type `[]byte`. A string literal's array has an additional element at the end containing `'\0'`.
 
 BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer literals with the suffix `X` or character literals in single quotes. The range of BYTE literals is 0X to 255X. The range of WORD literals is 0 to `maxword`. WORD literals are integer literals with the suffix `LOWER`.
+
+### Element lists
+
+    ElementList = Expression | "{" ElementList ","... "}".
+
+A element list can be assigned to a structure or array variable. Each item from an element list is assigned to an element of the variable in order. If an array is longer than the element list then the array's remaining elements are filled in with default values. If those elements are structures or arrays then these rules are applied recursively.
+
+Example:
+s
+    type colour = struct { name: [12]byte; rgb: [3]int; };
+
+    let Colors: [5]colour = 
+        { 
+            {"Fuchsia",    {0xFF, 0x00, 0xFF}},
+            {"Chartreuse", {0x7F, 0xFF, 0x00}},
+            {"Turquoise",  {0x40, 0xE0, 0xD0}},
+            {"Goldenrod",  {0xDA, 0xA5, 0x20}}
+        };
+
+Note: `colour[4]` will be assigned `{"", {0, 0, 0}}`.
 
 ## The standard declarations
 

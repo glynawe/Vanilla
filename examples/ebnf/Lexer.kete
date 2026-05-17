@@ -1,4 +1,4 @@
-inteface LEXER {
+interface LEXER {
     import IO;
 
     const EOF = '\x00';
@@ -7,7 +7,7 @@ inteface LEXER {
     const SymbolSize = 64;
 
     type T;
-    type String = [64]byte;
+    type String = [SymbolSize]byte;
 
     fn New (input: IO::File) : T;
     fn Get (self: T);
