@@ -1,0 +1,53 @@
+{
+    "spellright.language": [
+        "en-GB-10-1."
+    ],
+    "spellright.documentTypes": [
+        "latex",
+        "plaintext",
+        "markdown"
+    ],
+    "cSpell.words": [
+        "AZAZ",
+        "BINDIGIT",
+        "defn",
+        "defns",
+        "DQCHAR",
+        "Ebnf",
+        "Elem",
+        "expectedlexeme",
+        "extentions",
+        "fieldsof",
+        "FORALL",
+        "getbit",
+        "Getchar",
+        "GRAMRULE",
+        "HEXDIGIT",
+        "isempty",
+        "lenint",
+        "lenword",
+        "LEXRULE",
+        "lnot",
+        "lxor",
+        "maxerrors",
+        "maxint",
+        "maxword",
+        "minint",
+        "Modula",
+        "nextcolumn",
+        "nextline",
+        "notin",
+        "nulltype",
+        "OCTDIGIT",
+        "qualident",
+        "repr",
+        "setbit",
+        "sizelimit",
+        "SQCHAR",
+        "STRCHAR",
+        "typeconstraints",
+        "TYPESIZE",
+        "valueof",
+        "Wirth's"
+    ]
+}

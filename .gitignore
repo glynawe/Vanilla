@@ -1,6 +1,4 @@
-/.vscode
 _build
-.vscode
 *.aux
 *.cache
 *.cmi
@@ -21,3 +19,4 @@ scratch*
 unused
 Kete.opam
 kete.conflicts
+vscode/gdw.kete-1.0.1/.vscode/launch.json

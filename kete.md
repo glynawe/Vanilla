@@ -281,7 +281,7 @@ A pointer to an undeclared type can be declared provided that that type is decla
 **Example:**
 
     type Tree = ref Node;
-    type Node = record { left, right: Tree; };
+    type Node = struct { left, right: Tree; };
 
 ### Type equivalence
 
@@ -604,11 +604,11 @@ BYTE, WORD and INTEGER literals are distinct. BYTE literals are either integer l
 A element list can be assigned to a structure or array variable. Each item from an element list is assigned to an element of the variable in order. If an array is longer than the element list then the array's remaining elements are filled in with default values. If those elements are structures or arrays then these rules are applied recursively.
 
 Example:
-s
+
     type colour = struct { name: [12]byte; rgb: [3]int; };
 
-    let Colors: [5]colour = 
-        { 
+    let Colors: [5]colour =
+        {
             {"Fuchsia",    {0xFF, 0x00, 0xFF}},
             {"Chartreuse", {0x7F, 0xFF, 0x00}},
             {"Turquoise",  {0x40, 0xE0, 0xD0}},
