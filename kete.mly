@@ -39,6 +39,7 @@ MARK: Operators
 %token SUB "-"  
 %token QUESTION "?"
 %token ARROW "->"
+%token AT "@"
 
 %left "||"
 %left "&&"
@@ -80,6 +81,7 @@ MARK: Keywords
 %token FLOAT "float"
 %token FN "fn"
 %token FOR "for"
+%token FUNCTOR "functor"
 %token IF "if"
 %token INT "int"
 %token IMPORT "import"
@@ -173,11 +175,11 @@ moduledecl :
     { () }
 | "module" n=NAME i=publicinterface? "{" ds=declaration* "}"
     { () }
-| "module" n=NAME "<" ps=commas(moduleparameter) ">"
+| "functor" n=NAME "<" ps=commas(functorparameter) ">"
   i=publicinterface? c=loption(typeconstraints) "{" ds=declaration* "}"
     { () }
 
-moduleparameter 
+functorparameter 
 : n1=name ":" n2=name
     { () }
 
@@ -355,7 +357,7 @@ closed_statement
     { () }
 
 label
-: n1=name ":"  { () }
+: "@" n1=name  { () }
 
 simple_statement
 : block

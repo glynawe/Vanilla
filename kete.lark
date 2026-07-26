@@ -1,11 +1,11 @@
 //
-// KeteC grammar in Lark. 
+// KeteC grammar in Lark.
 //
 
 program: (module | interface | functor)*
 
 module    : "module" NAME [publicinterface] "{" declaration* "}"
-functor   : "module" NAME moduleparameters [publicinterface] [typeconstraints] "{" declaration* "}"
+functor   : "functor" NAME moduleparameters [publicinterface] [typeconstraints] "{" declaration* "}"
 interface : "interface" NAME "{" definition* "}"
 
 moduleparameters : "<" moduleparameter ("," moduleparameter)* ">"
@@ -78,7 +78,7 @@ forever  : "loop" statement
 break    : "break" [NAME] ";"
 loopto   : expression ".." expression
 loopuntil: expression ":" expression
-label    : NAME ":"
+label    : "@" NAME
 proccall : designator callchain ";"
 
 switch :    "switch" "(" expression ")" "{" case* [default] "}"

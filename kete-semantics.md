@@ -813,10 +813,10 @@ TODO: declarations can replace definitions, definitions can confirm declarations
 
 An overbar over a syntactic variable means that it represents a list of
 those variables. Most set operators are valid for lists, lists are
-"bags". `∅` represents an empty list. Sequences can be shown with
+"bags". `∅` represents an empty list. Lists can be shown with
 separators between elements (e.g. `,` or `;`), but those have no significance.
 
-Sequences can be:
+Lists can be:
 
 - destructured, `̅α = α₀ ̅α₀`;
 - concatenated, `α ̅α` or `̅α₀ ̅α₁`;

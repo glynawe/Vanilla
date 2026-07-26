@@ -91,7 +91,7 @@ This very simplified program defines strings and generic sets as abstract data t
         fn Contains (set: T, element: ElemT) : bool;
     }
 
-    module Set <Element: COMPARABLE> : SET with ElemT = Element::T {
+    functor Set <Element: COMPARABLE> : SET with ElemT = Element::T {
         type T = record {
             value: ElemT;
             next: T;
@@ -153,7 +153,7 @@ A Kete program may contain any number of interfaces, modules and functors. One m
                 {DeclarationOrDefinition}
                 "}".
 
-    Functor   = "module" ModuleName "<" ModuleParameter ","... ">"
+    Functor   = "functor" ModuleName "<" ModuleParameter ","... ">"
                 [PublicInterface] [TypeConstraints] "{"
                 {DeclarationOrDefinition}
                 "}".
@@ -172,7 +172,7 @@ An *interface* contains a set of definitions. A *module* contains a set of defin
 
 If a module is declared with a *public interface* then only the definitions in that interface will be available when the module is imported. The module must contain declarations for all the definitions in its public interface.
 
-A *functor* is a module parametrized by interfaces for modules that it may import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each interface parameter specifies a minimum set of definitions that the actual module must provide. A functor *type constraint* specifies types from different parameter modules that to be treated as being identical (this is important when defining generic types).
+A *functor* is a module parametrized by interfaces for modules that it may import; the actual modules are supplied when the functor is imported. The primary purpose of functors is to define generic abstract data types. Each interface parameter specifies a minimum set of definitions that the actual module must provide. A functor *type constraint* specifies types from different parameter modules that are to be treated as identical (this is important when defining generic types).
 
 Functor application is *generative*. Modules are distinct even if their interfaces are the same. In this example `A.t` and `B.t` are incompatible types:
 
@@ -422,9 +422,9 @@ The `++`, `--`, `+=` etc. operators have the same meaning as in C, but may only 
 
 ### Looping Statements
 
-    For   = [NAME ":"] "for" "(" NAME "=" Expression  (":" | "..") Expression ")" Statement.
-    While = [NAME ":"] "while" "(" Expression ")" Statement.
-    Loop  = [NAME ":"] "loop" Statement.
+    For   = ["@" NAME] "for" "(" NAME "=" Expression  (":" | "..") Expression ")" Statement.
+    While = ["@" NAME] "while" "(" Expression ")" Statement.
+    Loop  = ["@" NAME] "loop" Statement.
 
     Break = "break" [NAME] ";".
 
@@ -809,7 +809,7 @@ Example:
 ### Keywords
 
     Keywords =
-        "break" | "case" | "const" | "default" | "else" |
+        "break" | "case" | "const" | "default" | "else" | "functor"
         "for" | "if" | "import" | "include" | "interface" | "is" |
         "module" | "fn" | "struct" | "record" | "match" |
         "ref" | "return" | "type" | "let" | "var" | with" |
@@ -840,7 +840,7 @@ A Kete source file contains one or more interfaces or modules. The names of the 
 
 ## The Kete Syntax
 
-The syntax of Kete is presented informally in this document, but is LR(1). [kete.mly](kete.mly) is an LR(1) skeleton grammar for Ocaml [Menhir](https://gallium.inria.fr/~fpottier/menhir/). [kete.lark](kete.lark) is an Earley grammar for Python [Lark](https://github.com/lark-parser/lark).
+The syntax of Kete is presented informally in this document, but is LL(1) (except for that bloody "else"). [kete.mly](kete.mly) is an LR(1) skeleton grammar for Ocaml [Menhir](https://gallium.inria.fr/~fpottier/menhir/). [kete.lark](kete.lark) is an Earley grammar for Python [Lark](https://github.com/lark-parser/lark).
 
 ### The syntax metalanguage
 

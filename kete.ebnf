@@ -1,0 +1,145 @@
+program   = {interface | module | functor}.
+
+interface = "interface" NAME "{" {definition} "}".
+module    = "module" NAME [publicinterface] "{" {declaration} "}".
+functor   = "functor" NAME functorparameters [publicinterface] [typeconstraints] "{" {declaration} "}".
+
+functorparameters = "<" moduleparameter {"," moduleparameter} ">".
+typeconstraints   = "with" typeconstraint {"," typeconstraint}.
+moduleparameter   = NAME ":" NAME.
+typeconstraint    = globalname "=" globalname.
+publicinterface   = ":" NAME.
+
+definition        = vardefinition | procdefinition | otherdefinitions.
+declaration       = vardeclaration | procdeclaration | otherdefinitions.
+otherdefinitions  = inclusion | constdefinition | typedefinition.
+
+inclusion = "import" NAME ["=" expansion] ";" | "include" expansion ";".
+expansion = NAME ["<" NAME {"," NAME} ">"] [":" NAME] [typeconstraints].
+
+globalname = NAME ["::" NAME].
+
+constdefinition = "const" NAME "=" constant ";".
+constant = expression.
+
+vardefinition   = ("var" | "let") varlist ";".
+vardeclaration  = ("var" | "let") varlist ["=" expression] ";".
+varlist         =  namelist ":" type.
+namelist        = NAME {"," NAME}.
+
+procdefinition  = "fn" NAME proctype ";".
+procdeclaration = ["loop"] "fn" NAME proctype procbody.
+procbody        = block | "=" expression ";".
+proctype        = "(" parameterlist ")" [":" type].
+parameterlist   = [parameters {"," parameters}].
+parameters      = varlist | "var" varlist.
+
+typedefinition = "type" NAME ["=" structuredtype] ";".
+
+type =
+    globalname
+  | "[" [constant] "]" type
+  | "ref" type
+  | "byte"
+  | "int"
+  | "word"
+  | "float"
+  | "bool".
+
+structuredtype =
+    type
+  | "struct" fields
+  | "record" [parent] [fields]
+  | "fn" proctype.
+
+parent = "(" globalname ")".
+
+fields = "{" {varlist ";"} "}".
+
+statement =
+      block
+    | designator (assignment | callchain ";")
+    | "var" namelist ([":" type ["=" expression]] | "=" expression) ";"
+    | "let" namelist [":" type] "=" expression ";"
+    | "const" NAME "=" constant ";"
+    | "if" "(" expression ")" statement //["else" statement]
+    | "switch" "(" expression ")" "{" {"case" case} [default] "}"
+    | "match" "(" expression ")" "{" {"case" typecase} [default] "}"
+    | "return" [expression] ";"
+    | "break" [NAME] ";"
+    | ["@" NAME] loop
+    | ";".
+
+loop =
+      "loop" statement
+    | "for" "(" NAME "=" expression (":" | "..") expression ")" statement
+    | "while" "(" expression ")" statement.
+
+block = "{" {statement} "}".
+
+case    = range {"," range} ":" statements.
+range   = constant [".." constant].
+default = "default" ":" statements.
+
+typecase =
+    "(" NAME ":" globalname ")" ":" statements
+  | "null" ":" statements.
+
+statements = statement {statement}.
+
+
+assignment =
+    "=" expression ";"
+  | mathop "=" expression ";"
+  | "++" ";"
+  | "--" ";".
+
+mathop = "+" | "-" | "*" | "/" | "%".
+
+expression = disjunction ["?" disjunction ":" expression].
+
+disjunction = conjunction {"||" conjunction}.
+
+conjunction = relation {"&&" relation}.
+
+relation = sum (("==" | "!=" | "<" | "<=" | ">" | ">=") sum | "is" globalname).
+
+sum = term ("+" | "-") term.
+
+term = factor {("*" | "/" | "%") factor}.
+
+factor =
+    INTEGER
+  | REAL
+  | CHARACTER
+  | STRING
+  | "true"
+  | "false"
+  | "null"
+  | "("expression ")"
+  | designator [callchain]
+  | "+" factor
+  | "-" factor
+  | "!" factor
+  | "{" [expression {"," expression}] "}"
+  | "new" "(" type ["," constant] ")"
+  | "TYPESIZE" "(" type ")"
+  | "TYPE" "(" expression "," type ")".
+
+callchain =  ["->" NAME] "(" [argument {"," argument}] ")" [callchain].
+
+argument = expression | "var" designator.
+
+designator = globalname {"." NAME | "^" |"[" expression "]"}.
+
+COMMENT = "//" /[^\n]*/
+WHITESPACE = /[ \t\n\r]+/
+
+NAME = /[A-Za-z_][A-Za-z0-9_]*/
+
+INTEGER =   /[0-9]+[XL]?/ | /0x[0-9A-Fa-f]+[XL]?/ | /0o[0-7]+[XL]?/ | /0b[01]+[XL]?/
+REAL =      /[0-9]+[.][0-9]+([Ee][+-]?[0-9]+)?/
+STRING =    "\"" (NORMAL | "'"  | "\\\"" | ESCAPE)* "\""
+CHARACTER = "'"  (NORMAL | "\"" | "\\'"  | ESCAPE) "'"
+ESCAPE =    "\\\\" | "\\n" | "\\f" | "\\t" | "\\b" | "\\a" | "\\e" | "\\v" | "\0" | "\\x" /[0-9A-Fa-f][0-9A-Fa-f]/
+NORMAL =   " " | "!" | "#".."&" | "(".."[" | "]".."~"
